@@ -1,0 +1,11 @@
+fasta: data/resources/common/GRCh38.primary_assembly.genome.fa
+gtf: data/resources/common/gencode.v37.annotation.gtf
+chrom_sizes: data/results/common/chrom_sizes
+
+pilot:
+  abundance: data/resources/pilot_talon_abundance_filtered.tsv
+  gtf: data/resources/pilot_talon_observedOnly.gtf
+  read_annot: data/resources/pilot_talon_read_annot.tsv
+
+pilot_apa:
+  dir: data/results/pilot_apa

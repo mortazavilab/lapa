@@ -1,0 +1,30 @@
+configfile: "configs/config.yaml"
+
+
+rule all:
+    input:
+        directory(config['pilot_apa']['dir'])
+
+rule chrom_sizes:
+    input:
+        fasta = config['fasta']
+    output:
+        chrom_sizes = config['chrom_sizes']
+    shell:
+        "faidx {input.fasta} -i chromsizes > {output.chrom_sizes}"
+
+rule postprocess_tes:
+    input:
+        read_annot = config['pilot']['read_annot'],
+        fasta = config['fasta'],
+        gtf = config['gtf'],
+        chrom_sizes = config['chrom_sizes']
+    output:
+        directory(config['pilot_apa']['dir'])
+    shell:
+        "longread_postprocessing tes \
+        --alignment {input.read_annot} \
+        --fasta {input.fasta} \
+        --annotation {input.gtf} \
+        --chrom_sizes {input.chrom_sizes} \
+        --output_dir {output}"
