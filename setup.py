@@ -23,16 +23,16 @@ setup(
         'Natural Language :: English',
         'Programming Language :: Python :: 3.6',
     ],
-    description="Fix UTR of Gencode",
+    description="Alternative polyadenylation detection from diverse data sources",
     install_requires=requirements,
     license="MIT license",
     entry_points='''
         [console_scripts]
-        longread_postprocessing=longread_postprocessing.main:cli
+        lapa=lapa.main:cli
     ''',
     keywords=['genomics', 'long read RNA-seq', 'APA'],
-    name='longread_postprocessing',
-    packages=find_packages(include=['longread_postprocessing']),
+    name='lapa',
+    packages=find_packages(include=['lapa']),
     setup_requires=setup_requirements,
     test_suite='tests',
     tests_require=test_requirements,

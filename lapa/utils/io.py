@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
-from longread_postprocessing.utils.common import filter_main_chroms, \
+import pyranges as pr
+from lapa.utils.common import filter_main_chroms, \
     chroms, chroms_chr
 
 
@@ -16,14 +17,18 @@ def read_talon_read_annot(path):
         'read_start': 'Start',
         'read_end': 'End',
         'strand': 'Strand',
-        'annot_gene_id': 'gene_id'
+        'annot_gene_id': 'gene_id',
+        'dataset': 'sample'
     })
     # TO FIX: start end strand may not be correct
     return df
 
 
-def read_bam(path):
-    raise NotImplementedError()
+def read_bam_ends(path):
+    df = pr.read_bam(path)
+
+    import pdb
+    pdb.set_trace()
 
 
 def read_chrom_sizes(chrom_size_file):
@@ -48,8 +53,21 @@ def bw_from_pyranges(gr, value_col, chrom_size_file, bw_pos_file, bw_neg_file):
 
 
 def read_polyA_cluster(path):
-    cols = ['Chromosome', 'Start', 'End', 'Strand', 'polyA_site', 'count',
-            'fracA', 'singal', 'Feature', 'canonical_site', 'canonical', 'tpm']
+    cols = [
+        'Chromosome', 'Start', 'End', 'polyA_site', 'count', 'Strand',
+        'fracA', 'singal', 'Feature', 'canonical_site', 'canonical', 'tpm'
+    ]
+    df = pd.read_csv(path, header=None, sep='\t')
+    df.columns = cols
+    return df
+
+
+def read_apa_sample(path):
+    cols = [
+        'Chromosome', 'Start', 'End', 'count', 'polyA_site', 'Strand',
+        'gene_id', 'gene_count', 'usage', 'count_cluster',
+        'fracA', 'singal', 'Feature', 'canonical_site', 'canonical', 'tpm'
+    ]
     df = pd.read_csv(path, header=None, sep='\t')
     df.columns = cols
     return df

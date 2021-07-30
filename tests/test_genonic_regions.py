@@ -1,7 +1,7 @@
 import pytest
 from conftest import gtf_brca1
 import pyranges as pr
-from longread_postprocessing.genomic_regions import GenomicRegions
+from lapa.genomic_regions import GenomicRegions
 
 
 @pytest.fixture
