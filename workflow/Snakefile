@@ -3,7 +3,32 @@ configfile: "configs/config.yaml"
 
 rule all:
     input:
-        config['pilot_apa']['dir']
+        expand(config['short_rnaseq']['polyA_trimmed'],
+               encode_id=config['short_rnaseq']['data']['gm12878'],
+               sample='gm12878')
+
+
+rule download_short_reads:
+    output:
+        config['short_rnaseq']['fastq']
+    shell:
+        "wget https://www.encodeproject.org/files/{wildcards.encode_id}/@@download/{wildcards.encode_id}.fastq.gz -O {output}"
+
+
+rule filter_reads_with_polyA_tail:
+    input:
+        fastq = config['short_rnaseq']['fastq']
+    params:
+        pattern = "A" * 10,
+        mismatch = 0
+    output:
+        fastq = config['short_rnaseq']['polyA_trimmed']
+    shell:
+        '''
+        seqkit grep --by-seq --max-mismatch {params.mismatch} \
+        --pattern {params.pattern} {input.fastq} | gzip > {output.fastq}
+        '''
+
 
 rule chrom_sizes:
     input:
@@ -22,7 +47,7 @@ rule postprocess_tes:
     output:
         directory(config['pilot_apa']['dir'])
     shell:
-        "longread_postprocessing tes \
+        "lapa \
         --alignment {input.read_annot} \
         --fasta {input.fasta} \
         --annotation {input.gtf} \
@@ -39,7 +64,7 @@ rule pilot_plot:
     output:
         directory(config['pilot_apa']['dir'])
     shell:
-        "longread_postprocessing tes \
+        "lapa \
         --alignment {input.read_annot} \
         --fasta {input.fasta} \
         --annotation {input.gtf} \

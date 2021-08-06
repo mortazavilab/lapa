@@ -1,8 +1,20 @@
+from pathlib import Path
 import numpy as np
 import pandas as pd
-import pyranges as pr
-from lapa.utils.common import filter_main_chroms, \
-    chroms, chroms_chr
+from bamread import read_bam
+from lapa.utils.common import chroms_chr
+
+
+cluster_col_order = [
+    'Chromosome', 'Start', 'End', 'polyA_site', 'tpm', 'Strand',
+    'Feature', 'count', 'fracA', 'signal', 'canonical_site', 'canonical'
+]
+
+sample_col_order = [
+    'Chromosome', 'Start', 'End', 'polyA_site', 'tpm', 'Strand',
+    'Feature', 'gene_id', 'count', 'gene_count', 'usage',
+    'fracA', 'signal', 'canonical',  'canonical_site'
+]
 
 
 def remove_chr(df):
@@ -20,15 +32,38 @@ def read_talon_read_annot(path):
         'annot_gene_id': 'gene_id',
         'dataset': 'sample'
     })
+
+    start = np.where(df['Start'] < df['End'], df['Start'], df['End'])
+    end = np.where(df['Start'] > df['End'], df['Start'], df['End'])
+    df['End'] = np.where(df['Strand'] == '-', start, end)
+    del df['Start']
+
     # TO FIX: start end strand may not be correct
     return df
 
 
-def read_bam_ends(path):
-    df = pr.read_bam(path)
+def read_bam_ends(path, mapq=10, sample=None):
+    df = read_bam(path, mapq=mapq)
 
-    import pdb
-    pdb.set_trace()
+    df['End'] = np.where(df['Strand'] == '-', df['Start'], df['End'])
+    del df['Start']
+
+    if sample is None:
+        df['sample'] = Path(path).stem
+    else:
+        df['sample'] = sample
+
+    return df
+
+
+def read_sample_csv(path, mapq=10):
+    df_sample = pd.read_csv(path)
+
+    df = list()
+    for i, row in df_sample.iterrows():
+        df.append(read_bam_ends(row['path'], sample=row['sample']))
+
+    return pd.concat(df)
 
 
 def read_chrom_sizes(chrom_size_file):
@@ -53,21 +88,12 @@ def bw_from_pyranges(gr, value_col, chrom_size_file, bw_pos_file, bw_neg_file):
 
 
 def read_polyA_cluster(path):
-    cols = [
-        'Chromosome', 'Start', 'End', 'polyA_site', 'count', 'Strand',
-        'fracA', 'singal', 'Feature', 'canonical_site', 'canonical', 'tpm'
-    ]
     df = pd.read_csv(path, header=None, sep='\t')
-    df.columns = cols
+    df.columns = cluster_col_order
     return df
 
 
 def read_apa_sample(path):
-    cols = [
-        'Chromosome', 'Start', 'End', 'count', 'polyA_site', 'Strand',
-        'gene_id', 'gene_count', 'usage', 'count_cluster',
-        'fracA', 'singal', 'Feature', 'canonical_site', 'canonical', 'tpm'
-    ]
     df = pd.read_csv(path, header=None, sep='\t')
-    df.columns = cols
+    df.columns = sample_col_order
     return df

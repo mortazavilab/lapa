@@ -5,11 +5,12 @@ requirements = [
     'setuptools',
     'tqdm',
     'click',
-    'pyranges',
     'pandas',
-    'kipoiseq',
     'pybigwig',
-    'scipy'
+    'scipy',
+    'bamread>=0.0.9',
+    'pyranges>=0.0.71',
+    'kipoiseq>=0.3.0'
 ]
 
 setup_requirements = ['pytest-runner', ]

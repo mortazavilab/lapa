@@ -5,15 +5,17 @@ import pyranges as pr
 from tqdm import tqdm
 from kipoiseq import Interval
 from kipoiseq.extractors import FastaStringExtractor
-from lapa.utils.io import read_talon_read_annot, bw_from_pyranges
+from lapa.utils.io import read_talon_read_annot, bw_from_pyranges, \
+    read_bam_ends, cluster_col_order, sample_col_order, read_sample_csv
 from lapa.utils.common import pad_series, polyA_signal_seqs
 from lapa.genomic_regions import GenomicRegions
 
 
 def _count_tes(df_alignment, chrom_sizes, sample, output_dir):
     # count TES sites
-    columns = ['Chromosome', 'End', 'Strand', 'gene_id']
+    columns = ['Chromosome', 'End', 'Strand']
     df = df_alignment[columns]
+
     df['count'] = 1
     df = df.groupby(columns).agg('sum').reset_index()
 
@@ -26,11 +28,7 @@ def _count_tes(df_alignment, chrom_sizes, sample, output_dir):
         str(output_dir / f'{sample}_tes_counts_neg.bw')
     )
 
-    # set polyA site
-    df['tes_site'] = df['Chromosome'].astype(str) + ':' + \
-        df['End'].astype(str) + ':' + df['Strand']
-
-    return df.set_index('tes_site')
+    return df
 
 
 def count_tes(df_alignment, chrom_sizes, output_dir):
@@ -45,12 +43,11 @@ def count_tes(df_alignment, chrom_sizes, output_dir):
 class Cluster:
 
     def __init__(self, Chromosome: str, Start: int, End: int,
-                 Strand: str, gene_id: str, counts=None):
+                 Strand: str, counts=None):
         self.Chromosome = str(Chromosome)
         self.Start = Start
         self.End = End
         self.Strand = Strand
-        self.gene_id = gene_id
         self.counts = counts or list()
 
     def extend(self, end, count):
@@ -90,12 +87,12 @@ class Cluster:
 
         seq = fasta.extract(interval)
 
-        for singal_seq in polyA_signal_seqs:
-            index = seq.find(singal_seq)
+        for signal_seq in polyA_signal_seqs:
+            index = seq.find(signal_seq)
             if index == -1:
                 continue
             else:
-                return self.Start + index, singal_seq
+                return self.Start + index, signal_seq
         return None, None
 
     def fraction_A(self, fasta, polyA_site):
@@ -133,37 +130,41 @@ class Cluster:
             'count': total,
             'Strand': self.Strand,
             'fracA': fracA,
-            'singal': signal
+            'signal': signal
         }
 
+    def __str__(self):
+        return f'{self.Chromosome}:{self.Start}-{self.End}:{self.Strand}'
 
-class TesCluster:
+    def __repr__(self):
+        return f'Cluster({str(self)})'
+
+
+class TesClustering:
 
     def __init__(self, fasta):
         self.fasta = FastaStringExtractor(fasta, use_strand=True)
 
-    def cluster(self, df_tes, extent_cutoff=3, window=25, total_filter=10):
-        for i, _df in tqdm(df_tes.groupby('gene_id')):
+    def cluster(self, df_tes, extent_cutoff=3, window=25):
+        for i, _df in tqdm(df_tes.groupby(['Chromosome', 'Strand'])):
             cluster = None
 
             for j, row in _df.sort_values('End').iterrows():
+
+                if cluster is not None:
+                    if (row['End'] - cluster.End) > window:
+                        yield cluster
+                        cluster = None
+
                 # if enough reads supporting TES, create or extent cluster
                 if row['count'] > extent_cutoff:
                     if cluster is None:
                         cluster = Cluster(row['Chromosome'], row['End'] - 1,
-                                          row['End'], row['Strand'],
-                                          row['gene_id'])
+                                          row['End'], row['Strand'])
                     cluster.extend(row['End'], row['count'])
 
-                if cluster is not None:
-                    if (row['End'] - cluster.End) > window:
-                        if cluster.total_count >= total_filter:
-                            yield cluster
-                        cluster = None
-
             if cluster is not None:
-                if cluster.total_count >= total_filter:
-                    yield cluster
+                yield cluster
 
     def to_bed(self, df_tes, bed_path):
         with open(bed_path, 'w') as f:
@@ -183,36 +184,39 @@ def tes_cluster_annotate(df_cluster, annotation):
     gr_gtf = pr.read_gtf(annotation)
     greg = GenomicRegions(gr_gtf)
     gr = greg.annotate(gr_apa, single=True)
+    # if genes already defined
+    gr = greg.overlap_gene(gr)
+    df = greg.overlap_tes(gr).df
 
-    gr_tes = gr_gtf.features.tes()
-    df_tes = gr_tes.df[['Chromosome', 'Start',
-                        'End', 'Strand']].drop_duplicates()
-    df_tes['canonical'] = True
-
-    gr_tes = pr.PyRanges(df_tes, int64=True)
-    gr = gr.join(gr_tes, how='left')
-
-    df = gr.df
-
-    del df['End_b']
-    del df['Strand_b']
+    df.loc[df['Feature'].isna(), 'Feature'] = 'intergenic'
 
     df['canonical'] = df['canonical'] == 1
     df = df.rename(columns={'Start_b': 'canonical_site'})
-    # df['canonical_site'] = df['canonical_site'].replace(-1, np.nan)
-    df['tpm'] = df['count'] * 1000000 / df['count'].sum()
+    df['gene_id'] = df['gene_id'].replace('-1', '')
+    df['gene_name'] = df['gene_name'].replace('-1', '')
 
-    return df
+    df['tpm'] = (df['count'] * 1000000 / df['count'].sum()).round(4)
+
+    return df.sort_values(['Chromosome', 'End'])
 
 
-def tes_sample(df_cluster, df_tes_sample):
-    columns = ['Chromosome', 'Start', 'End', 'Strand']
-
+def tes_sample(df_cluster, df_tes_sample,
+               filter_intergenic=True,
+               filter_internal_priming=True):
+    columns = ['Chromosome', 'Start', 'End', 'Strand', 'gene_id']
     gr = pr.PyRanges(df_tes_sample)
+
+    if filter_intergenic:
+        df_cluster = df_cluster[df_cluster['Feature'] != 'intergenic']
+
+    if filter_internal_priming:
+        df_cluster = df_cluster[(df_cluster['fracA'] > 7)
+                                & (df_cluster['signal'] == 'None@None')]
+
     gr_cluster = pr.PyRanges(df_cluster[columns])
     df_join = gr_cluster.join(gr, suffix='_sample').df
 
-    df_join = df_join.groupby(columns + ['gene_id'], observed=True) \
+    df_join = df_join.groupby(columns, observed=True) \
         .agg({'count': 'sum'}).reset_index()
     df_join = df_join[df_join['count'] > 0]
 
@@ -228,47 +232,42 @@ def tes_sample(df_cluster, df_tes_sample):
     df_apa = df_join.reset_index().set_index(columns).join(
         df_cluster.set_index(columns), rsuffix='_cluster')
 
-    df_apa['tpm'] = df_apa['count'] * 1000000 / df_apa['count'].sum()
+    df_apa['tpm'] = (df_apa['count'] * 1000000 /
+                     df_apa['count'].sum()).round(4)
     return df_apa.reset_index()
 
 
-def lapa(alignment, fasta, annotation, chrom_sizes, output_dir):
+def lapa(alignment, fasta, annotation, chrom_sizes, output_dir, mapq=10):
     output_dir = Path(output_dir)
     output_dir.mkdir(exist_ok=True)
 
     print('Reading the alignment file...')
     if alignment.endswith('_read_annot.tsv'):
         df_alignment = read_talon_read_annot(alignment)
-    elif alignment.endswith('.bam') or alignment.endswith('.sam'):
-        raise ValueError('Bam file is not supported at the moment')
+    elif alignment.endswith('.bam'):
+        df_alignment = read_bam_ends(alignment, mapq=mapq)
+    elif alignment.endswith('.csv'):
+        df_alignment = read_sample_csv(alignment, mapq=10)
     else:
-        raise ValueError('Alignment file need to be sam or bam file.')
+        raise ValueError(
+            'Unknown file alignment format: supported '
+            'file formats are `bam` and `sample.csv`')
 
     print('Counting TES...')
     df_tes, tes = count_tes(df_alignment, chrom_sizes, output_dir)
     del df_alignment
 
     print('Clustering TES and calculating polyA_sites...')
-    df_cluster = TesCluster(fasta).to_df(df_tes)
+    df_cluster = TesClustering(fasta).to_df(df_tes)
     del df_tes
 
     print('Annotating TES cluster...')
     df_cluster = tes_cluster_annotate(df_cluster, annotation)
-
-    col_order = [
-        'Chromosome', 'Start', 'End', 'polyA_site', 'count', 'Strand',
-        'fracA', 'singal', 'Feature', 'canonical_site', 'canonical', 'tpm'
-    ]
-    df_cluster[col_order].to_csv(output_dir / 'polyA_clusters.bed',
-                                 index=False, sep='\t', header=False)
+    df_cluster[cluster_col_order].to_csv(output_dir / 'polyA_clusters.bed',
+                                         index=False, sep='\t', header=False)
 
     print('Calculationg APA per samples...')
     for sample, df_tes_sample in tes.items():
         df_apa = tes_sample(df_cluster, df_tes_sample)
-        col_order = [
-            'Chromosome', 'Start', 'End', 'count', 'polyA_site', 'Strand',
-            'gene_id', 'gene_count', 'usage', 'count_cluster',
-            'fracA', 'singal', 'Feature', 'canonical_site', 'canonical', 'tpm'
-        ]
-        df_apa[col_order].to_csv(output_dir / f'{sample}_apa.bed',
-                                 index=False, sep='\t', header=False)
+        df_apa[sample_col_order].to_csv(output_dir / f'{sample}_apa.bed',
+                                        index=False, sep='\t', header=False)

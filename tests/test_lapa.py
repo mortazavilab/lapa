@@ -1,11 +1,15 @@
+from collections import Counter
 import pytest
 import pyBigWig
 import numpy as np
 import pandas as pd
 from lapa import lapa, read_polyA_cluster, read_apa_sample
-from lapa.lapa import count_tes, TesCluster, tes_cluster_annotate, tes_sample
-from lapa.utils.io import read_talon_read_annot
-from conftest import fasta, gtf, read_annot, chrom_sizes, nbr1_hepg2_read_annot
+from lapa.lapa import count_tes, TesClustering, tes_cluster_annotate, \
+    tes_sample
+from lapa.utils.io import read_talon_read_annot, cluster_col_order, \
+    sample_col_order
+from conftest import fasta, gtf, read_annot, chrom_sizes, \
+    nbr1_hepg2_read_annot, quantseq_gm12_bam, sample_csv
 
 
 def test_count_tes(tmp_path):
@@ -28,102 +32,145 @@ def test_count_tes(tmp_path):
 @pytest.fixture
 def df_tes():
     return pd.DataFrame({
-        'Chromosome': ['chr17', 'chr17', 'chr17', 'chr17', 'chr17'],
-        'End': [100100, 100101, 100101, 100101, 100200],
+        'Chromosome': ['chr17', 'chr17', 'chrM', 'chr17', 'chr17'],
+        'Start': [100099, 100100, 1100, 100150, 100199],
+        'End': [100100, 100101, 1101, 100151, 100200],
         'Strand': ['+', '+', '+', '-', '-'],
-        'gene_id': ['gene_a', 'gene_a', 'gene_b', 'gene_c', 'gene_c'],
         'count': [10, 5, 11, 3, 7]
     })
 
 
-def test_TesCluster_cluster(df_tes):
-    clusters = list(TesCluster(fasta).cluster(df_tes))
-    assert len(clusters) == 2
+def test_TesClustering_cluster(df_tes):
+    clusters = list(TesClustering(fasta).cluster(df_tes))
+
+    assert len(clusters) == 3
 
     cluster = clusters[0]
-    assert cluster.Chromosome == 'chr1'
+    assert cluster.Chromosome == 'chr17'
     assert cluster.Start == 100099
     assert cluster.End == 100101
     assert cluster.Strand == '+'
     assert cluster.counts == [10, 5]
 
     cluster = clusters[1]
-    assert cluster.Chromosome == 'chr1'
-    assert cluster.Start == 100100
-    assert cluster.End == 100101
+    assert str(cluster) == 'chr17:100199-100200:-'
+    assert cluster.counts == [7]
+
+    cluster = clusters[2]
+    assert cluster.Chromosome == 'chrM'
+    assert cluster.Start == 1100
+    assert cluster.End == 1101
     assert cluster.Strand == '+'
     assert cluster.counts == [11]
 
 
 def test_TesCluster_to_df(df_tes):
-    df_clusters = TesCluster(fasta).to_df(df_tes)
+    df_clusters = TesClustering(fasta).to_df(df_tes)
 
-    pd.testing.assert_frame_equal(
-        df_clusters,
-        pd.DataFrame({
-            'Chromosome': ['chr17', 'chr17'],
-            'Start': [100099, 100100],
-            'End': [100101, 100101],
-            'polyA_site': [100100, 100101],
-            'count': [15, 11],
-            'Strand': ['+', '+'],
-            'fracA': [6, 6],
-            'singal': ['100157@GATAAA', '100157@GATAAA']
-        })
-    )
+    df_expected = pd.DataFrame({
+        'Chromosome': ['chr17', 'chr17', 'chrM'],
+        'Start': [100099, 100199, 1100],
+        'End': [100101, 100200, 1101],
+        'polyA_site': [100100, 100200, 1101],
+        'count': [15, 7, 11],
+        'Strand': ['+', '-', '+'],
+        'fracA': [6, 2, -1],
+        'signal': ['100157@GATAAA', 'None@None', 'None@None']
+    })
+    pd.testing.assert_frame_equal(df_clusters, df_expected)
 
 
 def test_tes_cluster_annotation():
 
     df_cluster = pd.DataFrame({
-        'Chromosome': ['chr17', 'chr17'],
-        'Start': [100099, 100100],
-        'End': [100101, 100101],
-        'polyA_site': [100100, 100101],
-        'count': [15, 11],
-        'Strand': ['+', '+'],
-        'fracA': [6, 6],
-        'singal': ['100157@GATAAA', '100157@GATAAA']
+        'Chromosome': ['chr17', 'chrM', 'chr17', 'chr17'],
+        'Start': [100099, 1100, 43144800, 43145100],
+        'End': [100101, 1101, 43144850, 43145130],
+        'polyA_site': [100100, 1101, 43144825, 43145114],
+        'count': [15, 11, 5, 10],
+        'Strand': ['+', '+', '+', '+'],
+        'fracA': [6, 6, 1, 1],
+        'signal': ['100157@GATAAA', '100157@GATAAA', 'None@None', 'None@None']
     })
 
     df_annotate = tes_cluster_annotate(df_cluster, gtf)
+
     df_expected = pd.DataFrame({
-        'Chromosome': ['chr17', 'chr17'],
-        'Start': [100099, 100100],
-        'End': [100101, 100101],
-        'Strand': ['+', '+'],
-        'polyA_site': [100100, 100101],
-        'count': [15, 11],
-        'fracA': [6, 6],
-        'singal': ['100157@GATAAA', '100157@GATAAA'],
-        'Feature': ['intergenic', 'intergenic'],
-        'canonical_site': [-1, -1],
-        'canonical': [False, False],
-        'tpm': [15 * 1000000 / (15 + 11), 11 * 1000000 / (15 + 11)]
+        'Chromosome': ['chr17', 'chr17', 'chr17', 'chrM'],
+        'Start': [100099, 43144800, 43145100, 1100],
+        'End': [100101, 43144850, 43145130, 1101],
+        'Strand': ['+', '+', '+', '+'],
+        'polyA_site': [100100, 43144825, 43145114, 1101],
+        'count': [15, 5, 10, 11],
+        'fracA': [6, 1, 1, 6],
+        'signal': ['100157@GATAAA', 'None@None', 'None@None', '100157@GATAAA'],
+        'Feature': ['intergenic', 'exon', 'exon', 'intergenic'],
+        'gene_id': ['', 'ENSG00000198496.12', 'ENSG00000198496.12', ''],
+        'gene_name': ['', 'NBR2', 'NBR2', ''],
+        'canonical_site': [-1, -1, 43145114, -1],
+        'canonical': [False, False, True, False],
+        'tpm': [
+            15 * 1000000 / (15 + 11 + 10 + 5),
+            5 * 1000000 / (15 + 11 + 10 + 5),
+            10 * 1000000 / (15 + 11 + 10 + 5),
+            11 * 1000000 / (15 + 11 + 10 + 5)
+        ]
     })
+
+    df_annotate = df_annotate.reset_index()
+    del df_annotate['index']
+
     pd.testing.assert_frame_equal(df_annotate, df_expected,
                                   check_dtype=False, check_categorical=False)
 
 
 def test_tes_sample():
-    df_cluster = pd.DataFrame({
+
+    df_tes = pd.DataFrame({
         'Chromosome': ['chr17', 'chr17'],
-        'Start': [100099, 100100],
-        'End': [100101, 100101],
+        'Start': [43144811, 43145111],
+        'End': [43144812, 43145112],
         'Strand': ['+', '+'],
-        'polyA_site': [100100, 100101],
-        'count': [15, 11],
-        'fracA': [6, 6],
-        'singal': ['100157@GATAAA', '100157@GATAAA'],
-        'Feature': ['intergenic', 'intergenic'],
-        'canonical_site': [-1, -1],
-        'canonical': [False, False],
-        'tpm': [15 * 1000000 / (15 + 11), 11 * 1000000 / (15 + 11)]
+        'count': [10, 6]
     })
+
+    df_cluster = pd.DataFrame({
+        'Chromosome': ['chr17', 'chr17', 'chr17', 'chrM'],
+        'Start': [100099, 43144800, 43145100, 1100],
+        'End': [100101, 43144850, 43145130, 1101],
+        'Strand': ['+', '+', '+', '+'],
+        'polyA_site': [100100, 43144825, 43145114, 1101],
+        'count': [15, 6, 10, 11],
+        'fracA': [6, 1, 10, 1],
+        'signal': ['100157@GATAAA', 'None@None', 'None@None', '100157@GATAAA'],
+        'Feature': ['intergenic', 'exon', 'exon', 'intergenic'],
+        'gene_id': ['', 'ENSG00000198496.12', 'ENSG00000198496.12', ''],
+        'gene_name': ['', 'NBR2', 'NBR2', ''],
+        'canonical_site': [-1, -1, 43145114, -1],
+        'canonical': [False, False, True, False],
+        'tpm': [
+            15 * 1000000 / (15 + 11 + 10 + 6),
+            10 * 1000000 / (15 + 11 + 10 + 6),
+            11 * 1000000 / (15 + 11 + 10 + 6),
+            6 * 1000000 / (15 + 11 + 10 + 6)
+        ]
+    })
+
+    df_apa = tes_sample(df_cluster, df_tes, filter_internal_priming=False)
+
+    assert df_apa.shape[0] == 2
+    assert all(df_apa['count'] == [10, 6])
+    assert all(df_apa['usage'] == [10 / 16, 6 / 16])
+
     df_apa = tes_sample(df_cluster, df_tes)
 
-    import pdb
-    pdb.set_trace()
+    assert df_apa.shape[0] == 1
+
+    row = df_apa.iloc[0]
+    assert row['Chromosome'] == 'chr17'
+    assert row['Start'] == 43145100
+    assert row['End'] == 43145130
+    assert row['Strand'] == '+'
 
 
 def test_lapa(tmp_path):
@@ -133,17 +180,52 @@ def test_lapa(tmp_path):
 
     df_cluster = read_polyA_cluster(str(output_dir / 'polyA_clusters.bed'))
 
-    # TODO: write better test cases!
-    assert all(df_cluster.columns == [
-        'Chromosome', 'Start', 'End', 'polyA_site', 'count', 'Strand',
-        'fracA', 'singal', 'Feature', 'canonical_site', 'canonical', 'tpm'
-    ])
+    assert all(df_cluster.columns == cluster_col_order)
+
+    counts = pd.Series(Counter(df_cluster['Feature']))
+    assert counts.idxmax() == 'three_prime_utr'
+
+    assert all(df_cluster['polyA_site'] <= df_cluster['End'])
+    assert all(df_cluster['polyA_site'] >= df_cluster['Start'])
+
+    assert (df_cluster['End'] - df_cluster['Start']).max() < 150
 
     assert set(df_cluster['Chromosome']) == {'chr17', 'ERCC-00060'}
 
     df_apa = read_apa_sample(str(output_dir / 'gm12878_apa.bed'))
-    assert all(df_apa == [
-        'Chromosome', 'Start', 'End', 'count', 'polyA_site', 'Strand',
-        'gene_id', 'gene_count', 'usage', 'count_cluster',
-        'fracA', 'singal', 'Feature', 'canonical_site', 'canonical', 'tpm'
-    ])
+    assert all(df_apa == sample_col_order)
+
+
+def test_lapa_bam(tmp_path):
+    output_dir = tmp_path / 'lapa'
+
+    lapa(quantseq_gm12_bam, fasta, gtf, chrom_sizes, output_dir)
+
+    df_cluster = read_polyA_cluster(str(output_dir / 'polyA_clusters.bed'))
+
+    assert all(df_cluster.columns == cluster_col_order)
+
+    assert set(df_cluster['Chromosome']) == {'chr17'}
+
+    counts = pd.Series(Counter(df_cluster['Feature']))
+    assert counts.idxmax() == 'three_prime_utr'
+
+    assert (df_cluster['End'] - df_cluster['Start']).max() < 150
+
+    assert all(df_cluster['fracA'] <= 10)
+    assert all(df_cluster['fracA'] >= 0)
+
+    df_apa = read_apa_sample(
+        str(output_dir / 'quantseq3_gm12878_chr17_apa.bed'))
+    assert all(df_apa.columns == sample_col_order)
+
+
+def test_lapa_read_csv(tmp_path):
+    output_dir = tmp_path / 'lapa'
+
+    lapa(sample_csv, fasta, gtf, chrom_sizes, output_dir)
+
+    df_cluster = read_polyA_cluster(str(output_dir / 'polyA_clusters.bed'))
+
+    import pdb
+    pdb.set_trace()

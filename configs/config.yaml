@@ -9,3 +9,29 @@ pilot:
 
 pilot_apa:
   dir: data/results/pilot_apa
+
+quantseq:
+  bam: data/resources/quantseq3/GM12878_{rep}.bam
+  polyA_atlas: data/resources/quantseq3/GM12878{rep}.clusters.hg38.GM12878.bed.gz
+  
+
+short_rnaseq:
+  fastq: data/resources/short_rnaseq/{sample}/{encode_id}.fastq.gz
+  polyA_trimmed: data/resources/short_rnaseq/{sample}/polyA/{encode_id}.fastq.gz
+  
+  data:
+
+    gm12878:
+      - ENCFF824LLV
+      - ENCFF729YAX
+      - ENCFF974EKR
+      - ENCFF481BWJ
+
+      - ENCFF286QHA
+      - ENCFF436TWZ
+      - ENCFF930QFA
+      - ENCFF887HOU
+
+      - ENCFF000CXI
+      - ENCFF000CXH
+    
