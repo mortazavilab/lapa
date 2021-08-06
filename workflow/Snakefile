@@ -3,12 +3,12 @@ configfile: "configs/config.yaml"
 
 rule all:
     input:
-        expand(config['short_rnaseq']['polyA_trimmed'],
-               encode_id=config['short_rnaseq']['data']['gm12878'],
-               sample='gm12878')
+        expand(config['short_rnaseq']['merged_bam'], sample='gm12878')
 
 
 rule download_short_reads:
+    resources:
+        mem_gb = 4
     output:
         config['short_rnaseq']['fastq']
     shell:
@@ -19,8 +19,10 @@ rule filter_reads_with_polyA_tail:
     input:
         fastq = config['short_rnaseq']['fastq']
     params:
-        pattern = "A" * 10,
+        pattern = "A" * 20,
         mismatch = 0
+    resources:
+        mem_gb = 8
     output:
         fastq = config['short_rnaseq']['polyA_trimmed']
     shell:
@@ -38,10 +40,27 @@ rule star_align:
     log:
         "logs/star/illumina_{sample}_{encode_id}.log"
     params:
-        index = config['short_rnaseq']['star_index']
-    threads: 16
+        index = config['short_rnaseq']['star_index'],
+        extra = "--outSAMtype BAM SortedByCoordinate --limitBAMsortRAM 32000000000 --outSAMattributes All"
+    threads: 8
+    resources:
+        mem_gb = 64
     wrapper:
         "0.74.0/bio/star/align"
+
+
+rule merge_short_reads:
+    input:
+        bams = (lambda wildcards:  expand(config['short_rnaseq']['bam'],
+                                          encode_id=config['short_rnaseq']['data'][wildcards.sample],
+                                          sample=wildcards.sample))
+    resources:
+        mem_gb = 32
+    output:
+        bam = config['short_rnaseq']['merged_bam']
+    run:
+        bams = ' '.join(input['bams'])
+        shell("samtools merge {output.bam} {bams}")
 
 
 rule chrom_sizes:

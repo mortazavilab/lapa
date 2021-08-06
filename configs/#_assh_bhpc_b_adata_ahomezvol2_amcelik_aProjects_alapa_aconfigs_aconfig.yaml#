@@ -19,7 +19,7 @@ short_rnaseq:
   fastq: data/results/short_rnaseq/{sample}/fastq/{encode_id}.fastq.gz
   polyA_trimmed: data/results/short_rnaseq/{sample}/polyA_trimmed_fastq/{encode_id}.polyA.fastq.gz
   bam: data/results/short_rnaseq/{sample}/bam/{encode_id}/Aligned.sortedByCoord.out.bam
-  merged_bam: data/results/short_rnaseq/{sample}/bam/{sample}.bam
+merged_bam: data/results/short_rnaseq/{sample}/bam/{sample}.bam
   
   star_index: data/resources/star_index/
   
