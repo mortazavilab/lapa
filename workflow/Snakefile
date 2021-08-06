@@ -29,7 +29,6 @@ rule filter_reads_with_polyA_tail:
         --pattern {params.pattern} {input.fastq} | gzip > {output.fastq}
         '''
 
-
 rule star_align:
     input:
         fq1 = config['short_rnaseq']['polyA_trimmed'],
