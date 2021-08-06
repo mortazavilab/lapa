@@ -16,8 +16,11 @@ quantseq:
   
 
 short_rnaseq:
-  fastq: data/resources/short_rnaseq/{sample}/{encode_id}.fastq.gz
-  polyA_trimmed: data/resources/short_rnaseq/{sample}/polyA/{encode_id}.fastq.gz
+  fastq: data/results/short_rnaseq/{sample}/fastq/{encode_id}.fastq.gz
+  polyA_trimmed: data/results/short_rnaseq/{sample}/polyA_trimmed_fastq/{encode_id}.fastq.gz
+  bam: data/results/short_rnaseq/{sample}/bam/{encode_id}.bam
+
+  star_index: data/results/star_index/
   
   data:
 

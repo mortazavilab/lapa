@@ -30,6 +30,21 @@ rule filter_reads_with_polyA_tail:
         '''
 
 
+rule star_align:
+    input:
+        fq1 = config['short_rnaseq']['polyA_trimmed'],
+        index = config['short_rnaseq']['star_index']
+    output:
+        bam = config['short_rnaseq']['bam']
+    log:
+        "logs/star/illumina_{sample}_{encode_id}.log"
+    params:
+        index = config['short_rnaseq']['star_index']
+    threads: 16
+    wrapper:
+        "0.74.0/bio/star/align"
+
+
 rule chrom_sizes:
     input:
         fasta = config['fasta']
