@@ -1,0 +1,57 @@
+
+
+rule download_short_reads:
+    resources:
+        mem_gb = 4
+    output:
+        config['short_rnaseq']['fastq']
+    shell:
+        "wget https://www.encodeproject.org/files/{wildcards.encode_id}/@@download/{wildcards.encode_id}.fastq.gz -O {output}"
+
+
+rule filter_reads_with_polyA_tail:
+    input:
+        fastq = config['short_rnaseq']['fastq']
+    params:
+        pattern = "A" * 20,
+        mismatch = 0
+    resources:
+        mem_gb = 8
+    output:
+        fastq = config['short_rnaseq']['polyA_trimmed']
+    shell:
+        '''
+        seqkit grep --by-seq --max-mismatch {params.mismatch} \
+        --pattern {params.pattern} {input.fastq} | gzip > {output.fastq}
+        '''
+
+rule star_align:
+    input:
+        fq1 = config['short_rnaseq']['polyA_trimmed'],
+        index = config['short_rnaseq']['star_index']
+    output:
+        bam = config['short_rnaseq']['bam']
+    log:
+        "logs/star/illumina_{sample}_{encode_id}.log"
+    params:
+        index = config['short_rnaseq']['star_index'],
+        extra = "--outSAMtype BAM SortedByCoordinate --limitBAMsortRAM 32000000000 --outSAMattributes All"
+    threads: 8
+    resources:
+        mem_gb = 64
+    wrapper:
+        "0.74.0/bio/star/align"
+
+
+rule merge_short_reads:
+    input:
+        bams = (lambda wildcards:  expand(config['short_rnaseq']['bam'],
+                                          encode_id=config['short_rnaseq']['data'][wildcards.sample],
+                                          sample=wildcards.sample))
+    resources:
+        mem_gb = 32
+    output:
+        bam = config['short_rnaseq']['merged_bam']
+    run:
+        bams = ' '.join(input['bams'])
+        shell("samtools merge {output.bam} {bams}")

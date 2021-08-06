@@ -1,0 +1,72 @@
+
+rule lapa_gm12878_longreads:
+    input:
+        read_annot = config['pilot']['read_annot'],
+        fasta = config['fasta'],
+        gtf = config['gtf'],
+        chrom_sizes = config['chrom_sizes']
+    threads: 1
+    resources:
+        mem_gb = 16
+    output:
+        directory(config['pilot_apa']['dir'])
+    shell:
+        "lapa \
+        --alignment {input.read_annot} \
+        --fasta {input.fasta} \
+        --annotation {input.gtf} \
+        --chrom_sizes {input.chrom_sizes} \
+        --output_dir {output}"
+
+
+rule lapa_gm12878_short_reads:
+    input:
+        bam = config['short_rnaseq']['merged_bam'].format(sample='gm12878'),
+        fasta = config['fasta'],
+        gtf = config['gtf'],
+        chrom_sizes = config['chrom_sizes']
+    threads: 1
+    resources:
+        mem_gb = 16
+    output:
+        directory(config['lapa']['short_rna_dir'].format(sample='gm12878'))
+    shell:
+        "lapa \
+        --alignment {input.bam} \
+        --fasta {input.fasta} \
+        --annotation {input.gtf} \
+        --chrom_sizes {input.chrom_sizes} \
+        --output_dir {output}"
+
+
+rule sample_gm12878_quantseq:
+    params:
+        bam = config['quantseq']['bam']
+    output:
+        config['lapa']['samples'].format(sample='gm12878', method='quantseq')
+    run:
+        with open(output) as f:
+            f.writelines([
+                f'gm12878,{params.bam.format(rep=i)}'
+                for i in ['rep1', 'rep2']
+            ])
+
+rule lapa_gm12878_quantseq:
+    input:
+        sample_csv = config['lapa']['samples'].format(
+            sample='gm12878', method='quantseq'),
+        fasta = config['fasta'],
+        gtf = config['gtf'],
+        chrom_sizes = config['chrom_sizes']
+    threads: 1
+    resources:
+        mem_gb = 16
+    output:
+        directory(config['pilot_apa']['dir'])
+    shell:
+        "lapa \
+        --alignment {input.read_annot} \
+        --fasta {input.fasta} \
+        --annotation {input.gtf} \
+        --chrom_sizes {input.chrom_sizes} \
+        --output_dir {output}"

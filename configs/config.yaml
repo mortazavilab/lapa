@@ -8,7 +8,7 @@ pilot:
   read_annot: data/resources/pilot_talon_read_annot.tsv
 
 pilot_apa:
-  dir: data/results/pilot_apa
+  dir: data/results/lapa/{sample}/pilot_apa
 
 quantseq:
   bam: data/resources/quantseq3/GM12878_{rep}.bam
@@ -19,7 +19,7 @@ short_rnaseq:
   fastq: data/results/short_rnaseq/{sample}/fastq/{encode_id}.fastq.gz
   polyA_trimmed: data/results/short_rnaseq/{sample}/polyA_trimmed_fastq/{encode_id}.polyA.fastq.gz
   bam: data/results/short_rnaseq/{sample}/bam/{encode_id}/Aligned.sortedByCoord.out.bam
-merged_bam: data/results/short_rnaseq/{sample}/bam/{sample}.bam
+  merged_bam: data/results/short_rnaseq/{sample}/bam/{sample}.bam
   
   star_index: data/resources/star_index/
   
@@ -39,3 +39,7 @@ merged_bam: data/results/short_rnaseq/{sample}/bam/{sample}.bam
       - ENCFF000CXI
       - ENCFF000CXH
     
+lapa:
+  samples: data/results/lapa/{sample}/{sample}_{method}.csv
+  short_rna_dir: data/results/lapa/{sample}/short_rna_apa
+  quantseq_dir: data/results/lapa/{sample}/quantseq_apa
