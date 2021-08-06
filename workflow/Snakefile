@@ -1,11 +1,41 @@
 configfile: "configs/config.yaml"
 
 
+def get_specie(wildcards):
+    if 'specie' in wildcards.keys():
+        return wildcards.specie
+
+    if wildcards.sample == 'gm12878':
+        return 'human'
+    elif wildcards.sample == 'c2c12':
+        return 'mouse'
+    else:
+        raise ValueError(f'{sample} is not known sample')
+
+
+def fasta(wildcards):
+    return config[get_specie(wildcards)]['fasta']
+
+
+def gtf(wildcards):
+    return config[get_specie(wildcards)]['gtf']
+
+
+def chrom_sizes(wildcards):
+    return config['common']['chrom_sizes'].format(specie=get_specie(wildcards))
+
+
 include: "common/Snakefile"
-include: "common/Snakefile"
+include: "align_short_rnaseq/Snakefile"
 include: "gm12878/Snakefile"
+include: "c2c12/Snakefile"
 
 
 rule all:
     input:
-        expand(config['short_rnaseq']['merged_bam'], sample='gm12878')
+        expand(config['lapa']['read3_dir'], sample=['c2c12'])
+        # expand(config['lapa']['long_rna_dir'], sample=['c2c12'])
+        # config['c2c12']['read_annot_bulk']
+        # config['lapa']['quantseq_dir'].format(sample='gm12878'),
+        # config['lapa']['short_rna_dir'].format(sample='gm12878'),
+        # config['pilot_apa']['dir'].format(sample='gm12878')

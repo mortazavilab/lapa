@@ -1,7 +1,14 @@
-fasta: data/resources/common/GRCh38.primary_assembly.genome.fa
-gtf: data/resources/common/gencode.v37.annotation.gtf
-chrom_sizes: data/results/common/chrom_sizes
+human:
+  fasta: data/resources/common/human/GRCh38.primary_assembly.genome.fa
+  gtf: data/resources/common/mouse/gencode.v38.annotation_utr_fixed.gtf
 
+mouse:
+  fasta: data/resources/common/mouse/GRCm38.primary_assembly.genome.fa
+  gtf: data/resources/common/mouse/gencode.vM25.annotation_utr_fixed.gtf
+
+common:
+  chrom_sizes: data/results/common/{specie}_chrom_sizes
+  
 pilot:
   abundance: data/resources/pilot_talon_abundance_filtered.tsv
   gtf: data/resources/pilot_talon_observedOnly.gtf
@@ -38,8 +45,29 @@ short_rnaseq:
 
       - ENCFF000CXI
       - ENCFF000CXH
-    
+
+
+c2c12:
+  read_annot_bulk_sc: data/resources/c2c12/c2c12_bulk_sc_talon_read_annot.tsv
+  read_annot_bulk: data/resources/c2c12/c2c12_bulk_talon_read_annot.tsv
+  read_annot_sc: data/resources/c2c12/c2c12_sc_talon_read_annot.tsv
+  
+  read3:
+    bam: data/resources/c2c12/C2C12_{rep}_bowtie2.bam
+
+    rep:
+      - Diff_4d_1
+      - Diff_4d_2
+      - Pro_1
+      - Pro_2
+
 lapa:
   samples: data/results/lapa/{sample}/{sample}_{method}.csv
   short_rna_dir: data/results/lapa/{sample}/short_rna_apa
   quantseq_dir: data/results/lapa/{sample}/quantseq_apa
+
+  read3_dir: data/results/lapa/{sample}/read3_apa
+
+  long_rna_dir: data/results/lapa/{sample}/long_rna_apa
+
+

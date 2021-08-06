@@ -1,8 +1,8 @@
 
 rule chrom_sizes:
     input:
-        fasta = config['fasta']
+        fasta = fasta
     output:
-        chrom_sizes = config['chrom_sizes']
+        chrom_sizes = config['common']['chrom_sizes']
     shell:
         "faidx {input.fasta} -i chromsizes > {output.chrom_sizes}"

@@ -2,14 +2,14 @@
 rule lapa_gm12878_longreads:
     input:
         read_annot = config['pilot']['read_annot'],
-        fasta = config['fasta'],
-        gtf = config['gtf'],
-        chrom_sizes = config['chrom_sizes']
+        fasta = fasta,
+        gtf = gtf,
+        chrom_sizes = chrom_sizes
     threads: 1
     resources:
         mem_gb = 16
     output:
-        directory(config['pilot_apa']['dir'])
+        directory(config['pilot_apa']['dir'].format(sample='gm12878'))
     shell:
         "lapa \
         --alignment {input.read_annot} \
@@ -22,9 +22,9 @@ rule lapa_gm12878_longreads:
 rule lapa_gm12878_short_reads:
     input:
         bam = config['short_rnaseq']['merged_bam'].format(sample='gm12878'),
-        fasta = config['fasta'],
-        gtf = config['gtf'],
-        chrom_sizes = config['chrom_sizes']
+        fasta = fasta,
+        gtf = gtf,
+        chrom_sizes = chrom_sizes
     threads: 1
     resources:
         mem_gb = 16
@@ -40,32 +40,33 @@ rule lapa_gm12878_short_reads:
 
 
 rule sample_gm12878_quantseq:
-    params:
-        bam = config['quantseq']['bam']
     output:
-        config['lapa']['samples'].format(sample='gm12878', method='quantseq')
+        csv = config['lapa']['samples'].format(
+            sample='gm12878', method='quantseq')
     run:
-        with open(output) as f:
-            f.writelines([
-                f'gm12878,{params.bam.format(rep=i)}'
-                for i in ['rep1', 'rep2']
-            ])
+        bam = config['quantseq']['bam']
+        with open(output['csv'], 'w') as f:
+            f.write('sample,path\n')
+            for i in ['rep1', 'rep2']:
+                f.write(f'gm12878_{i},{bam.format(rep=i)}\n')
+
 
 rule lapa_gm12878_quantseq:
     input:
+        bam = expand(config['quantseq']['bam'], rep=['rep1', 'rep2']),
         sample_csv = config['lapa']['samples'].format(
             sample='gm12878', method='quantseq'),
-        fasta = config['fasta'],
-        gtf = config['gtf'],
-        chrom_sizes = config['chrom_sizes']
+        fasta = fasta,
+        gtf = gtf,
+        chrom_sizes = chrom_sizes
     threads: 1
     resources:
         mem_gb = 16
     output:
-        directory(config['pilot_apa']['dir'])
+        directory(config['lapa']['quantseq_dir'].format(sample='gm12878'))
     shell:
         "lapa \
-        --alignment {input.read_annot} \
+        --alignment {input.sample_csv} \
         --fasta {input.fasta} \
         --annotation {input.gtf} \
         --chrom_sizes {input.chrom_sizes} \
