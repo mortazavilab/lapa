@@ -181,21 +181,14 @@ class TesClustering:
 def tes_cluster_annotate(df_cluster, annotation):
     gr_apa = pr.PyRanges(df_cluster)
 
+    total = gr_apa.count.sum()
+
     gr_gtf = pr.read_gtf(annotation)
     greg = GenomicRegions(gr_gtf)
-    gr = greg.annotate(gr_apa, single=True)
-    # if genes already defined
-    gr = greg.overlap_gene(gr)
-    df = greg.overlap_tes(gr).df
 
-    df.loc[df['Feature'].isna(), 'Feature'] = 'intergenic'
+    df = greg.annotate(gr_apa)
 
-    df['canonical'] = df['canonical'] == 1
-    df = df.rename(columns={'Start_b': 'canonical_site'})
-    df['gene_id'] = df['gene_id'].replace('-1', '')
-    df['gene_name'] = df['gene_name'].replace('-1', '')
-
-    df['tpm'] = (df['count'] * 1000000 / df['count'].sum()).round(4)
+    df['tpm'] = df['count'] * 1000000 / total
 
     return df.sort_values(['Chromosome', 'End'])
 
@@ -203,6 +196,7 @@ def tes_cluster_annotate(df_cluster, annotation):
 def tes_sample(df_cluster, df_tes_sample,
                filter_intergenic=True,
                filter_internal_priming=True):
+
     columns = ['Chromosome', 'Start', 'End', 'Strand', 'gene_id']
     gr = pr.PyRanges(df_tes_sample)
 
@@ -210,14 +204,14 @@ def tes_sample(df_cluster, df_tes_sample,
         df_cluster = df_cluster[df_cluster['Feature'] != 'intergenic']
 
     if filter_internal_priming:
-        df_cluster = df_cluster[(df_cluster['fracA'] > 7)
-                                & (df_cluster['signal'] == 'None@None')]
+        df_cluster = df_cluster[~((df_cluster['fracA'] > 7)
+                                  & (df_cluster['signal'] == 'None@None'))]
 
     gr_cluster = pr.PyRanges(df_cluster[columns])
     df_join = gr_cluster.join(gr, suffix='_sample').df
 
     df_join = df_join.groupby(columns, observed=True) \
-        .agg({'count': 'sum'}).reset_index()
+                     .agg({'count': 'sum'}).reset_index()
     df_join = df_join[df_join['count'] > 0]
 
     # get number of tes in the gene
@@ -233,7 +227,7 @@ def tes_sample(df_cluster, df_tes_sample,
         df_cluster.set_index(columns), rsuffix='_cluster')
 
     df_apa['tpm'] = (df_apa['count'] * 1000000 /
-                     df_apa['count'].sum()).round(4)
+                     df_apa['count'].sum()).round(2)
     return df_apa.reset_index()
 
 
@@ -247,7 +241,7 @@ def lapa(alignment, fasta, annotation, chrom_sizes, output_dir, mapq=10):
     elif alignment.endswith('.bam'):
         df_alignment = read_bam_ends(alignment, mapq=mapq)
     elif alignment.endswith('.csv'):
-        df_alignment = read_sample_csv(alignment, mapq=10)
+        df_alignment = read_sample_csv(alignment, mapq=mapq)
     else:
         raise ValueError(
             'Unknown file alignment format: supported '

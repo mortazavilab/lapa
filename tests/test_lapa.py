@@ -96,22 +96,22 @@ def test_tes_cluster_annotation():
     df_annotate = tes_cluster_annotate(df_cluster, gtf)
 
     df_expected = pd.DataFrame({
-        'Chromosome': ['chr17', 'chr17', 'chr17', 'chrM'],
-        'Start': [100099, 43144800, 43145100, 1100],
-        'End': [100101, 43144850, 43145130, 1101],
-        'Strand': ['+', '+', '+', '+'],
-        'polyA_site': [100100, 43144825, 43145114, 1101],
-        'count': [15, 5, 10, 11],
-        'fracA': [6, 1, 1, 6],
-        'signal': ['100157@GATAAA', 'None@None', 'None@None', '100157@GATAAA'],
-        'Feature': ['intergenic', 'exon', 'exon', 'intergenic'],
-        'gene_id': ['', 'ENSG00000198496.12', 'ENSG00000198496.12', ''],
-        'gene_name': ['', 'NBR2', 'NBR2', ''],
-        'canonical_site': [-1, -1, 43145114, -1],
-        'canonical': [False, False, True, False],
+        'Chromosome': ['chr17', 'chr17', 'chr17', 'chr17', 'chrM'],
+        'Start': [100099, 43144800, 43145100, 43145100, 1100],
+        'End': [100101, 43144850, 43145130, 43145130, 1101],
+        'polyA_site': [100100, 43144825, 43145114, 43145114, 1101],
+        'count': [15, 5, 10, 10, 11],
+        'Strand': ['+', '+', '+', '+', '+'],
+        'fracA': [6, 1, 1, 1, 6],
+        'signal': ['100157@GATAAA', 'None@None', 'None@None', 'None@None', '100157@GATAAA'],
+        'Feature': ['intergenic', 'exon', 'exon', 'exon', 'intergenic'],
+        'gene_id': ['', 'ENSG00000198496.12', 'ENSG00000198496.12', 'ENSG00000267681.1', ''],
+        'gene_name': ['', 'NBR2', 'NBR2', 'CTD-3199J23.6', ''],
+        'canonical_site': [-1, -1, -1, -1, -1],
         'tpm': [
             15 * 1000000 / (15 + 11 + 10 + 5),
             5 * 1000000 / (15 + 11 + 10 + 5),
+            10 * 1000000 / (15 + 11 + 10 + 5),
             10 * 1000000 / (15 + 11 + 10 + 5),
             11 * 1000000 / (15 + 11 + 10 + 5)
         ]
@@ -168,22 +168,21 @@ def test_tes_sample():
 
     row = df_apa.iloc[0]
     assert row['Chromosome'] == 'chr17'
-    assert row['Start'] == 43145100
-    assert row['End'] == 43145130
+    assert row['Start'] == 43144800
+    assert row['End'] == 43144850
     assert row['Strand'] == '+'
 
 
 def test_lapa(tmp_path):
     output_dir = tmp_path / 'lapa'
 
+    df_read_annot = read_talon_read_annot(read_annot)
+
     lapa(read_annot, fasta, gtf, chrom_sizes, output_dir)
 
     df_cluster = read_polyA_cluster(str(output_dir / 'polyA_clusters.bed'))
 
     assert all(df_cluster.columns == cluster_col_order)
-
-    counts = pd.Series(Counter(df_cluster['Feature']))
-    assert counts.idxmax() == 'three_prime_utr'
 
     assert all(df_cluster['polyA_site'] <= df_cluster['End'])
     assert all(df_cluster['polyA_site'] >= df_cluster['Start'])
@@ -192,8 +191,20 @@ def test_lapa(tmp_path):
 
     assert set(df_cluster['Chromosome']) == {'chr17', 'ERCC-00060'}
 
+    counts = df_cluster.drop_duplicates([
+        'Chromosome', 'Start', 'End', 'Strand'])['count'].sum()
+    assert df_read_annot.shape[0] > counts
+
     df_apa = read_apa_sample(str(output_dir / 'gm12878_apa.bed'))
     assert all(df_apa == sample_col_order)
+
+    counts = pd.Series(Counter(df_apa['Feature']))
+    assert counts.idxmax() == 'three_prime_utr'
+
+    counts = df_apa.drop_duplicates([
+        'Chromosome', 'Start', 'End', 'Strand'])['count'].sum()
+    _df = df_read_annot[df_read_annot['sample'] == 'gm12878']
+    assert _df.shape[0] > counts
 
 
 def test_lapa_bam(tmp_path):
@@ -206,18 +217,18 @@ def test_lapa_bam(tmp_path):
     assert all(df_cluster.columns == cluster_col_order)
 
     assert set(df_cluster['Chromosome']) == {'chr17'}
-
-    counts = pd.Series(Counter(df_cluster['Feature']))
-    assert counts.idxmax() == 'three_prime_utr'
-
     assert (df_cluster['End'] - df_cluster['Start']).max() < 150
 
     assert all(df_cluster['fracA'] <= 10)
     assert all(df_cluster['fracA'] >= 0)
 
     df_apa = read_apa_sample(
-        str(output_dir / 'quantseq3_gm12878_chr17_apa.bed'))
+        str(output_dir / 'quantseq3_gm12878_chr17_rep1_apa.bed'))
+
     assert all(df_apa.columns == sample_col_order)
+
+    counts = pd.Series(Counter(df_apa['Feature']))
+    assert counts.idxmax() == 'three_prime_utr'
 
 
 def test_lapa_read_csv(tmp_path):
@@ -227,5 +238,17 @@ def test_lapa_read_csv(tmp_path):
 
     df_cluster = read_polyA_cluster(str(output_dir / 'polyA_clusters.bed'))
 
-    import pdb
-    pdb.set_trace()
+    assert set(df_cluster['Chromosome']) == {'chr17'}
+
+    assert (df_cluster['End'] - df_cluster['Start']).max() < 150
+
+    assert all(df_cluster['fracA'] <= 10)
+    assert all(df_cluster['fracA'] >= 0)
+
+    df_apa = read_apa_sample(str(output_dir / 'gm12878_apa.bed'))
+    counts = pd.Series(Counter(df_apa['Feature']))
+
+    assert all(df_apa.columns == sample_col_order)
+
+    counts = pd.Series(Counter(df_apa['Feature']))
+    assert counts.idxmax() == 'three_prime_utr'

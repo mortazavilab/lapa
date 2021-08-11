@@ -33,7 +33,8 @@ include: "c2c12/Snakefile"
 
 rule all:
     input:
-        expand(config['lapa']['read3_dir'], sample=['c2c12'])
+        rules.site_motif.output
+        # expand(config['lapa']['read3_dir'], sample=['c2c12'])
         # expand(config['lapa']['long_rna_dir'], sample=['c2c12'])
         # config['c2c12']['read_annot_bulk']
         # config['lapa']['quantseq_dir'].format(sample='gm12878'),

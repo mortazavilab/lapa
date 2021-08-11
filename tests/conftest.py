@@ -12,3 +12,9 @@ chrom_sizes = 'tests/data/chrom_sizes'
 quantseq_gm12_bam = 'tests/data/quantseq3_gm12878_chr17_rep1.bam'
 
 sample_csv = 'tests/data/alignment_sample.csv'
+
+agg_annotation_gene = [
+    'tests/data/agg_gene_0.csv',
+    'tests/data/agg_gene_1.csv',
+    'tests/data/agg_gene_brca1.csv'
+]

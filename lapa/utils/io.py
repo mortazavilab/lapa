@@ -7,13 +7,13 @@ from lapa.utils.common import chroms_chr
 
 cluster_col_order = [
     'Chromosome', 'Start', 'End', 'polyA_site', 'tpm', 'Strand',
-    'Feature', 'count', 'fracA', 'signal', 'canonical_site', 'canonical'
+    'Feature', 'count', 'fracA', 'signal', 'canonical_site'
 ]
 
 sample_col_order = [
     'Chromosome', 'Start', 'End', 'polyA_site', 'tpm', 'Strand',
     'Feature', 'gene_id', 'count', 'gene_count', 'usage',
-    'fracA', 'signal', 'canonical',  'canonical_site'
+    'fracA', 'signal', 'canonical_site'
 ]
 
 

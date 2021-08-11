@@ -10,6 +10,7 @@ dependencies:
   - seqkit  
   - pip:
     - snakemake
+    - biopython
     - jupyter
     - notebook
     - pytest
