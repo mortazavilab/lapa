@@ -13,3 +13,12 @@ rule site_motif:
         motif_logo = "reports/figures/polyA_motif.pdf"
     script:
         "polyA_motif.py"
+
+
+rule gtf_tes:
+    input:
+        gtf = gtf
+    output:
+        tes = config['annotation']['tes']
+    script:
+        "gtf_tes.py"

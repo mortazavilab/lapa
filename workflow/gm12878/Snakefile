@@ -1,7 +1,7 @@
 
-rule lapa_gm12878_longreads:
+rule lapa_longreads:
     input:
-        read_annot = config['pilot']['read_annot'],
+        read_annot = read_annot,
         fasta = fasta,
         gtf = gtf,
         chrom_sizes = chrom_sizes
@@ -9,7 +9,7 @@ rule lapa_gm12878_longreads:
     resources:
         mem_gb = 16
     output:
-        directory(config['pilot_apa']['dir'].format(sample='gm12878'))
+        config['lapa']['long_rna_dir']
     shell:
         "lapa \
         --alignment {input.read_annot} \
@@ -21,7 +21,7 @@ rule lapa_gm12878_longreads:
 
 rule lapa_gm12878_short_reads:
     input:
-        bam = config['short_rnaseq']['merged_bam'].format(sample='gm12878'),
+        bam = config['short_rnaseq']['merged_bam'],
         fasta = fasta,
         gtf = gtf,
         chrom_sizes = chrom_sizes
@@ -29,7 +29,7 @@ rule lapa_gm12878_short_reads:
     resources:
         mem_gb = 16
     output:
-        directory(config['lapa']['short_rna_dir'].format(sample='gm12878'))
+        directory(config['lapa']['short_rna_dir'])
     shell:
         "lapa \
         --alignment {input.bam} \
@@ -63,7 +63,7 @@ rule lapa_gm12878_quantseq:
     resources:
         mem_gb = 16
     output:
-        directory(config['lapa']['quantseq_dir'].format(sample='gm12878'))
+        directory(config['lapa']['quantseq_dir'])
     shell:
         "lapa \
         --alignment {input.sample_csv} \

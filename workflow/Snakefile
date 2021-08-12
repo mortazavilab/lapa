@@ -25,18 +25,36 @@ def chrom_sizes(wildcards):
     return config['common']['chrom_sizes'].format(specie=get_specie(wildcards))
 
 
+def read_annot(wildcards):
+    if wildcards.sample == 'gm12878':
+        return config['pilot']['read_annot']
+    elif wildcards.sample == 'c2c12':
+        return config['c2c12']['read_annot_bulk']
+    else:
+        raise('readannot is not defined for `%s`' % wildcards.sample)
+
+
 include: "common/Snakefile"
+include: "read3/Snakefile"
+include: "quantseq3/Snakefile"
 include: "align_short_rnaseq/Snakefile"
 include: "gm12878/Snakefile"
 include: "c2c12/Snakefile"
+include: "benchmark/Snakefile"
+include: "plot/Snakefile"
 
 
 rule all:
     input:
+        expand(config['lapa']['quantseq_dir'], sample=['gm12878']),
+        expand(config['lapa']['long_rna_dir'], sample=['gm12878']),
+        expand(config['lapa']['short_rna_dir'], sample=['gm12878']),
+        expand(config['lapa']['read3_dir'], sample=['c2c12']),
+        expand(config['lapa']['long_rna_dir'], sample=['c2c12']),
+
+        # figure-1
+        rules.read_nums_datasets.output,
+        rules.plot_hist_read_count.output,
         rules.site_motif.output
-        # expand(config['lapa']['read3_dir'], sample=['c2c12'])
-        # expand(config['lapa']['long_rna_dir'], sample=['c2c12'])
+
         # config['c2c12']['read_annot_bulk']
-        # config['lapa']['quantseq_dir'].format(sample='gm12878'),
-        # config['lapa']['short_rna_dir'].format(sample='gm12878'),
-        # config['pilot_apa']['dir'].format(sample='gm12878')

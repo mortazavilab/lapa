@@ -45,21 +45,21 @@ rule split_c2c12_read_annot:
         "split_annot.py"
 
 
-rule lapa_c2c12_longreads:
-    input:
-        read_annot = config['c2c12']['read_annot_bulk'],
-        fasta = fasta,
-        gtf = gtf,
-        chrom_sizes = chrom_sizes
-    threads: 1
-    resources:
-        mem_gb = 16
-    output:
-        directory(config['lapa']['long_rna_dir'])
-    shell:
-        "lapa \
-        --alignment {input.read_annot} \
-        --fasta {input.fasta} \
-        --annotation {input.gtf} \
-        --chrom_sizes {input.chrom_sizes} \
-        --output_dir {output}"
+# rule lapa_c2c12_longreads:
+#     input:
+#         read_annot = config['c2c12']['read_annot_bulk'],
+#         fasta = fasta,
+#         gtf = gtf,
+#         chrom_sizes = chrom_sizes
+#     threads: 1
+#     resources:
+#         mem_gb = 16
+#     output:
+#         directory(config['lapa']['long_rna_dir'].format(sample='c2c12'))
+#     shell:
+#         "lapa \
+#         --alignment {input.read_annot} \
+#         --fasta {input.fasta} \
+#         --annotation {input.gtf} \
+#         --chrom_sizes {input.chrom_sizes} \
+#         --output_dir {output}"

@@ -1,5 +1,5 @@
 
-
+import pdb
 rule download_short_reads:
     resources:
         mem_gb = 4
@@ -36,18 +36,61 @@ rule star_align:
     params:
         index = config['short_rnaseq']['star_index'],
         extra = "--outSAMtype BAM SortedByCoordinate --limitBAMsortRAM 32000000000 --outSAMattributes All"
-    threads: 8
     resources:
+        threads = 8,
         mem_gb = 64
     wrapper:
         "0.74.0/bio/star/align"
 
 
+rule count_raw_short_reads:
+    input:
+        fastq = config['short_rnaseq']['fastq']
+    resources:
+        mem_gb = 4
+    output:
+        txt = 'data/results/short_rnaseq/{sample}/counts/{encode_id}.txt'
+    shell:
+        "zcat {input.fastq} | grep '@' | wc -l > {output.txt}"
+
+
+rule count_polyA_short_reads:
+    input:
+        fastq = config['short_rnaseq']['polyA_trimmed']
+    resources:
+        mem_gb = 4
+    output:
+        txt = 'data/results/short_rnaseq/{sample}/counts_polyA/{encode_id}.txt'
+    shell:
+        "zcat {input.fastq} | grep '@' | wc -l > {output.txt}"
+
+
+rule count_short_read:
+    input:
+        count_raw_dir = (lambda wildcards: expand(
+            'data/results/short_rnaseq/{sample}/counts/{encode_id}.txt',
+            sample=wildcards['sample'],
+            encode_id=config['short_rnaseq']['data'][wildcards['sample']]
+        )),
+        count_dir = (lambda wildcards: expand(
+            'data/results/short_rnaseq/{sample}/counts_polyA/{encode_id}.txt',
+            sample=wildcards['sample'],
+            encode_id=config['short_rnaseq']['data'][wildcards['sample']]
+        ))
+    resources:
+        mem_gb = 4
+    output:
+        csv = config['short_rnaseq']['short_count']
+    script:
+        "counts.py"
+
+
 rule merge_short_reads:
     input:
-        bams = (lambda wildcards:  expand(config['short_rnaseq']['bam'],
-                                          encode_id=config['short_rnaseq']['data'][wildcards.sample],
-                                          sample=wildcards.sample))
+        bams = (lambda wildcards: expand(
+            config['short_rnaseq']['bam'],
+            encode_id=config['short_rnaseq']['data'][wildcards.sample],
+            sample=wildcards.sample))
     resources:
         mem_gb = 32
     output:

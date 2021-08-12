@@ -1,0 +1,12 @@
+rule benchmark_lapa:
+    input:
+        short_rna = config['lapa']['lapa_dir'].format(
+            sample='gm12878', dataset='short_rna_lapa'),
+        quantseq = config['lapa']['lapa_dir'].format(
+            sample='gm12878', dataset='quantseq_lapa'),
+        long_rna_gm12 = config['lapa']['lapa_dir'].format(
+            sample='gm12878', dataset='long_rna_lapa')
+    output:
+        'reports/figures/pr_curve.png'
+    notebook:
+        'benchmark_lapa.ipynb'

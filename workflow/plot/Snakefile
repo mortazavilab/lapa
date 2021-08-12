@@ -1,0 +1,55 @@
+
+rule read_nums_datasets:
+    input:
+        short_counts = config['short_rnaseq']['short_count'].format(
+            sample='gm12878'),
+        quantseq = config['quantseq']['quantseq_count'],
+        read3 = config['read3']['read3_count'],
+        c2c12_read_annot = config['c2c12']['read_annot_bulk'],
+        gm12878_read_annot = config['pilot']['read_annot']
+    output:
+        read_nums = "reports/figures/read_nums_datasets.png"
+    notebook:
+        "read_nums_datasets.ipynb"
+
+
+rule hist_read_counts:
+    input:
+        tes = (lambda wildcards: config['annotation']['tes'].format(
+            specie=get_specie(wildcards))),
+        lapa_dir = config['lapa']['lapa_dir']
+    output:
+        hist = 'data/results/temp/hist/{sample}/{dataset}.csv',
+        percentage = 'data/results/temp/hist/{sample}/{dataset}.txt'
+    script:
+        'hist_read_counts.py'
+
+
+rule plot_hist_read_count:
+    input:
+        short_rna_hist = 'data/results/temp/hist/{sample}/{dataset}.csv'.format(
+            sample='gm12878', dataset='short_rna_lapa'),
+        quantseq_hist = 'data/results/temp/hist/{sample}/{dataset}.csv'.format(
+            sample='gm12878', dataset='quantseq_lapa'),
+        long_rna_gm12_hist = 'data/results/temp/hist/{sample}/{dataset}.csv'.format(
+            sample='gm12878', dataset='long_rna_lapa'),
+        read3 = 'data/results/temp/hist/{sample}/{dataset}.csv'.format(
+            sample='c2c12', dataset='read3_lapa'),
+        long_rna_c2c12_hist = 'data/results/temp/hist/{sample}/{dataset}.csv'.format(
+            sample='c2c12', dataset='long_rna_lapa'),
+
+        short_rna_percent = 'data/results/temp/hist/{sample}/{dataset}.txt'.format(
+            sample='gm12878', dataset='short_rna_lapa'),
+        quantseq_percent = 'data/results/temp/hist/{sample}/{dataset}.txt'.format(
+            sample='gm12878', dataset='quantseq_lapa'),
+        long_rna_gm12_percent = 'data/results/temp/hist/{sample}/{dataset}.txt'.format(
+            sample='gm12878', dataset='long_rna_lapa'),
+        read3_percent = 'data/results/temp/hist/{sample}/{dataset}.txt'.format(
+            sample='c2c12', dataset='read3_lapa'),
+        long_rna_c2c12_percent = 'data/results/temp/hist/{sample}/{dataset}.txt'.format(
+            sample='c2c12', dataset='long_rna_lapa')
+    output:
+        hist = 'reports/figures/hist_read_counts.png',
+        percent = 'reports/figures/percentage_of_reads_tes.png'
+    notebook:
+        'hist_read_count.ipynb'

@@ -1,0 +1,39 @@
+
+rule count_quantseq:
+    input:
+        fastq = config['quantseq']['fastq']
+    resources:
+        mem_gb = 4
+    output:
+        txt = 'data/results/quantseq/count/quantseq_{rep}.txt'
+    shell:
+        "zcat {input.fastq} | grep '@' | wc -l > {output.txt}"
+
+
+rule count_polyA_quantseq:
+    input:
+        fastq = config['quantseq']['fastq_polyA']
+    resources:
+        mem_gb = 4
+    output:
+        txt = 'data/results/quantseq/count_polyA/quantseq_{rep}.txt'
+    shell:
+        "zcat {input.fastq} | grep '@' | wc -l > {output.txt}"
+
+
+rule merge_count_quantseq:
+    input:
+        count_raw = expand(
+            'data/results/quantseq/count/quantseq_{rep}.txt',
+            rep=['1', '2']
+        ),
+        count_polyA = expand(
+            'data/results/quantseq/count_polyA/quantseq_{rep}.txt',
+            rep=['1', '2']
+        )
+    resources:
+        mem_gb = 4
+    output:
+        csv = config['quantseq']['quantseq_count']
+    script:
+        "count.py"

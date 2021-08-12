@@ -1,0 +1,39 @@
+
+rule count_read3:
+    input:
+        fastq = config['read3']['fastq']
+    resources:
+        mem_gb = 4
+    output:
+        txt = 'data/results/read3/count/read3_{geo_id}.txt'
+    shell:
+        "zcat {input.fastq} | grep '@' | wc -l > {output.txt}"
+
+
+rule count_polyA_read3:
+    input:
+        fastq = config['read3']['fastq_polyA']
+    resources:
+        mem_gb = 4
+    output:
+        txt = 'data/results/read3/count_polyA/read3_{geo_id}.txt'
+    shell:
+        "zcat {input.fastq} | grep '>' | wc -l > {output.txt}"
+
+
+rule merge_count_read3:
+    input:
+        count_raw = expand(
+            'data/results/read3/count/read3_{geo_id}.txt',
+            geo_id=config['read3']['geo_ids'].keys()
+        ),
+        count_polyA = expand(
+            'data/results/read3/count_polyA/read3_{geo_id}.txt',
+            geo_id=config['read3']['geo_ids'].keys()
+        )
+    resources:
+        mem_gb = 4
+    output:
+        csv = config['read3']['read3_count']
+    script:
+        "count.py"

@@ -16,5 +16,7 @@ dependencies:
     - pytest
     - cython
     - pyfaidx
+    - seaborn
+    - snakemk_util
     - -e .
 

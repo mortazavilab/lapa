@@ -1,11 +1,14 @@
 human:
   fasta: data/resources/common/human/GRCh38.primary_assembly.genome.fa
-  gtf: data/resources/common/mouse/gencode.v38.annotation_utr_fixed.gtf
+  gtf: data/resources/common/human/gencode.v38.annotation_utr_fixed.gtf
 
 mouse:
   fasta: data/resources/common/mouse/GRCm38.primary_assembly.genome.fa
   gtf: data/resources/common/mouse/gencode.vM25.annotation_utr_fixed.gtf
 
+annotation:
+  tes: data/results/common/{specie}_tes.csv
+  
 common:
   chrom_sizes: data/results/common/{specie}_chrom_sizes
   
@@ -14,18 +17,38 @@ pilot:
   gtf: data/resources/pilot_talon_observedOnly.gtf
   read_annot: data/resources/pilot_talon_read_annot.tsv
 
-pilot_apa:
-  dir: data/results/lapa/{sample}/pilot_apa
-
 quantseq:
+  fastq: data/resources/quantseq3/GM12878_rep{rep}_polyA_S{rep}_R1.fastq.gz
+  fastq_polyA: data/resources/quantseq3/GM12878_rep{rep}_polyA_S{rep}_R1.trimmed.polyA_filtered.fastq.gz
+  quantseq_count: data/resources/quantseq3/counts.csv
+  
   bam: data/resources/quantseq3/GM12878_{rep}.bam
   polyA_atlas: data/resources/quantseq3/GM12878{rep}.clusters.hg38.GM12878.bed.gz
   
 
+read3:
+  fastq: data/resources/read3/fastq/{geo_id}/{geo_id}.fq.gz
+  fastq_polyA: data/resources/read3/fastq/{geo_id}/{geo_id}.trimmed_tail.fa.gz
+
+  read3_count: data/resources/read3/counts.csv
+  
+  geo_ids:
+    GSM1518115:
+      - SRR1596187
+    GSM1518116:
+      - SRR1596188
+      - SRR1596189
+    GSM1518117:
+      - SRR1596190
+    GSM1518118:
+      - SRR1596191
+      - SRR1596192  
+  
 short_rnaseq:
   fastq: data/results/short_rnaseq/{sample}/fastq/{encode_id}.fastq.gz
   polyA_trimmed: data/results/short_rnaseq/{sample}/polyA_trimmed_fastq/{encode_id}.polyA.fastq.gz
   bam: data/results/short_rnaseq/{sample}/bam/{encode_id}/Aligned.sortedByCoord.out.bam
+  short_count: data/short_rnaseq/{sample}/counts.csv
   merged_bam: data/results/short_rnaseq/{sample}/bam/{sample}.bam
   
   star_index: data/resources/star_index/
@@ -63,11 +86,10 @@ c2c12:
 
 lapa:
   samples: data/results/lapa/{sample}/{sample}_{method}.csv
-  short_rna_dir: data/results/lapa/{sample}/short_rna_apa
-  quantseq_dir: data/results/lapa/{sample}/quantseq_apa
 
-  read3_dir: data/results/lapa/{sample}/read3_apa
+  lapa_dir: data/results/lapa/{sample}/{dataset}/
 
-  long_rna_dir: data/results/lapa/{sample}/long_rna_apa
-
-
+  short_rna_dir: data/results/lapa/{sample}/short_rna_lapa
+  quantseq_dir: data/results/lapa/{sample}/quantseq_lapa
+  read3_dir: data/results/lapa/{sample}/read3_lapa
+  long_rna_dir: data/results/lapa/{sample}/long_rna_lapa
