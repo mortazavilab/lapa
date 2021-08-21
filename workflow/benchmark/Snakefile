@@ -7,6 +7,7 @@ rule benchmark_lapa:
         long_rna_gm12 = config['lapa']['lapa_dir'].format(
             sample='gm12878', dataset='long_rna_lapa')
     output:
-        'reports/figures/pr_curve.png'
+        rep1 = 'reports/figures/gm12878_rep1_pr_curve.png',
+        rep2 = 'reports/figures/gm12878_rep2_pr_curve.png'
     notebook:
         'benchmark_lapa.ipynb'
