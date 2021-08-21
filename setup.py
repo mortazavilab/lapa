@@ -37,6 +37,6 @@ setup(
     setup_requires=setup_requirements,
     test_suite='tests',
     tests_require=test_requirements,
-    url='https://github.com/MuhammedHasan/longread_postprocessing',
-    version='1.0.0',
+    url='https://github.com/mortazavilab/lapa',
+    version='0.0.1',
 )
