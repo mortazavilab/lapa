@@ -1,5 +1,7 @@
 # LAPA (Alpha release)
 
+![tests](https://github.com/mortazavilab/lapa/actions/workflows/python-app.yml/badge.svg)
+
 Alternative polyadenylation detection from diverse data sources such as 3'-seq, long-read and short-reads.
 
 ## Installation
