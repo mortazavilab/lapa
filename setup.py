@@ -10,7 +10,8 @@ requirements = [
     'scipy',
     'bamread>=0.0.9',
     'pyranges>=0.0.71',
-    'kipoiseq>=0.3.0'
+    'kipoiseq>=0.3.0',
+    'matplotlib'
 ]
 
 setup_requirements = ['pytest-runner', ]
