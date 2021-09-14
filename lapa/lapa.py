@@ -9,35 +9,35 @@ from lapa.utils.io import read_talon_read_annot, bw_from_pyranges, \
     read_bam_ends, cluster_col_order, sample_col_order, read_sample_csv
 from lapa.utils.common import pad_series, polyA_signal_seqs
 from lapa.genomic_regions import GenomicRegions
+from lapa.count import count_tes_samples
+
+# def _count_tes(df_alignment, chrom_sizes, sample, output_dir):
+#     # count TES sites
+#     columns = ['Chromosome', 'End', 'Strand']
+#     df = df_alignment[columns]
+
+#     df['count'] = 1
+#     df = df.groupby(columns).agg('sum').reset_index()
+
+#     df['Start'] = df['End'] - 1
+
+#     bw_from_pyranges(
+#         pr.PyRanges(df), 'count',
+#         chrom_sizes,
+#         str(output_dir / f'{sample}_tes_counts_pos.bw'),
+#         str(output_dir / f'{sample}_tes_counts_neg.bw')
+#     )
+
+#     return df
 
 
-def _count_tes(df_alignment, chrom_sizes, sample, output_dir):
-    # count TES sites
-    columns = ['Chromosome', 'End', 'Strand']
-    df = df_alignment[columns]
-
-    df['count'] = 1
-    df = df.groupby(columns).agg('sum').reset_index()
-
-    df['Start'] = df['End'] - 1
-
-    bw_from_pyranges(
-        pr.PyRanges(df), 'count',
-        chrom_sizes,
-        str(output_dir / f'{sample}_tes_counts_pos.bw'),
-        str(output_dir / f'{sample}_tes_counts_neg.bw')
-    )
-
-    return df
-
-
-def count_tes(df_alignment, chrom_sizes, output_dir):
-    tes = {
-        sample: _count_tes(df, chrom_sizes, sample, output_dir)
-        for sample, df in df_alignment.groupby('sample')
-    }
-    # TODO: combine tes samples counts pd.concat |> agg(sum)
-    return _count_tes(df_alignment, chrom_sizes, 'all', output_dir), tes
+# def count_tes(df_alignment, chrom_sizes, output_dir):
+#     tes = {
+#         sample: _count_tes(df, chrom_sizes, sample, output_dir)
+#         for sample, df in df_alignment.groupby('sample')
+#     }
+#     # TODO: combine tes samples counts pd.concat |> agg(sum)
+#     return _count_tes(df_alignment, chrom_sizes, 'all', output_dir), tes
 
 
 class Cluster:
@@ -231,24 +231,40 @@ def tes_sample(df_cluster, df_tes_sample,
     return df_apa.reset_index()
 
 
-def lapa(alignment, fasta, annotation, chrom_sizes, output_dir, mapq=10):
+def prepare_alignment(alignment):
+    if alignment.endswith('.bam'):
+        alignments = alignment.split(',')
+        return pd.DataFrame({
+            'sample': ['all'] * len(alignments),
+            'path': alignments
+        })
+    elif alignment.endswith('.csv'):
+        df = pd.read_csv(alignment)
+        assert all(df.columns == ['sample', 'path']), \
+            'provided csv file should be consist of columns `sample` and `path`'
+        return df
+
+
+def lapa(alignment, fasta, annotation, chrom_sizes, output_dir, method,
+         min_tail_len=10, min_percent_A=0.9, mapq=10):
+
     output_dir = Path(output_dir)
     output_dir.mkdir(exist_ok=True)
 
     print('Reading the alignment file...')
     if alignment.endswith('_read_annot.tsv'):
-        df_alignment = read_talon_read_annot(alignment)
-    elif alignment.endswith('.bam'):
-        df_alignment = read_bam_ends(alignment, mapq=mapq)
-    elif alignment.endswith('.csv'):
-        df_alignment = read_sample_csv(alignment, mapq=mapq)
+        # df_alignment = read_talon_read_annot(alignment)
+        raise NotImplementedError()
+    elif alignment.endswith('.bam') or alignment.endswith('.csv'):
+        df_alignment = prepare_alignment(alignment)
     else:
         raise ValueError(
             'Unknown file alignment format: supported '
             'file formats are `bam` and `sample.csv`')
 
     print('Counting TES...')
-    df_tes, tes = count_tes(df_alignment, chrom_sizes, output_dir)
+    df_tes, tes = count_tes_samples(
+        df_alignment, chrom_sizes, output_dir, method)
     del df_alignment
 
     print('Clustering TES and calculating polyA_sites...')
