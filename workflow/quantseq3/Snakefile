@@ -1,24 +1,43 @@
 
+rule star_align_polyA:
+    input:
+        fq1 = config['quantseq']['fastq_raw'],
+        index = config['star']['star_index']
+    threads: 8
+    resources:
+        mem_gb = 32
+    output:
+        bam = config['quantseq']['bam']
+    log:
+        "logs/star/quantseq_{rep}.log"
+    params:
+        index = config['star']['star_index'],
+        extra = "--outSAMtype BAM SortedByCoordinate --alignSJoverhangMin 10 --outSAMattributes All"
+    wrapper:
+        "0.72.0/bio/star/align"
+
+
+rule count_quantseq_tailed:
+    input:
+        bam = config['quantseq']['bam']
+    output:
+        txt = 'data/results/quantseq/count_polyA/quantseq_{rep}.txt'
+    threads: 1
+    resources:
+        mem_gb = 16
+    script:
+        "../common/lapa_count_tail.py"
+
+
 rule count_quantseq:
     input:
-        fastq = config['quantseq']['fastq']
+        bam = config['quantseq']['bam']
     resources:
         mem_gb = 4
     output:
         txt = 'data/results/quantseq/count/quantseq_{rep}.txt'
     shell:
-        "zcat {input.fastq} | grep '@' | wc -l > {output.txt}"
-
-
-rule count_polyA_quantseq:
-    input:
-        fastq = config['quantseq']['fastq_polyA']
-    resources:
-        mem_gb = 4
-    output:
-        txt = 'data/results/quantseq/count_polyA/quantseq_{rep}.txt'
-    shell:
-        "zcat {input.fastq} | grep '@' | wc -l > {output.txt}"
+        "samtools view -F 4 -c {input.bam} > {output.txt}"
 
 
 rule merge_count_quantseq:

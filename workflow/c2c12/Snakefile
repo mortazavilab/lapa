@@ -1,38 +1,38 @@
 
-rule sample_c2c12_read3:
-    output:
-        csv = config['lapa']['samples'].format(
-            sample='c2c12', method='read3')
-    run:
-        bam = config['c2c12']['read3']['bam']
+# rule sample_c2c12_read3:
+#     output:
+#         csv = config['lapa']['samples'].format(
+#             sample='c2c12', method='read3')
+#     run:
+#         bam = config['c2c12']['read3']['bam']
 
-        with open(output['csv'], 'w') as f:
-            f.write('sample,path\n')
-            for i in config['c2c12']['read3']['rep']:
-                f.write(f'c2c12_{i},{bam.format(rep=i)}\n')
+#         with open(output['csv'], 'w') as f:
+#             f.write('sample,path\n')
+#             for i in config['c2c12']['read3']['rep']:
+#                 f.write(f'c2c12_{i},{bam.format(rep=i)}\n')
 
 
-rule lapa_c2c12_read3:
-    input:
-        bam = expand(config['c2c12']['read3']['bam'],
-                     rep=config['c2c12']['read3']['rep']),
-        sample_csv = config['lapa']['samples'].format(
-            method='read3', sample='{sample}'),
-        fasta = fasta,
-        gtf = gtf,
-        chrom_sizes = chrom_sizes
-    threads: 1
-    resources:
-        mem_gb = 16
-    output:
-        directory(config['lapa']['read3_dir'])
-    shell:
-        "lapa \
-        --alignment {input.sample_csv} \
-        --fasta {input.fasta} \
-        --annotation {input.gtf} \
-        --chrom_sizes {input.chrom_sizes} \
-        --output_dir {output}"
+# rule lapa_c2c12_read3:
+#     input:
+#         bam = expand(config['c2c12']['read3']['bam'],
+#                      rep=config['c2c12']['read3']['rep']),
+#         sample_csv = config['lapa']['samples'].format(
+#             method='read3', sample='{sample}'),
+#         fasta = fasta,
+#         gtf = gtf,
+#         chrom_sizes = chrom_sizes
+#     threads: 1
+#     resources:
+#         mem_gb = 16
+#     output:
+#         directory(config['lapa']['read3_dir'])
+#     shell:
+#         "lapa \
+#         --alignment {input.sample_csv} \
+#         --fasta {input.fasta} \
+#         --annotation {input.gtf} \
+#         --chrom_sizes {input.chrom_sizes} \
+#         --output_dir {output}"
 
 
 rule split_c2c12_read_annot:

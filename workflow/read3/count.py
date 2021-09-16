@@ -1,4 +1,3 @@
-from pathlib import Path
 import pandas as pd
 
 
@@ -8,13 +7,6 @@ for path in snakemake.input['count_raw']:
     with open(path) as f:
         rows.append({
             'type': 'raw',
-            'count': int(f.read())
-        })
-
-for path in snakemake.input['count_polyA']:
-    with open(path) as f:
-        rows.append({
-            'type': 'polyA',
             'count': int(f.read())
         })
 

@@ -41,9 +41,9 @@ class BaseTesCounter:
 
 class TailTesCounter(BaseTesCounter):
 
-    def __init__(self, bam_file, min_tail_len=10, min_percent_A=0.9, mapq=10):
+    def __init__(self, bam_file, min_tail_len=10, min_percent_a=0.9, mapq=10):
         self.min_tail_len = min_tail_len
-        self.min_percent_A = min_percent_A
+        self.min_percent_a = min_percent_a
         super().__init__(bam_file, mapq)
 
     @staticmethod
@@ -82,9 +82,9 @@ class TailTesCounter(BaseTesCounter):
             polyA_site = read.reference_end
             tail_base = 'A'
 
-        tail_len, percent_A = TailTesCounter._calculate_tail_seq(
+        tail_len, percent_a = TailTesCounter._calculate_tail_seq(
             tail_seq, tail_base)
-        return polyA_site, tail_len, percent_A
+        return polyA_site, tail_len, percent_a
 
     @staticmethod
     def _calculate_tail_seq(tail_seq, tail_base):
@@ -92,39 +92,39 @@ class TailTesCounter(BaseTesCounter):
         best_score = 0
 
         tail_len = 0
-        num_A = 0
-        _num_A = 0
+        num_a = 0
+        _num_a = 0
 
         for i, base in enumerate(tail_seq):
             if base == tail_base:
                 score += 1
-                _num_A += 1
+                _num_a += 1
             else:
                 score -= 4
 
             if score >= best_score:
                 best_score = score
                 tail_len = i + 1
-                num_A = _num_A
+                num_a = _num_a
 
-        percent_A = num_A / tail_len if tail_len > 0 else 0
-        return tail_len, percent_A
+        percent_a = num_a / tail_len if tail_len > 0 else 0
+        return tail_len, percent_a
 
     def iter_tailed_reads(self):
         """Iterates polyA reads and polyA_site based on polyA filters.
         """
         for read in tqdm(self.bam):
-            polyA_site, tail_len, percent_A = self.detect_polyA_tail(read)
+            polyA_site, tail_len, percent_a = self.detect_polyA_tail(read)
 
             if (tail_len >= self.min_tail_len) \
-               and (percent_A >= self.min_percent_A) \
+               and (percent_a >= self.min_percent_a) \
                and (read.mapping_quality >= self.mapq):
-                yield read, polyA_site, tail_len, percent_A
+                yield read, polyA_site, tail_len, percent_a
 
     def save_tailed_reads(self, output_bam):
         tailed_bam = pysam.AlignmentFile(output_bam, "wb", template=self.bam)
 
-        for read, polyA_site, tail_len, percent_A in self.iter_tailed_reads():
+        for read, polyA_site, tail_len, percent_a in self.iter_tailed_reads():
             tailed_bam.write(read)
 
         tailed_bam.close()
@@ -132,7 +132,7 @@ class TailTesCounter(BaseTesCounter):
     def tail_len_dist(self):
         tail_dist = defaultdict(int)
 
-        for _, polyA_site, tail_len, percent_A in self.iter_tailed_reads():
+        for _, polyA_site, tail_len, percent_a in self.iter_tailed_reads():
             tail_dist[tail_len] += 1
 
         return pd.Series(tail_dist).sort_index()
@@ -151,19 +151,19 @@ class TailTesCounter(BaseTesCounter):
     def count(self):
         tes = Counter()
 
-        for read, polyA_site, tail_len, percent_A in self.iter_tailed_reads():
+        for read, polyA_site, tail_len, percent_a in self.iter_tailed_reads():
             strand = '-' if read.is_reverse else '+'
             tes[(read.reference_name, polyA_site, strand)] += 1
 
         return tes
 
 
-class EndTesCounter:
+class EndTesCounter(BaseTesCounter):
 
     def count(self):
         tes = Counter()
 
-        for read in self.bam:
+        for read in tqdm(self.bam):
             if read.is_reverse:
                 strand = '-'
                 polyA_site = read.reference_start
@@ -185,7 +185,7 @@ def save_tes_count_bw(df, output_dir, chrom_sizes, sample):
 
 
 def count_tes_samples(df_alignment, chrom_sizes, output_dir, method,
-                      min_tail_len=10, min_percent_A=0.9, mapq=10):
+                      min_tail_len=10, min_percent_a=0.9, mapq=10):
     assert method in {'tail', 'end'}, \
         '`method` parameter for counting need to either `tail` or `end`'
 
@@ -195,9 +195,9 @@ def count_tes_samples(df_alignment, chrom_sizes, output_dir, method,
 
         if method == 'tail':
             _df = TailTesCounter(row['path'], min_tail_len,
-                                 min_percent_A, mapq).to_df()
+                                 min_percent_a, mapq).to_df()
         elif method == 'end':
-            _df = EndCounter(row['path'], mapq).to_df()
+            _df = EndTesCounter(row['path'], mapq).to_df()
         else:
             raise ValueError('`method` need to be either `tail` or `end`')
 

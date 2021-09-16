@@ -1,7 +1,29 @@
+rule download_gm12_reads:
+    resources:
+        mem_gb = 4
+    output:
+        bam = config['long_read']['gm12878']['bam']
+    shell:
+        "wget https://www.encodeproject.org/files/{wildcards.encode_id}/@@download/{wildcards.encode_id}.bam -O {output}"
 
-rule lapa_longreads:
+
+rule count_gm12_pacbio:
     input:
-        read_annot = read_annot,
+        bam = config['long_read']['gm12878']['bam']
+    output:
+        txt = 'data/results/gm12878/count/{encode_id}.txt'
+    threads: 1
+    resources:
+        mem_gb = 16
+    shell:
+        "samtools view -F 4 -c {input.bam} > {output.txt}"
+
+
+rule lapa_longreads_gm12:
+    input:
+        bam = expand(config['long_read']['bam'],
+                     encode_id=config['long_read']['gm12878']['encode_id'],
+                     sample='gm12878'),
         fasta = fasta,
         gtf = gtf,
         chrom_sizes = chrom_sizes
@@ -10,18 +32,22 @@ rule lapa_longreads:
         mem_gb = 16
     output:
         config['lapa']['long_rna_dir']
-    shell:
-        "lapa \
-        --alignment {input.read_annot} \
+    run:
+        alignment = ','.join(input.bam)        
+        shell(f'lapa \
+        --alignment "{alignment}" \
         --fasta {input.fasta} \
         --annotation {input.gtf} \
         --chrom_sizes {input.chrom_sizes} \
-        --output_dir {output}"
+        --method end \
+        --output_dir {output}')
 
 
 rule lapa_gm12878_short_reads:
     input:
-        bam = config['short_rnaseq']['merged_bam'],
+        bam = expand(config['short_rnaseq']['bam'],
+                     encode_id=config['short_rnaseq']['data']['gm12878'],
+                     sample='gm12878'),
         fasta = fasta,
         gtf = gtf,
         chrom_sizes = chrom_sizes
@@ -30,16 +56,20 @@ rule lapa_gm12878_short_reads:
         mem_gb = 16
     output:
         directory(config['lapa']['short_rna_dir'])
-    shell:
-        "lapa \
-        --alignment {input.bam} \
+    run:
+        alignment = ','.join(input.bam)        
+        shell(f'lapa \
+        --alignment "{alignment}" \
         --fasta {input.fasta} \
         --annotation {input.gtf} \
         --chrom_sizes {input.chrom_sizes} \
-        --output_dir {output}"
+        --method tail \
+        --output_dir {output}')
 
 
 rule sample_gm12878_quantseq:
+    input:
+        bam = expand(config['quantseq']['bam'], rep=['rep1', 'rep2'])        
     output:
         csv = config['lapa']['samples'].format(
             sample='gm12878', method='quantseq')
@@ -53,7 +83,6 @@ rule sample_gm12878_quantseq:
 
 rule lapa_gm12878_quantseq:
     input:
-        bam = expand(config['quantseq']['bam'], rep=['rep1', 'rep2']),
         sample_csv = config['lapa']['samples'].format(
             sample='gm12878', method='quantseq'),
         fasta = fasta,
@@ -70,4 +99,5 @@ rule lapa_gm12878_quantseq:
         --fasta {input.fasta} \
         --annotation {input.gtf} \
         --chrom_sizes {input.chrom_sizes} \
+        --method tail \
         --output_dir {output}"

@@ -1,7 +1,4 @@
-import pyranges as pr
+from lapa.utils.gtf import get_tes_from_gtf
 
-df_gtf = pr.read_gtf(snakemake.input['gtf'])
-
-df_tes = df_gtf.features.tes().df[[
-    'Chromosome', 'Start', 'End', 'Strand', 'gene_id', 'gene_type'
-]].drop_duplicates().to_csv(snakemake.output['tes'], index=False)
+df_tes = get_tes_from_gtf(snakemake.input['gtf'])
+df_tes.to_csv(snakemake.output['tes'], index=False)

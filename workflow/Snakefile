@@ -1,3 +1,4 @@
+import pdb
 configfile: "configs/config.yaml"
 
 
@@ -46,15 +47,20 @@ include: "plot/Snakefile"
 
 rule all:
     input:
-        expand(config['lapa']['quantseq_dir'], sample=['gm12878']),
-        expand(config['lapa']['long_rna_dir'], sample=['gm12878']),
-        expand(config['lapa']['short_rna_dir'], sample=['gm12878']),
-        expand(config['lapa']['read3_dir'], sample=['c2c12']),
-        expand(config['lapa']['long_rna_dir'], sample=['c2c12']),
-
         # figure-1
         rules.read_nums_datasets.output,
         rules.plot_hist_read_count.output,
         rules.site_motif.output
+
+        # expand(rules.count_gm12_pacbio.output,
+        #        encode_id=config['long_read']['gm12878']['encode_id'])
+
+        # expand(rules.merge_short_reads.output, sample='gm12878')
+
+        # expand(config['lapa']['quantseq_dir'], sample=['gm12878']),
+        # expand(config['lapa']['long_rna_dir'], sample=['gm12878']),
+        # expand(config['lapa']['short_rna_dir'], sample=['gm12878']),
+        # expand(config['lapa']['read3_dir'], sample=['c2c12']),
+        # expand(config['lapa']['long_rna_dir'], sample=['c2c12']),
 
         # config['c2c12']['read_annot_bulk']

@@ -18,18 +18,22 @@ pilot:
   read_annot: data/resources/pilot_talon_read_annot.tsv
 
 quantseq:
-  fastq: data/resources/quantseq3/GM12878_rep{rep}_polyA_S{rep}_R1.fastq.gz
-  fastq_polyA: data/resources/quantseq3/GM12878_rep{rep}_polyA_S{rep}_R1.trimmed.polyA_filtered.fastq.gz
+  fastq_raw: data/resources/quantseq3/GM12878_rep{rep}_polyA_S{rep}_R1.fastq.gz
+  fastq: data/resources/quantseq3/GM12878_rep{rep}.trimmed.fastq.gz
+  truseq_adaptor: data/resources/quantseq3/truseq_rna.fa.gz
   quantseq_count: data/resources/quantseq3/counts.csv
   
-  bam: data/resources/quantseq3/GM12878_{rep}.bam
+  bam: data/resources/quantseq3/GM12878_rep{rep}/Aligned.sortedByCoord.out.bam
   polyA_atlas: data/resources/quantseq3/GM12878{rep}.clusters.hg38.GM12878.bed.gz
   
 
 read3:
-  fastq: data/resources/read3/fastq/{geo_id}/{geo_id}.fq.gz
-  fastq_polyA: data/resources/read3/fastq/{geo_id}/{geo_id}.trimmed_tail.fa.gz
-
+  fastq_dir: data/resources/read3/fastq/
+  fastq: data/resources/read3/fastq/{srr_id}.fastq
+  bam: data/resources/read3/bam/{geo_id}/Aligned.sortedByCoord.out.bam
+  # fastq_polyA: data/resources/read3/fastq/{geo_id}/{geo_id}.trimmed_tail.fa.gz
+  
+  
   read3_count: data/resources/read3/counts.csv
   
   geo_ids:
@@ -42,19 +46,41 @@ read3:
       - SRR1596190
     GSM1518118:
       - SRR1596191
-      - SRR1596192  
-  
-short_rnaseq:
-  fastq: data/results/short_rnaseq/{sample}/fastq/{encode_id}.fastq.gz
-  polyA_trimmed: data/results/short_rnaseq/{sample}/polyA_trimmed_fastq/{encode_id}.polyA.fastq.gz
-  bam: data/results/short_rnaseq/{sample}/bam/{encode_id}/Aligned.sortedByCoord.out.bam
-  short_count: data/short_rnaseq/{sample}/counts.csv
-  merged_bam: data/results/short_rnaseq/{sample}/bam/{sample}.bam
-  
-  star_index: data/resources/star_index/
-  
-  data:
+      - SRR1596192
 
+  lapa: data/results/read3/lapa_dir
+
+star:
+  mouse_index: data/resources/mouse_star_index/
+  star_index: data/resources/star_index/
+
+
+long_read:
+  bam: data/resources/{sample}/bam/{encode_id}.bam
+
+  gm12878:
+    bam: data/resources/gm12878/bam/{encode_id}.bam
+
+    encode_id:
+      - ENCFF277NCZ
+      - ENCFF592BQN
+      - ENCFF407TMX
+      - ENCFF234YIJ
+      - ENCFF810UWA
+      - ENCFF132HLS
+      - ENCFF615XZM
+
+  wtc11:
+    bam: data/resources/wtc11/bam/{encode_id}.bam    
+
+short_rnaseq:
+  fastq: data/resources/short_rnaseq/{sample}/fastq/{encode_id}.fastq.gz
+  # polyA_trimmed: data/results/short_rnaseq/{sample}/polyA_trimmed_fastq/{encode_id}.polyA.fastq.gz
+  bam: data/resources/short_rnaseq/{sample}/bam/{encode_id}/Aligned.sortedByCoord.out.bam
+  short_count: data/results/short_rnaseq/{sample}/counts.csv
+  merged_bam: data/results/short_rnaseq/{sample}/bam/{sample}.bam
+
+  data:
     gm12878:
       - ENCFF824LLV
       - ENCFF729YAX

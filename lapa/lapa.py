@@ -246,7 +246,7 @@ def prepare_alignment(alignment):
 
 
 def lapa(alignment, fasta, annotation, chrom_sizes, output_dir, method,
-         min_tail_len=10, min_percent_A=0.9, mapq=10):
+         min_tail_len=10, min_percent_a=0.9, mapq=10):
 
     output_dir = Path(output_dir)
     output_dir.mkdir(exist_ok=True)
@@ -264,7 +264,7 @@ def lapa(alignment, fasta, annotation, chrom_sizes, output_dir, method,
 
     print('Counting TES...')
     df_tes, tes = count_tes_samples(
-        df_alignment, chrom_sizes, output_dir, method)
+        df_alignment, chrom_sizes, output_dir, method, min_tail_len, min_percent_a, mapq)
     del df_alignment
 
     print('Clustering TES and calculating polyA_sites...')
