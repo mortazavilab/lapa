@@ -37,9 +37,10 @@ def read_talon_read_annot(path):
     end = np.where(df['Start'] > df['End'], df['Start'], df['End'])
     df['End'] = np.where(df['Strand'] == '-', start, end)
     del df['Start']
+    df['Start'] = df['End'] - 1
+    df['count'] = 1
 
-    # TO FIX: start end strand may not be correct
-    return df
+    return df[['Chromosome', 'Start', 'End', 'Strand', 'count', 'sample']]
 
 
 def read_bam_ends(path, mapq=10, sample=None):

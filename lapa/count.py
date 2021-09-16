@@ -185,8 +185,8 @@ def save_tes_count_bw(df, output_dir, chrom_sizes, sample):
     )
 
 
-def count_tes_samples(df_alignment, chrom_sizes, output_dir, method,
-                      min_tail_len=10, min_percent_a=0.9, mapq=10):
+def count_tes_bam_samples(df_alignment, method, min_tail_len=10,
+                          min_percent_a=0.9, mapq=10):
     assert method in {'tail', 'end'}, \
         '`method` parameter for counting need to either `tail` or `end`'
 
@@ -204,7 +204,10 @@ def count_tes_samples(df_alignment, chrom_sizes, output_dir, method,
         _df['sample'] = row['sample']
         df.append(_df)
 
-    df = pd.concat(df)
+    return pd.concat(df)
+
+
+def agg_tes_samples(df, chrom_sizes, output_dir):
     columns = ['Chromosome', 'Start', 'End', 'Strand']
     df_all = df.groupby(columns).agg('sum').reset_index()
 

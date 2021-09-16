@@ -9,35 +9,7 @@ from lapa.utils.io import read_talon_read_annot, bw_from_pyranges, \
     read_bam_ends, cluster_col_order, sample_col_order, read_sample_csv
 from lapa.utils.common import pad_series, polyA_signal_seqs
 from lapa.genomic_regions import GenomicRegions
-from lapa.count import count_tes_samples
-
-# def _count_tes(df_alignment, chrom_sizes, sample, output_dir):
-#     # count TES sites
-#     columns = ['Chromosome', 'End', 'Strand']
-#     df = df_alignment[columns]
-
-#     df['count'] = 1
-#     df = df.groupby(columns).agg('sum').reset_index()
-
-#     df['Start'] = df['End'] - 1
-
-#     bw_from_pyranges(
-#         pr.PyRanges(df), 'count',
-#         chrom_sizes,
-#         str(output_dir / f'{sample}_tes_counts_pos.bw'),
-#         str(output_dir / f'{sample}_tes_counts_neg.bw')
-#     )
-
-#     return df
-
-
-# def count_tes(df_alignment, chrom_sizes, output_dir):
-#     tes = {
-#         sample: _count_tes(df, chrom_sizes, sample, output_dir)
-#         for sample, df in df_alignment.groupby('sample')
-#     }
-#     # TODO: combine tes samples counts pd.concat |> agg(sum)
-#     return _count_tes(df_alignment, chrom_sizes, 'all', output_dir), tes
+from lapa.count import count_tes_bam_samples, agg_tes_samples
 
 
 class Cluster:
@@ -253,19 +225,19 @@ def lapa(alignment, fasta, annotation, chrom_sizes, output_dir, method,
 
     print('Reading the alignment file...')
     if alignment.endswith('_read_annot.tsv'):
-        # df_alignment = read_talon_read_annot(alignment)
-        raise NotImplementedError()
+        df_count = read_talon_read_annot(alignment)
     elif alignment.endswith('.bam') or alignment.endswith('.csv'):
         df_alignment = prepare_alignment(alignment)
+        df_count = count_tes_bam_samples(df_alignment, method, min_tail_len,
+                                         min_percent_a, mapq)
     else:
         raise ValueError(
             'Unknown file alignment format: supported '
             'file formats are `bam` and `sample.csv`')
 
     print('Counting TES...')
-    df_tes, tes = count_tes_samples(
-        df_alignment, chrom_sizes, output_dir, method, min_tail_len, min_percent_a, mapq)
-    del df_alignment
+    df_tes, tes = agg_tes_samples(df_count, chrom_sizes, output_dir)
+    del df_count
 
     print('Clustering TES and calculating polyA_sites...')
     df_cluster = TesClustering(fasta).to_df(df_tes)
