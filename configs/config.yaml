@@ -19,7 +19,7 @@ pilot:
 
 quantseq:
   fastq_raw: data/resources/quantseq3/GM12878_rep{rep}_polyA_S{rep}_R1.fastq.gz
-  fastq: data/resources/quantseq3/GM12878_rep{rep}.trimmed.fastq.gz
+  fastq: data/resources/quantseq3/GM12878_{rep}.trimmed.fastq.gz
   truseq_adaptor: data/resources/quantseq3/truseq_rna.fa.gz
   quantseq_count: data/resources/quantseq3/counts.csv
   

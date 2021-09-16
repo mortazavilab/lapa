@@ -47,6 +47,7 @@ include: "plot/Snakefile"
 
 rule all:
     input:
+        'data/results/temp/hist/gm12878/long_rna_lapa.csv',
         # figure-1
         rules.read_nums_datasets.output,
         rules.plot_hist_read_count.output,

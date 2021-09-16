@@ -24,16 +24,16 @@ rule lapa_longreads_gm12:
         bam = expand(config['long_read']['bam'],
                      encode_id=config['long_read']['gm12878']['encode_id'],
                      sample='gm12878'),
-        fasta = fasta,
-        gtf = gtf,
-        chrom_sizes = chrom_sizes
+        fasta = config['human']['fasta'],
+        gtf = config['human']['gtf'],
+        chrom_sizes = config['common']['chrom_sizes'].format(specie='human')
     threads: 1
     resources:
         mem_gb = 16
     output:
-        config['lapa']['long_rna_dir']
+        directory(config['lapa']['long_rna_dir'].format(sample='gm12878'))
     run:
-        alignment = ','.join(input.bam)        
+        alignment = ','.join(input.bam)
         shell(f'lapa \
         --alignment "{alignment}" \
         --fasta {input.fasta} \
@@ -57,7 +57,7 @@ rule lapa_gm12878_short_reads:
     output:
         directory(config['lapa']['short_rna_dir'])
     run:
-        alignment = ','.join(input.bam)        
+        alignment = ','.join(input.bam)
         shell(f'lapa \
         --alignment "{alignment}" \
         --fasta {input.fasta} \
@@ -69,7 +69,7 @@ rule lapa_gm12878_short_reads:
 
 rule sample_gm12878_quantseq:
     input:
-        bam = expand(config['quantseq']['bam'], rep=['rep1', 'rep2'])        
+        bam = expand(config['quantseq']['bam'], rep=['1', '2'])
     output:
         csv = config['lapa']['samples'].format(
             sample='gm12878', method='quantseq')

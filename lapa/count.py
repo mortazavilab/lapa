@@ -164,13 +164,14 @@ class EndTesCounter(BaseTesCounter):
         tes = Counter()
 
         for read in tqdm(self.bam):
-            if read.is_reverse:
-                strand = '-'
-                polyA_site = read.reference_start
-            else:
-                strand = '+'
-                polyA_site = read.reference_end
-            tes[(read.reference_name, polyA_site, strand)] += 1
+            if read.mapping_quality >= self.mapq:
+                if read.is_reverse:
+                    strand = '-'
+                    polyA_site = read.reference_start
+                else:
+                    strand = '+'
+                    polyA_site = read.reference_end
+                tes[(read.reference_name, polyA_site, strand)] += 1
 
         return tes
 
@@ -192,7 +193,6 @@ def count_tes_samples(df_alignment, chrom_sizes, output_dir, method,
     df = list()
 
     for _, row in df_alignment.iterrows():
-
         if method == 'tail':
             _df = TailTesCounter(row['path'], min_tail_len,
                                  min_percent_a, mapq).to_df()
@@ -219,5 +219,5 @@ def count_tes_samples(df_alignment, chrom_sizes, output_dir, method,
     else:
         tes[samples[0]] = df_all
 
-    save_tes_count_bw(_df, output_dir, chrom_sizes, 'all')
+    save_tes_count_bw(df_all, output_dir, chrom_sizes, 'all')
     return df_all, tes

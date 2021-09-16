@@ -85,7 +85,8 @@ rule merge_count_read3:
 
 rule lapa_config_read3_c2c12:
     input:
-        expand(config['read3']['bam'], geo_id=config['read3']['geo_ids'].keys())
+        expand(config['read3']['bam'],
+               geo_id=config['read3']['geo_ids'].keys())
     output:
         config = "data/results/read3/lapa_config.csv"
     run:
@@ -115,7 +116,7 @@ rule lapa_read3_c2c12:
     resources:
         mem_gb = 16
     output:
-        directory(config['lapa']['read3_dir'])
+        directory(config['lapa']['read3_dir'].format(sample='c2c12'))
     shell:
         "lapa \
         --alignment {input.config} \
@@ -124,6 +125,3 @@ rule lapa_read3_c2c12:
         --method end \
         --chrom_sizes {input.chrom_sizes} \
         --output_dir {output}"
-
-
-        
