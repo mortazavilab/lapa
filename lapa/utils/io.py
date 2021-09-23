@@ -35,7 +35,16 @@ def read_talon_read_annot(path):
 
     start = np.where(df['Start'] < df['End'], df['Start'], df['End'])
     end = np.where(df['Start'] > df['End'], df['Start'], df['End'])
-    df['End'] = np.where(df['Strand'] == '-', start, end)
+    df['Start'] = start.copy()
+    df['End'] = end.copy()
+
+    return df
+
+
+def read_talon_read_annot_count(path):
+    df = read_talon_read_annot(path)
+
+    df['End'] = np.where(df['Strand'] == '-', df['Start'], df['End'])
     del df['Start']
     df['Start'] = df['End'] - 1
     df['count'] = 1

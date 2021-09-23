@@ -5,10 +5,7 @@ import pandas as pd
 import numpy as np
 from lapa.count import TailTesCounter, \
     count_tes_bam_samples, agg_tes_samples
-
-# detect_polyA_tail, bam_detect_polyA_tail, \
-#     tail_len_dist, save_tailed_reads
-from conftest import quantseq_gm12_bam, short_bam, chrom_sizes, chr17_chrom_sizes
+from conftest import quantseq_gm12_bam, short_bam, chr17_chrom_sizes
 
 
 def load_reads(seq, cigar, flag, pos):

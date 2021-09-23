@@ -9,7 +9,8 @@ from lapa.lapa import lapa
 @click.option('--chrom_sizes', help='Chrom sizes files (can be generated with `faidx fasta -i chromsizes > chrom_sizes`)')
 @click.option('--output_dir', help='Output directory')
 @click.option('--method', help='Counting method either `end` or `tail`',
-              type=click.Choice(['end', 'tail'], case_sensitive=True))
+              type=click.Choice(['end', 'tail'], case_sensitive=True),
+              default=None)
 @click.option('--min_tail_len', default=10, type=int)
 @click.option('--min_percent_a', default=0.9, type=float)
 @click.option('--mapq', default=10, type=int)

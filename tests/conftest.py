@@ -21,5 +21,6 @@ agg_annotation_gene = [
     'tests/data/agg_gene_brca1.csv'
 ]
 
-
 short_bam = 'tests/data/short_chr17.bam'
+gtf_gm12_pb = 'tests/data/chr17_gm12_pb_talon.gtf'
+read_annot_gm12_pb = 'tests/data/chr17_gm12_read_annot.tsv'
