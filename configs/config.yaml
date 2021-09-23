@@ -56,6 +56,7 @@ long_read:
 
   gm12878:
     bam: data/resources/gm12878/bam/{encode_id}.bam
+
     gtf_pb: data/resources/gm12878/pb_talon.gtf
     gtf_ont: data/resources/gm12878/ont_talon.gtf
     
@@ -72,7 +73,7 @@ long_read:
       - ENCFF615XZM
 
   wtc11:
-    bam: data/resources/wtc11/bam/{encode_id}.bam    
+    bam: data/resources/wtc11/bam/{encode_id}.bam
 
 short_rnaseq:
   fastq: data/resources/short_rnaseq/{sample}/fastq/{encode_id}.fastq.gz

@@ -82,30 +82,3 @@ class GenomicRegions:
             del _df['dist']
 
             return _df
-
-    # def overlap_gene(self, gr):
-    #     df_gene = self.gr[self.gr.Feature == 'gene'] \
-    #                   .df.drop_duplicates(subset=['gene_id'])
-
-    #     df_gene = df_gene[df_gene['gene_type'].isin(
-    #         ['protein_coding', 'lncRNA'])]
-
-    #     df_gene = df_gene[[*_core_columns, 'gene_id', 'gene_name']]
-    #     df_gene = df_gene[df_gene['Strand'].isin(gr.Strand.cat.categories)]
-    #     gr_gene = pr.PyRanges(df_gene, int64=True)
-
-    #     gr_gene = pr.PyRanges(df_gene, int64=True)
-
-    #     gr = gr.join(gr_gene, how='left')
-    #     return gr.drop(['Start_b', 'End_b', 'Strand_b'])
-
-    # def overlap_tes(self, gr):
-    #     gr_tes = self.gr.features.tes()
-
-    #     df_tes = gr_tes.df[_core_columns].drop_duplicates()
-    #     df_tes['canonical'] = True
-
-    #     df_tes = df_tes[df_tes['Strand'].isin(gr.Strand.cat.categories)]
-    #     gr_tes = pr.PyRanges(df_tes, int64=True)
-
-    #     return gr.join(gr_tes, how='left').drop(['End_b', 'Strand_b'])
