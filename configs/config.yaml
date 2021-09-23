@@ -25,14 +25,11 @@ quantseq:
   
   bam: data/resources/quantseq3/GM12878_rep{rep}/Aligned.sortedByCoord.out.bam
   polyA_atlas: data/resources/quantseq3/GM12878{rep}.clusters.hg38.GM12878.bed.gz
-  
 
 read3:
   fastq_dir: data/resources/read3/fastq/
   fastq: data/resources/read3/fastq/{srr_id}.fastq
   bam: data/resources/read3/bam/{geo_id}/Aligned.sortedByCoord.out.bam
-  # fastq_polyA: data/resources/read3/fastq/{geo_id}/{geo_id}.trimmed_tail.fa.gz
-  
   
   read3_count: data/resources/read3/counts.csv
   
@@ -54,13 +51,17 @@ star:
   mouse_index: data/resources/mouse_star_index/
   star_index: data/resources/star_index/
 
-
 long_read:
   bam: data/resources/{sample}/bam/{encode_id}.bam
 
   gm12878:
     bam: data/resources/gm12878/bam/{encode_id}.bam
-
+    gtf_pb: data/resources/gm12878/pb_talon.gtf
+    gtf_ont: data/resources/gm12878/ont_talon.gtf
+    
+    abundance: data/resources/gm12878/pb_ont_talon_abundance_filtered.tsv
+    read_annot: data/resources/gm12878/GM12878_talon_read_annot.tsv
+    
     encode_id:
       - ENCFF277NCZ
       - ENCFF592BQN

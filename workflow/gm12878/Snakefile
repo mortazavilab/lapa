@@ -21,9 +21,7 @@ rule count_gm12_pacbio:
 
 rule lapa_longreads_gm12:
     input:
-        bam = expand(config['long_read']['bam'],
-                     encode_id=config['long_read']['gm12878']['encode_id'],
-                     sample='gm12878'),
+        alignment = config['long_read']['gm12878']['read_annot'],
         fasta = config['human']['fasta'],
         gtf = config['human']['gtf'],
         chrom_sizes = config['common']['chrom_sizes'].format(specie='human')
@@ -32,15 +30,13 @@ rule lapa_longreads_gm12:
         mem_gb = 16
     output:
         directory(config['lapa']['long_rna_dir'].format(sample='gm12878'))
-    run:
-        alignment = ','.join(input.bam)
-        shell(f'lapa \
-        --alignment "{alignment}" \
+    shell:
+        "lapa \
+        --alignment {input.alignment} \
         --fasta {input.fasta} \
         --annotation {input.gtf} \
         --chrom_sizes {input.chrom_sizes} \
-        --method end \
-        --output_dir {output}')
+        --output_dir {output}"
 
 
 rule lapa_gm12878_short_reads:
@@ -77,7 +73,7 @@ rule sample_gm12878_quantseq:
         bam = config['quantseq']['bam']
         with open(output['csv'], 'w') as f:
             f.write('sample,path\n')
-            for i in ['rep1', 'rep2']:
+            for i in ['1', '2']:
                 f.write(f'gm12878_{i},{bam.format(rep=i)}\n')
 
 
@@ -101,3 +97,41 @@ rule lapa_gm12878_quantseq:
         --chrom_sizes {input.chrom_sizes} \
         --method tail \
         --output_dir {output}"
+
+
+rule overlap_gm12_pac_talon:
+    input:
+        lapa_dir = config['lapa']['quantseq_dir'].format(
+            sample='gm12878'),
+        gtf = config['long_read']['gm12878']['gtf_pb'],
+        abundance = config['long_read']['gm12878']['abundance']
+    params:
+        max_distance = 50,
+        samples = ['gm12878_1', 'gm12878_2'],
+    output:
+        overlap = 'data/results/gm12878/overlap/gm12878_overlap_pb_annotation.csv'
+    script:
+        "../common/overlap_talon.py"
+
+
+rule overlap_gm12_nanopor_talon:
+    input:
+        lapa_dir = config['lapa']['quantseq_dir'].format(sample='gm12878'),
+        gtf = config['long_read']['gm12878']['gtf_ont'],
+        abundance = config['long_read']['gm12878']['abundance']
+    params:
+        max_distance = 50,
+        samples = ['gm12878_1', 'gm12878_2']
+    output:
+        overlap = 'data/results/gm12878/overlap/gm12878_overlap_ont_annotation.csv'
+    script:
+        "../common/overlap_talon.py"
+
+
+rule plot_overlap_gm12:
+    input:
+        'data/results/gm12878/overlap/{sample}_overlap_{platform}_annotation.csv'
+    output:
+        'reports/figures/{sample}_overlap_{platform}_annotation.png'
+    script:
+        "../common/plot_fig4.R"

@@ -24,11 +24,23 @@ rule star_index_mouse:
     wrapper:
         "0.72.0/bio/star/index"
 
+rule reverse_complement_fastq:
+    input:
+        fq = config['read3']['fastq']
+    output:
+        fq = 'data/resources/read3/fastq_rc/{srr_id}.fastq'
+    threads: 1
+    resources:
+        mem_gb = 16
+    shell:
+        "seqtk seq -r {input.fq} > {output.fq}"
+
 
 rule star_align_read3:
     input:
         fq1 = (lambda wildcards: [
-            config['read3']['fastq'].format(srr_id=srr_id)
+            'data/resources/read3/fastq_rc/{srr_id}.fastq'.format(
+                srr_id=srr_id)
             for srr_id in config['read3']['geo_ids'][wildcards.geo_id]
         ]),
         index = config['star']['mouse_index']
@@ -58,15 +70,16 @@ rule count_read3:
         "samtools view -F 4 -c {input.bam} > {output.txt}"
 
 
-# rule count_polyA_read3:
-#     input:
-#         bam = config['read3']['bam']
-#     resources:
-#         mem_gb = 4
-#     output:
-#         txt = 'data/results/read3/count_polyA/read3_{geo_id}.txt'
-#     shell:
-#         "zcat {input.fastq} | grep '>' | wc -l > {output.txt}"
+rule count_c2c12_tailed:
+    input:
+        bam = config['read3']['bam']
+    output:
+        txt = 'data/results/read3/count_polyA/read3_{geo_id}.txt'
+    threads: 1
+    resources:
+        mem_gb = 16
+    script:
+        "lapa_count_tail.py"
 
 
 rule merge_count_read3:
@@ -74,11 +87,16 @@ rule merge_count_read3:
         count_raw = expand(
             'data/results/read3/count/read3_{geo_id}.txt',
             geo_id=config['read3']['geo_ids'].keys()
+        ),
+        count_polyA = expand(
+            'data/results/read3/count_polyA/read3_{geo_id}.txt',
+            geo_id=config['read3']['geo_ids'].keys()
         )
-    resources:
-        mem_gb = 4
     output:
         csv = config['read3']['read3_count']
+    threads: 1
+    resources:
+        mem_gb = 4
     script:
         "count.py"
 
@@ -89,6 +107,9 @@ rule lapa_config_read3_c2c12:
                geo_id=config['read3']['geo_ids'].keys())
     output:
         config = "data/results/read3/lapa_config.csv"
+    threads: 1
+    resources:
+        mem_gb = 4
     run:
         import pandas as pd
         samples = [
@@ -122,6 +143,8 @@ rule lapa_read3_c2c12:
         --alignment {input.config} \
         --fasta {input.fasta} \
         --annotation {input.gtf} \
-        --method end \
+        --method tail \
+        --min_tail_len 2 \
+        --min_percent_a 1 \
         --chrom_sizes {input.chrom_sizes} \
         --output_dir {output}"
