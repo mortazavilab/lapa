@@ -1,10 +1,14 @@
 import pandas as pd
 import pyranges as pr
+from tqdm import tqdm
 from conftest import read_annot, fasta, gtf, chrom_sizes, \
     read_annot_gm12_pb, gtf_gm12_pb
 from lapa import lapa
 from lapa.utils.io import read_talon_read_annot
 from lapa.read import read_tes_mapping, correct_gtf_tes, sort_gtf
+
+
+tqdm.pandas()
 
 
 def test_read_tes_mapping(tmp_path):
@@ -27,7 +31,7 @@ def test_correct_gtf_tes(tmp_path):
     gtf_corrected = tmp_path / 'corrected.gtf'
 
     df_read_transcript = df_read_annot.rename(
-        columns={'annot_transcript_name': 'transcript_id'})[
+        columns={'annot_transcript_id': 'transcript_id'})[
         ['read_name', 'transcript_id']]
     correct_gtf_tes(df_mapping, df_read_transcript, gtf_gm12_pb, gtf_corrected)
 
@@ -76,7 +80,7 @@ def test_correct_gtf_tes_NBR1(tmp_path):
     gtf_corrected = tmp_path / 'corrected.gtf'
 
     df_read_transcript = df_read_annot.rename(
-        columns={'annot_transcript_name': 'transcript_id'})[
+        columns={'annot_transcript_id': 'transcript_id'})[
         ['read_name', 'transcript_id']]
     correct_gtf_tes(df_mapping, df_read_transcript, gtf_gm12_pb, gtf_corrected)
 

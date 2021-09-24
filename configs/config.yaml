@@ -59,6 +59,9 @@ long_read:
 
     gtf_pb: data/resources/gm12878/pb_talon.gtf
     gtf_ont: data/resources/gm12878/ont_talon.gtf
+
+    gtf_pb_cor: data/results/talon/gm12878/pb_talon_cor.gtf
+    gtf_ont_cor: data/results/talon/gm12878/ont_talon_cor.gtf
     
     abundance: data/resources/gm12878/pb_ont_talon_abundance_filtered.tsv
     read_annot: data/resources/gm12878/GM12878_talon_read_annot.tsv

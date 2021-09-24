@@ -1,13 +1,23 @@
 import numpy as np
 import pandas as pd
 import pyranges as pr
+from tqdm import tqdm
 from lapa.utils.io import read_talon_read_annot
 from lapa.result import LapaResult
 
 
+tqdm.pandas()
+
+
 def read_tes_mapping(lapa_dir, read_annot, filter_internal_priming=True,
                      distance=500):
-    df_reads = read_talon_read_annot(read_annot)
+    if type(read_annot) == str:
+        df_reads = read_talon_read_annot(read_annot)
+    elif type(read_annot) == pd.DataFrame:
+        df_reads = read_annot
+    else:
+        raise ValueError('`read_annot` should be `str` or `pd.DataFrame`')
+
     df_reads['End'] = np.where(df_reads['Strand'] == '-',
                                df_reads['Start'],
                                df_reads['End'])
@@ -42,25 +52,36 @@ def _correct_transcript(df):
 
     # TODO: update start based on tss_site
 
-    dfs = list()
+    # dfs = list()
 
-    for i, (_, _df) in enumerate(df.groupby('polyA_site')):
-        _df['transcript_id'] = _df['transcript_id'] + f'_{i}'
+    # for i, (_, _df) in enumerate(df.groupby('polyA_site')):
+    #     _df['transcript_id'] = _df['transcript_id'] + f'_{i}'
 
-        exons = _df['Feature'] == 'exon'
-        _df_exon = _df[exons]
-        _df_transcript = _df[_df['Feature'] == 'transcript']
+    # exons = _df['Feature'] == 'exon'
+    # _df_exon = _df[exons]
+    # _df_transcript = _df[_df['Feature'] == 'transcript']
 
-        first_exon = _df_exon['Start'].idxmin()
-        last_exon = _df_exon['End'].idxmax()
+    # first_exon = _df_exon['Start'].idxmin()
+    # last_exon = _df_exon['End'].idxmax()
 
-        _df.loc[first_exon, 'Start'] = _df_transcript.iloc[0]['Start']
-        _df.loc[last_exon, 'End'] = _df_transcript.iloc[0]['End']
+    # _df.loc[first_exon, 'Start'] = _df_transcript.iloc[0]['Start']
+    # _df.loc[last_exon, 'End'] = _df_transcript.iloc[0]['End']
 
-        dfs.append(_df)
+    # dfs.append(_df)
 
-    return pd.concat(dfs)
+    # return pd.concat(dfs)
 
+    exons = df['Feature'] == 'exon'
+    _df_exon = df[exons]
+    _df_transcript = df[df['Feature'] == 'transcript']
+
+    first_exon = _df_exon['Start'].idxmin()
+    last_exon = _df_exon['End'].idxmax()
+
+    df.loc[first_exon, 'Start'] = _df_transcript.iloc[0]['Start']
+    df.loc[last_exon, 'End'] = _df_transcript.iloc[0]['End']
+
+    return df
 
 # def _correct_exon(df_transcript, df_exon):
 
@@ -113,21 +134,29 @@ def sort_gtf(df):
 
 def correct_gtf_tes(df_read_tes, df_read_transcript, gtf, gtf_output):
 
-    cols = ['Chromosome', 'polyA_site', 'Strand', 'transcript_id']
+    # cols = ['Chromosome', 'polyA_site', 'Strand', 'transcript_id']
     df = df_read_tes.set_index('read_name').join(
         df_read_transcript.set_index('read_name')
-    )[cols].drop_duplicates().set_index('transcript_id')
+    )
+
+    indexes = df.groupby(['transcript_id', 'polyA_site'])['Strand'] \
+        .count().groupby(level=0).idxmax()
+    df = pd.DataFrame({
+        'transcript_id': indexes.str.get(0).tolist(),
+        'polyA_site': indexes.str.get(1).tolist()
+    }).set_index('transcript_id')
+
+    # df = df[cols].drop_duplicates().set_index('transcript_id')
 
     df_gtf = pr.read_gtf(gtf).df
     df_transcript = df_gtf[df_gtf['Feature'].isin({'transcript', 'exon'})]
-    df_transcript = df_transcript.set_index(
-        'transcript_id').join(df, rsuffix='_b', how='left')
+    df_transcript = df_transcript.set_index('transcript_id').join(
+        df, rsuffix='_b', how='left')
 
     df_transcript_cor = df_transcript.groupby(
-        'transcript_id').apply(_correct_transcript).reset_index(drop=True)
+        'transcript_id').progress_apply(_correct_transcript).reset_index(drop=True)
 
-    for i in ['Chromosome_b', 'polyA_site', 'Strand_b']:
-        del df_transcript_cor[i]
+    del df_transcript_cor['polyA_site']
 
     df_gene_cor = _correct_gene(df_transcript_cor,
                                 df_gtf[df_gtf['Feature'] == 'gene'])

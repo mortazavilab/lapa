@@ -13,15 +13,15 @@ rule benchmark_lapa:
         'benchmark_lapa.ipynb'
 
 
-rule overlap_gm12_pc_talon:
-    input:
-        clusters = config['lapa']['quantseq_dir'].format(sample='gm12878'),
-        gtf = config['long_read']['gm12878']['gtf_talon'],
-        abundance = config['long_read']['gm12878']['abundance']
-    params:
-        max_distance = 50,
-        tpm_columns = ['PB_GM12878_R1', 'PB_GM12878_R2']
-    output:
-        overlap = 'data/processed/annotation_overlap/gm12_overlap.tsv'
-    script:
-        "./overlap_talon_quanseq.py"
+# rule overlap_gm12_pc_talon:
+#     input:
+#         clusters = config['lapa']['quantseq_dir'].format(sample='gm12878'),
+#         gtf = config['long_read']['gm12878']['gtf_talon'],
+#         abundance = config['long_read']['gm12878']['abundance']
+#     params:
+#         max_distance = 50,
+#         tpm_columns = ['PB_GM12878_R1', 'PB_GM12878_R2']
+#     output:
+#         overlap = 'data/processed/annotation_overlap/gm12_overlap.tsv'
+#     script:
+#         "./overlap_talon_quanseq.py"

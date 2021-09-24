@@ -10,15 +10,6 @@ rule download_read3:
         "fasterq-dump {wildcards.srr_id} -t /tmp --outdir {params.fq_dir}"
 
 
-rule reverse_complement_fastq:
-    input:
-        fq = config['read3']['fastq']
-    output:
-        fq = 'data/resources/read3/fastq/{srr_id}_rc.fastq'
-    shell:
-        "seqtk seq -r {input.fq} > {output.fq}"
-
-
 rule star_index_mouse:
     input:
         fasta = config['mouse']['fasta'],
@@ -33,7 +24,7 @@ rule star_index_mouse:
     wrapper:
         "0.72.0/bio/star/index"
 
-rule reverse_complement_fastq:
+rule reverse_complement_fastq_read3:
     input:
         fq = config['read3']['fastq']
     output:

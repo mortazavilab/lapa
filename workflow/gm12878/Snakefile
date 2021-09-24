@@ -135,3 +135,44 @@ rule plot_overlap_gm12:
         'reports/figures/{sample}_overlap_{platform}_annotation.png'
     script:
         "../common/plot_fig4.R"
+
+
+rule correct_gtf_pac_talon:
+    input:
+        read_annot = config['long_read']['gm12878']['read_annot'],
+        lapa_dir = config['lapa']['long_rna_dir'].format(sample='gm12878'),
+        gtf = config['long_read']['gm12878']['gtf_pb']
+    params:
+        samples = ['gm12878_1', 'gm12878_2']
+    output:
+        gtf = config['long_read']['gm12878']['gtf_pb_cor']
+    script:
+        "../common/correct_gtf.py"
+
+
+rule correct_gtf_ont_talon:
+    input:
+        read_annot = config['long_read']['gm12878']['read_annot'],
+        lapa_dir = config['lapa']['long_rna_dir'].format(sample='gm12878'),
+        gtf = config['long_read']['gm12878']['gtf_ont']
+    params:
+        samples = ['gm12878_1', 'gm12878_2']
+    output:
+        gtf = config['long_read']['gm12878']['gtf_ont_cor']
+    script:
+        "../common/correct_gtf.py"
+
+
+rule overlap_gm12_corr_talon:
+    input:
+        lapa_dir = config['lapa']['quantseq_dir'].format(sample='gm12878'),
+        gtf = (lambda wildcards: config['long_read']
+               ['gm12878']['gtf_%s' % wildcards['platform']]),
+        abundance = config['long_read']['gm12878']['abundance']
+    params:
+        max_distance = 50,
+        samples = ['gm12878_1', 'gm12878_2']
+    output:
+        overlap = 'data/results/gm12878/overlap/{sample}_overlap_{platform}_annotation.csv'
+    script:
+        "../common/overlap_talon.py"

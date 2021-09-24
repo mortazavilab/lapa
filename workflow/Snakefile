@@ -53,7 +53,9 @@ rule all:
         rules.site_motif.output,
 
         expand('reports/figures/{sample}_overlap_{platform}_annotation.png',
-               sample='gm12878', platform=['pb', 'ont'])
+               sample='gm12878', platform=['pb', 'ont', 'pb_cor', 'ont_cor'])
+
+        # config['long_read']['gm12878']['gtf_pb_cor']
 
         # expand(rules.count_gm12_pacbio.output,
         #        encode_id=config['long_read']['gm12878']['encode_id'])
