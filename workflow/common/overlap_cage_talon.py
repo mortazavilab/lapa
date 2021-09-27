@@ -1,20 +1,21 @@
+import functools
 import numpy as np
 import pandas as pd
 import pyranges as pr
-from lapa.result import LapaResult
 
 
-gr_tes = pr.read_gtf(snakemake.input['gtf']).features.tes()
+pr_cage = functools.reduce(
+    lambda gr_x, gr_y: gr_x.merge(gr_y),
+    [pr.read_bed(i) for i in snakemake.input['cage']]
+)
 
-result = LapaResult(snakemake.input['lapa_dir'])
+# pr_cage.End = (pr_cage.Start + pr_cage.End) // 2
 
-df_quantseq = result.read_cluster().drop_duplicates(
-    subset=['Chromosome', 'polyA_site', 'Strand'])
-df_quantseq['Start'] = df_quantseq['polyA_site'] - 1
-df_quantseq['End'] = df_quantseq['polyA_site']
 
-# Find overlap between TES and quantseq polyA cluster
-df_overlap = gr_tes.nearest(pr.PyRanges(df_quantseq)).df
+gr_tss = pr.read_gtf(snakemake.input['gtf']).features.tss()
+
+# Find overlap between TSS and quantseq polyA cluster
+df_overlap = gr_tss.nearest(pr_cage).df
 dist = snakemake.params['max_distance']
 df_overlap = df_overlap[df_overlap['Distance'] < dist]
 
@@ -38,7 +39,7 @@ df_abundance['transcript_novelty'] = np.where(
     df_abundance['transcript_novelty']
 )
 
-transcripts = df_abundance.index.intersection(gr_tes.transcript_id)
+transcripts = df_abundance.index.intersection(gr_tss.transcript_id)
 
 pd.DataFrame({
     'transcript_id': transcripts,

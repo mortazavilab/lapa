@@ -141,7 +141,8 @@ rule correct_gtf_pac_talon:
     input:
         read_annot = config['long_read']['gm12878']['read_annot'],
         lapa_dir = config['lapa']['long_rna_dir'].format(sample='gm12878'),
-        gtf = config['long_read']['gm12878']['gtf_pb']
+        gtf = config['long_read']['gm12878']['gtf_pb'],
+        fasta = config['human']['fasta']
     params:
         samples = ['gm12878_1', 'gm12878_2']
     output:
@@ -154,7 +155,8 @@ rule correct_gtf_ont_talon:
     input:
         read_annot = config['long_read']['gm12878']['read_annot'],
         lapa_dir = config['lapa']['long_rna_dir'].format(sample='gm12878'),
-        gtf = config['long_read']['gm12878']['gtf_ont']
+        gtf = config['long_read']['gm12878']['gtf_ont'],
+        fasta = config['human']['fasta']
     params:
         samples = ['gm12878_1', 'gm12878_2']
     output:
@@ -170,9 +172,34 @@ rule overlap_gm12_corr_talon:
                ['gm12878']['gtf_%s' % wildcards['platform']]),
         abundance = config['long_read']['gm12878']['abundance']
     params:
-        max_distance = 50,
-        samples = ['gm12878_1', 'gm12878_2']
+        max_distance = 50
     output:
         overlap = 'data/results/gm12878/overlap/{sample}_overlap_{platform}_annotation.csv'
     script:
         "../common/overlap_talon.py"
+
+
+rule overlap_cage_gm12:
+    input:
+        cage = [
+            config['cage']['gm12878']['rep1'],
+            config['cage']['gm12878']['rep2']
+        ],
+        gtf = (lambda wildcards: config['long_read']
+               ['gm12878']['gtf_%s' % wildcards['platform']]),
+        abundance = config['long_read']['gm12878']['abundance']
+    params:
+        max_distance = 50
+    output:
+        overlap = 'data/results/gm12878/overlap_cage/{sample}_overlap_{platform}_annotation.csv'
+    script:
+        "../common/overlap_cage_talon.py"
+
+
+rule plot_cage_overlap_gm12:
+    input:
+        'data/results/gm12878/overlap_cage/{sample}_overlap_{platform}_annotation.csv'
+    output:
+        'reports/figures/{sample}_overlap_cage_{platform}_annotation.png'
+    script:
+        "../common/plot_fig4.R"

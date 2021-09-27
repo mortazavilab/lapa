@@ -52,7 +52,13 @@ rule all:
         rules.plot_hist_read_count.output,
         rules.site_motif.output,
 
+        expand('data/results/gm12878/overlap_cage/{sample}_overlap_{platform}_annotation.csv',
+               sample='gm12878', platform=['pb']),
+
         expand('reports/figures/{sample}_overlap_{platform}_annotation.png',
+               sample='gm12878', platform=['pb', 'ont', 'pb_cor', 'ont_cor']),
+
+        expand('reports/figures/{sample}_overlap_cage_{platform}_annotation.png',
                sample='gm12878', platform=['pb', 'ont', 'pb_cor', 'ont_cor'])
 
         # config['long_read']['gm12878']['gtf_pb_cor']

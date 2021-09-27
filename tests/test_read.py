@@ -99,8 +99,7 @@ def test_correct_gtf_tes_NBR1(tmp_path):
         df_gtf_sort_corr[df_gtf_sort_corr['Feature'] == 'transcript']['End']
         == df_gtf_sort[df_gtf_sort['Feature'] == 'transcript']['End'])
 
-    _df = df_gtf_corrected[
-        df_gtf_corrected['transcript_id'] == transripts_id + '_0']
+    _df = df_gtf_corrected[df_gtf_corrected['transcript_id'] == transripts_id]
 
     # last exon end and transcript end should be same
     transcript_end = _df.iloc[0]['End']

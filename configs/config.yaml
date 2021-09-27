@@ -78,6 +78,11 @@ long_read:
   wtc11:
     bam: data/resources/wtc11/bam/{encode_id}.bam
 
+cage:
+  gm12878:
+    rep1: data/resources/gm12878/cage/ENCFF016XXM.bed.gz
+    rep2: data/resources/gm12878/cage/ENCFF383NVJ.bed.gz
+
 short_rnaseq:
   fastq: data/resources/short_rnaseq/{sample}/fastq/{encode_id}.fastq.gz
   # polyA_trimmed: data/results/short_rnaseq/{sample}/polyA_trimmed_fastq/{encode_id}.polyA.fastq.gz
