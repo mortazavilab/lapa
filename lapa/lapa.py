@@ -81,7 +81,8 @@ def prepare_alignment(alignment):
 
 
 def lapa(alignment, fasta, annotation, chrom_sizes, output_dir, method=None,
-         min_tail_len=10, min_percent_a=0.9, mapq=10):
+         min_tail_len=10, min_percent_a=0.9, mapq=10,
+         cluster_extent_cutoff=3, cluster_window=25):
 
     output_dir = Path(output_dir)
     output_dir.mkdir(exist_ok=True)
@@ -104,7 +105,9 @@ def lapa(alignment, fasta, annotation, chrom_sizes, output_dir, method=None,
     del df_count
 
     print('Clustering TES and calculating polyA_sites...')
-    df_cluster = TesClustering(fasta).to_df(df_tes)
+    df_cluster = TesClustering(fasta,
+                               extent_cutoff=cluster_extent_cutoff,
+                               window=cluster_window).to_df(df_tes)
     del df_tes
 
     print('Annotating TES cluster...')

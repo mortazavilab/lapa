@@ -4,14 +4,12 @@ import pyranges as pr
 from tqdm import tqdm
 from lapa.utils.io import read_talon_read_annot
 from lapa.cluster import TesClustering
-from lapa.result import LapaResult
 
 
 tqdm.pandas()
 
 
-def read_tes_mapping(df_cluster, read_annot, filter_internal_priming=True,
-                     distance=500):
+def read_tes_mapping(df_cluster, read_annot, distance=1000):
     if type(read_annot) == str:
         df_reads = read_talon_read_annot(read_annot)
     elif type(read_annot) == pd.DataFrame:
@@ -25,11 +23,15 @@ def read_tes_mapping(df_cluster, read_annot, filter_internal_priming=True,
     df_reads['Start'] = df_reads['End'] - 1
     gr_reads = pr.PyRanges(df_reads)
 
-    gr = gr_reads.nearest(pr.PyRanges(df_cluster), how='downstream')
-    df = gr[gr.Distance < distance].df
+    df = gr_reads.nearest(pr.PyRanges(df_cluster), how='downstream',
+                          strandedness='same').df
+    unclustered = df.Distance > distance
+    df.loc[unclustered, 'polyA_site'] = df.loc[unclustered, 'End']
+    # df.loc[unclustered, 'count'] = 1
+
     df['polyA_site'] = df['polyA_site'].astype(int)
 
-    return df[['read_name', 'Chromosome', 'polyA_site', 'Strand', 'Distance']]
+    return df[['read_name', 'Chromosome', 'polyA_site', 'Strand']]
 
 
 def read_tss_read_annot(read_annot):
@@ -45,14 +47,15 @@ def read_tss_read_annot_count(read_annot):
     df['count'] = 1
 
     columns = ['Chromosome', 'Start', 'End', 'Strand']
-    df = df.groupby(columns).agg('sum').reset_index()
+    df = df.groupby(columns).agg('sum')[['count']].reset_index()
     return df
 
 
-def tss_cluster(read_annot, fasta):
+def tss_cluster(read_annot, fasta, extent_cutoff=3):
     df_reads = read_tss_read_annot_count(read_annot)
 
-    tss_clusters = list(TesClustering(fasta).cluster(df_reads))
+    tss_clusters = list(TesClustering(
+        fasta, extent_cutoff=extent_cutoff).cluster(df_reads))
     return pd.DataFrame({
         'Chromosome': [c.Chromosome for c in tss_clusters],
         'Start': [c.Start for c in tss_clusters],
@@ -63,50 +66,63 @@ def tss_cluster(read_annot, fasta):
     })
 
 
-def tss_mapping(df_tss_cluster, read_annot, distance=500):
+def tss_mapping(df_tss_cluster, read_annot, distance=1000):
     df_reads = read_tss_read_annot(read_annot)
     gr_reads = pr.PyRanges(df_reads)
 
-    gr = gr_reads.nearest(pr.PyRanges(df_tss_cluster), how='upstream')
-    df = gr[gr.Distance < distance].df
+    df = gr_reads.nearest(pr.PyRanges(df_tss_cluster), how='upstream').df
+    unclustered = df.Distance > distance
+    df.loc[unclustered, 'start_site'] = df.loc[unclustered, 'End']
+    df.loc[unclustered, 'count'] = 1
+
     df['start_site'] = df['start_site'].astype(int)
 
-    return df[['read_name', 'Chromosome', 'start_site', 'Strand', 'Distance']]
+    return df[['read_name', 'Chromosome', 'start_site', 'Strand']]
 
 
 def _correct_transcript(df):
     df = df.reset_index()
 
-    if all(df['polyA_site'].isna()) and all(df['start_site'].isna()):
-        return df
+    if all(df['polyA_site'].isna()):
+        if 'start_site' in df.columns:
+            if all(df['start_site'].isna()):
+                return df
+        else:
+            return df
 
-    if df.iloc[0]['Strand'] == '+':
-        tss_pos = 'Start'
-        tes_pos = 'End'
-    else:
-        tss_pos = 'End'
-        tes_pos = 'Start'
-
-    # Update transcripts
-    transcript = df['Feature'] == 'transcript'
-
-    polyA_site = df.loc[transcript, 'polyA_site']
-    if not all(polyA_site.isna()):
-        df.loc[transcript, tes_pos] = polyA_site.astype(int)
-    start_site = df.loc[transcript, 'start_site']
-    if not all(start_site.isna()):
-        df.loc[transcript, tss_pos] = start_site.astype(int)
-
-    # Update exons boundries
-    exons = df['Feature'] == 'exon'
-    _df_exon = df[exons]
-    _df_transcript = df[df['Feature'] == 'transcript']
-
+    strand = df.iloc[0]['Strand']
+    _df_exon = df[df['Feature'] == 'exon']
     first_exon = _df_exon['Start'].idxmin()
     last_exon = _df_exon['End'].idxmax()
 
-    df.loc[first_exon, 'Start'] = _df_transcript.iloc[0]['Start']
-    df.loc[last_exon, 'End'] = _df_transcript.iloc[0]['End']
+    transcript = df['Feature'] == 'transcript'
+    min_exon_len = 25
+
+    # Update transcripts
+    polyA_site = df.loc[transcript, 'polyA_site']
+    if not all(polyA_site.isna()):
+        polyA_site = polyA_site.astype(int)[0]
+        if strand == '+':
+            if df.loc[last_exon, 'Start'] < polyA_site - min_exon_len:
+                df.loc[last_exon, 'End'] = polyA_site
+                df.loc[transcript, 'End'] = polyA_site
+        elif strand == '-':
+            if polyA_site < df.loc[first_exon, 'End'] - min_exon_len:
+                df.loc[first_exon, 'Start'] = polyA_site
+                df.loc[transcript, 'Start'] = polyA_site
+
+    if 'start_site' in df.columns:
+        start_site = df.loc[transcript, 'start_site']
+        if not all(start_site.isna()):
+            start_site = start_site.astype(int)[0]
+            if strand == '+':
+                if start_site < df.loc[first_exon, 'End'] - min_exon_len:
+                    df.loc[first_exon, 'Start'] = start_site
+                    df.loc[transcript, 'Start'] = start_site
+            elif strand == '-':
+                if df.loc[last_exon, 'Start'] < start_site - min_exon_len:
+                    df.loc[last_exon, 'End'] = start_site
+                    df.loc[transcript, 'End'] = start_site
 
     return df
 
@@ -124,13 +140,24 @@ def _correct_gene(df_transcript, df_gene):
     return df_join.reset_index()
 
 
+def _sort_gtf_key(col):
+    if col.name == 'End':
+        return -col
+    elif col.name == 'exon_number':
+        return col.astype(float)
+    else:
+        return col
+
+
 def sort_gtf(df):
     return df.sort_values([
-        'Chromosome', 'gene_id', 'transcript_id',  'Start', 'End'
-    ], na_position='first', key=lambda x: x if x.name != 'End' else -x)
+        'Chromosome', 'gene_id', 'transcript_id', 'exon_number',
+        'Start', 'End'
+    ], na_position='first', key=_sort_gtf_key)
 
 
 def _transcript_mapping(df_read_tes, df_read_transcript, site):
+
     df = df_read_tes.set_index('read_name').join(
         df_read_transcript.set_index('read_name')
     ).reset_index()
@@ -168,18 +195,26 @@ def correct_gtf_tes(df_read_tes, df_read_transcript, gtf, gtf_output,
                     df_read_tss=None):
 
     df_tes = tes_transcript_mapping(df_read_tes, df_read_transcript)
-    df_tss = tss_transcript_mapping(df_read_tss, df_read_transcript)
+
+    if df_read_tss is not None:
+        df_tss = tss_transcript_mapping(df_read_tss, df_read_transcript)
 
     df_gtf = pr.read_gtf(gtf).df
     df_transcript = df_gtf[df_gtf['Feature'].isin({'transcript', 'exon'})]
+
     df_transcript = df_transcript.set_index('transcript_id') \
-                                 .join(df_tes, how='left') \
-                                 .join(df_tss, how='left')
+                                 .join(df_tes, how='left')
+
+    if df_read_tss is not None:
+        df_transcript = df_transcript.join(df_tss, how='left')
 
     df_transcript_cor = df_transcript.groupby('transcript_id').progress_apply(
         _correct_transcript).reset_index(drop=True)
 
     del df_transcript_cor['polyA_site']
+
+    if df_read_tss is not None:
+        del df_transcript_cor['start_site']
 
     df_gene_cor = _correct_gene(df_transcript_cor,
                                 df_gtf[df_gtf['Feature'] == 'gene'])

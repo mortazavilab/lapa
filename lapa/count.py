@@ -114,11 +114,17 @@ class TailTesCounter(BaseTesCounter):
         """Iterates polyA reads and polyA_site based on polyA filters.
         """
         for read in tqdm(self.bam):
+
+            if read.is_secondary:
+                continue
+
+            if read.mapping_quality < self.mapq:
+                continue
+
             polyA_site, tail_len, percent_a = self.detect_polyA_tail(read)
 
             if (tail_len >= self.min_tail_len) \
-               and (percent_a >= self.min_percent_a) \
-               and (read.mapping_quality >= self.mapq):
+               and (percent_a >= self.min_percent_a):
                 yield read, polyA_site, tail_len, percent_a
 
     def save_tailed_reads(self, output_bam):

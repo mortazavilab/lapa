@@ -78,10 +78,34 @@ long_read:
   wtc11:
     bam: data/resources/wtc11/bam/{encode_id}.bam
 
+    tool_gtf: data/resources/wtc11/correction/{tool}/human/WTC11/{platform}/{library_prep}/{method}/human_WTC11_{library_prep}_{platform}_{method}_{tool}.gtf
+    abundance: data/resources/wtc11/correction/talon/human/WTC11/{platform}/{library_prep}/{method}/human_WTC11_{library_prep}_{platform}_{method}_talon_abundance_filtered.tsv
+   
+    platform:
+      PacBio:
+        - cDNA
+        - CapTrap
+      ONT:
+        - cDNA
+        - dRNA
+        - R2C2
+        # - CapTrap
+
+polyA_seq:
+  wtc11:
+    - data/resources/wtc11/polyA/GSM3375361.clusters.2.0.GRCh38.96.bed.gz
+    - data/resources/wtc11/polyA/GSM3375362.clusters.2.0.GRCh38.96.bed.gz
+    - data/resources/wtc11/polyA/GSM3375363.clusters.2.0.GRCh38.96.bed.gz
+    - data/resources/wtc11/polyA/GSM3375364.clusters.2.0.GRCh38.96.bed.gz
+
 cage:
   gm12878:
     rep1: data/resources/gm12878/cage/ENCFF016XXM.bed.gz
     rep2: data/resources/gm12878/cage/ENCFF383NVJ.bed.gz
+
+  h1:
+    rep1: data/resources/h1/cage/ENCFF084VUM.bed.gz
+    rep2: data/resources/h1/cage/ENCFF604PAM.bed.gz
 
 short_rnaseq:
   fastq: data/resources/short_rnaseq/{sample}/fastq/{encode_id}.fastq.gz

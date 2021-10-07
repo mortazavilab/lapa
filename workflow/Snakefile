@@ -41,6 +41,7 @@ include: "quantseq3/Snakefile"
 include: "align_short_rnaseq/Snakefile"
 include: "gm12878/Snakefile"
 include: "c2c12/Snakefile"
+include: "wtc11/Snakefile"
 include: "benchmark/Snakefile"
 include: "plot/Snakefile"
 
@@ -59,7 +60,29 @@ rule all:
                sample='gm12878', platform=['pb', 'ont', 'pb_cor', 'ont_cor']),
 
         expand('reports/figures/{sample}_overlap_cage_{platform}_annotation.png',
-               sample='gm12878', platform=['pb', 'ont', 'pb_cor', 'ont_cor'])
+               sample='gm12878', platform=['pb', 'ont', 'pb_cor', 'ont_cor']),
+        [
+            expand(
+                'reports/figures/overlap/{tool}_{library_prep}_{platform}_{method}_annotation_cage_wtc11.png',
+                tool=['talon', 'talon_lapa'],
+                platform=platform,
+                library_prep=config['long_read']['wtc11']['platform'][platform],
+                method=['long'],  # , 'short'
+                sample='wtc11'
+            )
+            for platform in config['long_read']['wtc11']['platform']
+        ],
+        [
+            expand(
+                'reports/figures/overlap/{tool}_{library_prep}_{platform}_{method}_annotation_wtc11.png',
+                tool=['talon', 'talon_lapa'],
+                platform=platform,
+                library_prep=config['long_read']['wtc11']['platform'][platform],
+                method=['long'],  # , 'short'
+                sample='wtc11'
+            )
+            for platform in config['long_read']['wtc11']['platform']
+        ]
 
         # config['long_read']['gm12878']['gtf_pb_cor']
 

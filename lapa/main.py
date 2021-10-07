@@ -14,8 +14,11 @@ from lapa.lapa import lapa
 @click.option('--min_tail_len', default=10, type=int)
 @click.option('--min_percent_a', default=0.9, type=float)
 @click.option('--mapq', default=10, type=int)
+@click.option('--cluster_extent_cutoff', default=3, type=int)
+@click.option('--cluster_window', default=25, type=int)
 def cli(alignment, fasta, annotation, chrom_sizes, output_dir, method,
-        min_tail_len=10, min_percent_a=0.9, mapq=10):
+        min_tail_len=10, min_percent_a=0.9, mapq=10,
+        cluster_extent_cutoff=3, cluster_window=25):
     lapa(alignment, fasta, annotation, chrom_sizes, output_dir, method,
          min_tail_len=min_tail_len, min_percent_a=min_percent_a, mapq=mapq)
 
