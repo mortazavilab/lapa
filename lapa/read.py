@@ -25,13 +25,19 @@ def read_tes_mapping(df_cluster, read_annot, distance=1000):
 
     df = gr_reads.nearest(pr.PyRanges(df_cluster), how='downstream',
                           strandedness='same').df
-    unclustered = df.Distance > distance
+    df = df[df.Distance < distance]
+
+    df = df_reads.set_index('read_name').join(
+        df.set_index('read_name')[['polyA_site']])
+
+    unclustered = df['polyA_site'].isna()
     df.loc[unclustered, 'polyA_site'] = df.loc[unclustered, 'End']
     # df.loc[unclustered, 'count'] = 1
 
     df['polyA_site'] = df['polyA_site'].astype(int)
 
-    return df[['read_name', 'Chromosome', 'polyA_site', 'Strand']]
+    return df.reset_index()[['read_name', 'Chromosome',
+                             'polyA_site', 'Strand']]
 
 
 def read_tss_read_annot(read_annot):
@@ -81,7 +87,12 @@ def tss_mapping(df_tss_cluster, read_annot, distance=1000):
 
 
 def _correct_transcript(df):
-    df = df.reset_index()
+    df = df.reset_index(drop=True)
+
+    # transcript_id = df.iloc[0].transcript_id
+    # if '_' in transcript_id:
+    #     import pdb
+    #     pdb.set_trace()
 
     if all(df['polyA_site'].isna()):
         if 'start_site' in df.columns:
@@ -156,7 +167,8 @@ def sort_gtf(df):
     ], na_position='first', key=_sort_gtf_key)
 
 
-def _transcript_mapping(df_read_tes, df_read_transcript, site):
+def _transcript_mapping(df_read_tes, df_read_transcript, site, multiple=False,
+                        multiple_threshold=25, minor_threshold=0.5):
 
     df = df_read_tes.set_index('read_name').join(
         df_read_transcript.set_index('read_name')
@@ -167,24 +179,39 @@ def _transcript_mapping(df_read_tes, df_read_transcript, site):
         count=('read_name', 'count')).reset_index(site)
 
     df = df.join(df.groupby(['transcript_id', 'Strand'])[['count']].agg('max')
-                 .rename(columns={'count': 'threshold'}) * 0.5)
+                 .rename(columns={'count': 'threshold'}) * minor_threshold)
 
     df = df[df['count'] > df['threshold']].reset_index()
+
+    if multiple:
+        # Update transcript ids (create new transcript isoforms) by adding
+        # suffix to transcript id if number of
+        transcript_suffix = df.groupby('transcript_id').cumcount().astype(
+            str).radd('_').mask(df['count'] < multiple_threshold, '')
+        df['transcript_id'] += transcript_suffix
+
     return df
 
 
-def tes_transcript_mapping(df_read_tes, df_read_transcript):
+def tes_transcript_mapping(df_read_tes, df_read_transcript, multiple=True,
+                           multiple_threshold=25, minor_threshold=0.5):
     site = 'polyA_site'
-    df = _transcript_mapping(df_read_tes, df_read_transcript, site)
+
+    df = _transcript_mapping(
+        df_read_tes, df_read_transcript, site,
+        multiple=multiple, multiple_threshold=multiple_threshold,
+        minor_threshold=minor_threshold)
     return pd.concat([
         df[df['Strand'] == '-'].groupby('transcript_id')[[site]].agg('min'),
         df[df['Strand'] == '+'].groupby('transcript_id')[[site]].agg('max')
     ])
 
 
-def tss_transcript_mapping(df_read_tss, df_read_transcript):
+def tss_transcript_mapping(df_read_tss, df_read_transcript,
+                           minor_threshold=0.5):
     site = 'start_site'
-    df = _transcript_mapping(df_read_tss, df_read_transcript, site)
+    df = _transcript_mapping(df_read_tss, df_read_transcript, site,
+                             multiple=False, minor_threshold=minor_threshold)
     return pd.concat([
         df[df['Strand'] == '-'].groupby('transcript_id')[[site]].agg('max'),
         df[df['Strand'] == '+'].groupby('transcript_id')[[site]].agg('min')
@@ -194,7 +221,10 @@ def tss_transcript_mapping(df_read_tss, df_read_transcript):
 def correct_gtf_tes(df_read_tes, df_read_transcript, gtf, gtf_output,
                     df_read_tss=None):
 
-    df_tes = tes_transcript_mapping(df_read_tes, df_read_transcript)
+    df_tes = tes_transcript_mapping(
+        df_read_tes, df_read_transcript).reset_index()
+    df_tes['_transcript_id'] = df_tes['transcript_id'].str.split(
+        '_').str.get(0)
 
     if df_read_tss is not None:
         df_tss = tss_transcript_mapping(df_read_tss, df_read_transcript)
@@ -203,7 +233,7 @@ def correct_gtf_tes(df_read_tes, df_read_transcript, gtf, gtf_output,
     df_transcript = df_gtf[df_gtf['Feature'].isin({'transcript', 'exon'})]
 
     df_transcript = df_transcript.set_index('transcript_id') \
-                                 .join(df_tes, how='left')
+                                 .join(df_tes.set_index('_transcript_id'), how='left')
 
     if df_read_tss is not None:
         df_transcript = df_transcript.join(df_tss, how='left')
