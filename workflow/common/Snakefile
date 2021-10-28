@@ -1,7 +1,9 @@
-
 rule chrom_sizes:
     input:
         fasta = fasta
+    threads: 1
+    resources:
+        mem_gb = 4
     output:
         chrom_sizes = config['common']['chrom_sizes']
     shell:
@@ -15,10 +17,19 @@ rule site_motif:
         "polyA_motif.py"
 
 
-rule gtf_tes:
-    input:
-        gtf = gtf
-    output:
-        tes = config['annotation']['tes']
-    script:
-        "gtf_tes.py"
+# rule gtf_tes:
+#     input:
+#         gtf = gtf
+#     output:
+#         tes = config['annotation']['tes']
+#     script:
+#         "gtf_tes.py"
+
+
+# rule gene_name_id_mapping:
+#     input:
+#         gtf = gtf
+#     output:
+#         mapping = config['gene_id_name_mapping']
+#     script:
+#         "gene_id_name_mapping.py"

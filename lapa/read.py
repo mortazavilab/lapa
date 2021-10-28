@@ -168,7 +168,7 @@ def sort_gtf(df):
 
 
 def _transcript_mapping(df_read_tes, df_read_transcript, site, multiple=False,
-                        multiple_threshold=25, minor_threshold=0.5):
+                        multiple_threshold=10, minor_threshold=0.5):
 
     df = df_read_tes.set_index('read_name').join(
         df_read_transcript.set_index('read_name')
@@ -194,7 +194,7 @@ def _transcript_mapping(df_read_tes, df_read_transcript, site, multiple=False,
 
 
 def tes_transcript_mapping(df_read_tes, df_read_transcript, multiple=True,
-                           multiple_threshold=25, minor_threshold=0.5):
+                           multiple_threshold=10, minor_threshold=0.5):
     site = 'polyA_site'
 
     df = _transcript_mapping(

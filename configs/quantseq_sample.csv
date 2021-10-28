@@ -1,0 +1,13 @@
+genome,sample,rep,fastq
+hg38,H1mix,1,data/resources/quantseq/fastq/ENC4_104_S1_R1.fastq.gz
+hg38,H1mix,2,data/resources/quantseq/fastq/ENC4_105_S2_R1.fastq.gz
+hg38,H1mix,3,data/resources/quantseq/fastq/ENC4_106_S3_R1.fastq.gz
+hg38,H1mix,4,data/resources/quantseq/fastq/ENC4_107_S4_R1.fastq.gz
+hg38,H1mix,5,data/resources/quantseq/fastq/ENC4_108_S5_R1.fastq.gz
+hg38,H1mix,6,data/resources/quantseq/fastq/ENC4_109_S6_R1.fastq.gz
+mm39,ES,1,data/resources/quantseq/fastq/ES1_S10_R1.fastq.gz
+mm39,ES,2,data/resources/quantseq/fastq/ES2_S11_R1.fastq.gz
+mm39,ES,3,data/resources/quantseq/fastq/ES3_S12_R1.fastq.gz
+hg38,WTC11,1,data/resources/quantseq/fastq/WTC11_1_S7_R1.fastq.gz
+hg38,WTC11,2,data/resources/quantseq/fastq/WTC11_2_S8_R1.fastq.gz
+hg38,WTC11,3,data/resources/quantseq/fastq/WTC11_3_S9_R1.fastq.gz

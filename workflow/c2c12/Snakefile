@@ -48,9 +48,9 @@ rule split_c2c12_read_annot:
 rule lapa_longreads_c2c12:
     input:
         aligment = config['c2c12']['read_annot_bulk'],
-        fasta = config['human']['fasta'],
-        gtf = config['human']['gtf'],
-        chrom_sizes = config['common']['chrom_sizes'].format(specie='human')
+        fasta = config['mouse']['fasta'],
+        gtf = config['mouse']['gtf'],
+        chrom_sizes = config['common']['chrom_sizes'].format(specie='mouse')
     threads: 1
     resources:
         mem_gb = 16
@@ -65,6 +65,34 @@ rule lapa_longreads_c2c12:
         --method end \
         --output_dir {output}"
 
+
+rule differential_apa_c2c12:
+    input:
+        long_read = config['lapa']['long_rna_dir'].format(sample='c2c12'),
+        # quantseq = config['lapa']['quantseq_dir'].format(sample='c2c12'),
+        mapping = config['gene_id_name_mapping'].format(specie='mouse')
+    threads: 1
+    resources:
+        mem_gb = 16
+    output:
+        volcona_plot = '../../reports/figures/c2c12_volcona.png',
+        heatmap_plot = '../../reports/figures/c2c12_heatmap.png',
+        sig_csv = config['c2c12']['sig']
+    notebook:
+        "./differential_apa.ipynb"
+
+
+rule differential_apa_abundance_c2c12:
+    input:
+        sig_csv = config['c2c12']['sig'],
+        abundance = config['c2c12']['abundance']
+    threads: 1
+    resources:
+        mem_gb = 16
+    output:
+        boxplot = '../../reports/figures/c2c12_boxplot_gene.png',
+    notebook:
+        "./apa_differetial_gene_exp.ipynb"
 
 # rule lapa_c2c12_longreads:
 #     input:
