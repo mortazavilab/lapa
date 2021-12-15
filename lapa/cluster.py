@@ -149,7 +149,7 @@ class TesClustering:
     def to_bed(self, df_tes, bed_path):
         with open(bed_path, 'w') as f:
             for cluster in self.cluster(df_tes):
-                f.write(cluster.bed_line(fasta))
+                f.write(cluster.bed_line(self.fasta))
 
     def to_df(self, df_tes):
         return pd.DataFrame([

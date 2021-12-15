@@ -1,14 +1,12 @@
 import pandas as pd
 
 
-df_quantseq = pd.read_csv('configs/quantseq_sample.csv')
-
-
 def star_index(wildcards):
     return config['genome']['star_index'][genome(wildcards)]
 
 
 def fastq_quantseq(wildcards):
+    df_quantseq = pd.read_csv('configs/quantseq_sample.csv')
     _df = df_quantseq[
         (df_quantseq['sample'] == wildcards.sample)
         & (df_quantseq['rep'] == int(wildcards.rep))
@@ -116,15 +114,15 @@ rule lapa_quantseq:
 
 rule compare_lapa_polya_atlas:
     input:
-        lapa_tail = config['lapa']['lapa_dir'].format(
-            sample='ES', count_read='tail', method='quantseq'),
         lapa_end = config['lapa']['lapa_dir'].format(
-            sample='ES', count_read='end', method='quantseq'),
+            sample='{sample}', count_read='end', method='quantseq'),
         polya_atlas = expand(config['quantseq']['polya_atlas'],
-                             rep=[1, 2, 3], sample='ES')
+                             rep=[1, 2, 3], sample='{sample}')
+        # lapa_tail = config['lapa']['lapa_dir'].format(
+        #     sample='ES', count_read='tail', method='quantseq'),
     output:
-        polya_enrichment = 'reports/figures/polya_enrichment.png',
-        polya_rep = 'reports/figures/polya_replication.png'
+        polya_enrichment = 'reports/figures/{sample}/polya_enrichment.png',
+        polya_rep = 'reports/figures/{sample}/polya_replication.png'
     notebook:
         "./workflow/quantseq3/compare_polya_atlas.ipynb"
 

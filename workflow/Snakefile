@@ -39,19 +39,24 @@ def chrom_sizes(wildcards):
 
 include: "common/Snakefile"
 include: "quantseq3/Snakefile"
+include: "wtc11/Snakefile"
+
 # include: "read3/Snakefile"
 # include: "c2c12/Snakefile"
 # include: "pilot/Snakefile"
 
 rule all:
     input:
-        expand(config['lapa']['lapa_dir'], sample=['ES'],
-               method='quantseq', count_read=['end', 'tail']),
-        expand([
-            'data/results/quantseq/count/quantseq_{sample}_{rep}.txt',
-            'data/results/quantseq/count_polyA/quantseq_{sample}_{rep}.txt'],
-            rep=['1', '2', '3'], sample=['ES', 'WTC11']
-        ),
+        expand(config['lapa']['lapa_dir'], sample=['WTC11'],
+               method='quantseq', count_read=['end', 'tail'])
+        # 'reports/figures/wtc11/ont_rep1_tail_len_dist.png'
+
+        # expand([
+        #     'data/results/quantseq/count/quantseq_{sample}_{rep}.txt',
+        #     'data/results/quantseq/count_polyA/quantseq_{sample}_{rep}.txt'],
+        #     rep=['1', '2', '3'], sample=['WTC11']
+        # ),
+        
         # expand(
         #     'data/results/quantseq/count/quantseq_{sample}_{rep}.txt',
         #     rep=['1', '2', '3'], sample=['ES', 'WTC11']
