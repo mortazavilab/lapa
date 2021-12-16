@@ -48,7 +48,7 @@ include: "wtc11/Snakefile"
 rule all:
     input:
         expand(config['lapa']['lapa_dir'], sample=['WTC11'],
-               method='quantseq', count_read=['end', 'tail'])
+               method='quantseq', count_read=['end']) # , 'tail'
         # 'reports/figures/wtc11/ont_rep1_tail_len_dist.png'
 
         # expand([

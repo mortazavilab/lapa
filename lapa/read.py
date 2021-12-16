@@ -6,9 +6,6 @@ from lapa.utils.io import read_talon_read_annot
 from lapa.cluster import TesClustering
 
 
-tqdm.pandas()
-
-
 def read_tes_mapping(df_cluster, read_annot, distance=1000):
     if type(read_annot) == str:
         df_reads = read_talon_read_annot(read_annot)
@@ -238,6 +235,7 @@ def correct_gtf_tes(df_read_tes, df_read_transcript, gtf, gtf_output,
     if df_read_tss is not None:
         df_transcript = df_transcript.join(df_tss, how='left')
 
+    tqdm.pandas()
     df_transcript_cor = df_transcript.groupby('transcript_id').progress_apply(
         _correct_transcript).reset_index(drop=True)
 
