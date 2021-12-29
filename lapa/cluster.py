@@ -18,18 +18,30 @@ class Cluster:
 
     def extend(self, end, count):
         self.End = end
-        self.counts.append(count)
+        self.counts.append((end, count))
 
     @property
     def total_count(self):
-        return sum(self.counts)
+        return sum(i for _, i in self.counts)
 
     def __len__(self):
         return self.End - self.Start
 
+    @staticmethod
+    def _count_arr(counts):
+        counts = sorted(counts)
+        min_pos = counts[0][0]
+        max_pos = counts[-1][0]
+        count_arr = [0] * (max_pos - min_pos + 1)
+        for pos, c in counts:
+            count_arr[pos - min_pos] = c
+        return count_arr
+
     def polyA_site(self, window=5, std=1):
         pad_size = window // 2
-        counts = pad_series(self.counts, pad_size=pad_size)
+        counts = self._count_arr(self.counts)
+        # counts = pd.Series(dict(self.counts)).sort_index()
+        counts = pad_series(counts, pad_size=pad_size)
         moving_sum = counts.rolling(window, center=True,
                                     win_type='gaussian').sum(std=std)
         return self.Start + moving_sum.idxmax() + 1
@@ -83,7 +95,7 @@ class Cluster:
         return f'{row["Chromosome"]}\t{row["Start"]}\t{row["End"]}\t{row["polyA_site"]}\t{row["coubt"]}\t{row["Strand"]}\t{row["fracA"]}\t{row["signal"]}\n'
 
     def to_dict(self, fasta):
-        total = sum(self.counts)
+        total = self.total_count
         polyA = self.polyA_site()
         fracA = self.fraction_A(fasta, polyA)
         signal_seq_loc, signal_seq = self.polyA_signal_sequence(fasta, polyA)

@@ -1,16 +1,11 @@
 from pathlib import Path
-import numpy as np
 import pandas as pd
 import pyranges as pr
-from tqdm import tqdm
-from kipoiseq import Interval
-from kipoiseq.extractors import FastaStringExtractor
-from lapa.utils.io import read_talon_read_annot_count, bw_from_pyranges, \
-    read_bam_ends, cluster_col_order, sample_col_order, read_sample_csv
-from lapa.utils.common import pad_series, polyA_signal_seqs
+from lapa.cluster import TesClustering
 from lapa.genomic_regions import GenomicRegions
 from lapa.count import count_tes_bam_samples, agg_tes_samples
-from lapa.cluster import TesClustering
+from lapa.utils.io import read_talon_read_annot_count, \
+    cluster_col_order, sample_col_order
 
 
 def tes_cluster_annotate(df_cluster, annotation):

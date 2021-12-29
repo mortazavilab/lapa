@@ -1,0 +1,18 @@
+def bams(wildcards):
+    __import__("pdb").set_trace()
+
+    return
+
+
+rule lapa_long_reads_samples:
+    input:
+        bams = bams
+    output:
+        config['lapa']['samples']
+    run:
+        with open(output['csv'], 'w') as f:
+            f.write('sample,path\n')
+            for i in input['bams']:
+                __import__("pdb").set_trace()
+
+                f.write(f'gm12878_{i},{bam.format(rep=i)}\n')

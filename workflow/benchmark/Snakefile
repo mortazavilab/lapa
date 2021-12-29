@@ -1,16 +1,20 @@
 rule benchmark_lapa:
     input:
-        short_rna = config['lapa']['lapa_dir'].format(
-            sample='gm12878', dataset='short_rna_lapa'),
         quantseq = config['lapa']['lapa_dir'].format(
-            sample='gm12878', dataset='quantseq_lapa'),
-        long_rna_gm12 = config['lapa']['lapa_dir'].format(
-            sample='gm12878', dataset='long_rna_lapa')
+            sample='WTC11', method='quantseq', count_read='end'),
+        # short_rna = config['lapa']['lapa_dir'].format(
+        #     sample='wtc11', dataset='short_rna_lapa'),
+        cdna_ont = config['lapa']['lapa_dir'].format(
+            sample='WTC11', method='cDNA-ONT', count_read='tail'),
+        cdna_pacbio = config['lapa']['lapa_dir'].format(
+            sample='WTC11', method='cDNA-PacBio', count_read='tail'),
+        drna_ont = config['lapa']['lapa_dir'].format(
+            sample='WTC11', method='dRNA-ONT', count_read='tail')
     output:
-        rep1 = 'reports/figures/gm12878_rep1_pr_curve.png',
-        rep2 = 'reports/figures/gm12878_rep2_pr_curve.png'
+        rep1 = 'reports/figures/wtc11_rep1_pr_curve.png',
+        rep2 = 'reports/figures/wtc11_rep2_pr_curve.png'
     notebook:
-        'benchmark_lapa.ipynb'
+        './benchmark_lapa.ipynb'
 
 
 # rule overlap_gm12_pc_talon:

@@ -17,6 +17,27 @@ rule site_motif:
         "polyA_motif.py"
 
 
+rule download_encode_bam:
+    resources:
+        mem_gb = 4
+    output:
+        bam = config['encode']['bam']
+    shell:
+        "wget https://www.encodeproject.org/files/{wildcards.encode_id}/@@download/{wildcards.encode_id}.bam -O {output}"
+
+
+rule bam_read_count:
+    input:
+        bam = config['encode']['bam']
+    output:
+        txt = config['encode']['bam_read_count']
+    threads: 1
+    resources:
+        mem_gb = 4
+    shell:
+        "samtools view -F 4 -c {input.bam} > {output.txt}"
+
+
 # rule gtf_tes:
 #     input:
 #         gtf = gtf

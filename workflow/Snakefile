@@ -1,10 +1,15 @@
+import pandas as pd
+
 configfile: "configs/config.yaml"
+
+
+df_lrgasp = pd.read_csv(config['lrgasp']['config'], sep='\t')
 
 
 def genome(wildcards):
     if 'genome' in wildcards.keys():
         return wildcards.genome
-    
+
     if wildcards.sample == 'ES':
         return 'mm39'
     elif wildcards.sample == 'WTC11':
@@ -29,6 +34,13 @@ def chrom_sizes(wildcards):
     return config['common']['chrom_sizes'].format(genome=genome(wildcards))
 
 
+df_lrgasp = df_lrgasp[
+    (df_lrgasp['file_contents'] == 'reads') &
+    (df_lrgasp['library_prep'] == 'dRNA') &
+    (df_lrgasp['sample'] == 'WTC11')
+]
+
+
 # def read_annot(wildcards):
 #     if wildcards.sample == 'gm12878':
 #         return config['pilot']['read_annot']
@@ -38,17 +50,26 @@ def chrom_sizes(wildcards):
 #         raise('readannot is not defined for `%s`' % wildcards.sample)
 
 include: "common/Snakefile"
-include: "quantseq3/Snakefile"
-include: "wtc11/Snakefile"
+include: "long_reads/Snakefile"
 
+# include: "quantseq3/Snakefile"
+# include: "wtc11/Snakefile"
+# include: "benchmark/Snakefile"
 # include: "read3/Snakefile"
 # include: "c2c12/Snakefile"
 # include: "pilot/Snakefile"
 
+
 rule all:
     input:
-        expand(config['lapa']['lapa_dir'], sample=['WTC11'],
-               method='quantseq', count_read=['end']) # , 'tail'
+        expand(config['lapa']['samples'],
+               sample='WTC11',
+               library_prep='dRNA',
+               platform='ONT')
+
+        # expand(config['lapa']['lapa_dir'], sample=['WTC11'],
+        #        method='quantseq', count_read=['end'])
+        # , 'tail'
         # 'reports/figures/wtc11/ont_rep1_tail_len_dist.png'
 
         # expand([
@@ -56,7 +77,7 @@ rule all:
         #     'data/results/quantseq/count_polyA/quantseq_{sample}_{rep}.txt'],
         #     rep=['1', '2', '3'], sample=['WTC11']
         # ),
-        
+
         # expand(
         #     'data/results/quantseq/count/quantseq_{sample}_{rep}.txt',
         #     rep=['1', '2', '3'], sample=['ES', 'WTC11']

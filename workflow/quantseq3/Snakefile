@@ -114,10 +114,13 @@ rule lapa_quantseq:
 
 rule compare_lapa_polya_atlas:
     input:
-        lapa_end = config['lapa']['lapa_dir'].format(
-            sample='{sample}', count_read='end', method='quantseq'),
+        lapa_end = 'data/results/lapa/WTC11/quantseq_end/',
         polya_atlas = expand(config['quantseq']['polya_atlas'],
                              rep=[1, 2, 3], sample='{sample}')
+
+        # config['lapa']['lapa_dir'].format(
+        #     sample='{sample}', count_read='end', method='quantseq'),
+
         # lapa_tail = config['lapa']['lapa_dir'].format(
         #     sample='ES', count_read='tail', method='quantseq'),
     output:
