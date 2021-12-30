@@ -40,9 +40,9 @@ rule bam_read_count:
 
 rule utr_fix:
     input:
-        gtf = config['genome']['gtf_raw']
+        gtf = 'data/resources/common/{gtf}.gtf'
     output:
-        gtf = config['genome']['gtf']
+        gtf = 'data/resources/common/{gtf}.utr_fix.gtf'
     shell:
         "gencode_utr_fix --input_gtf {input.gtf} --output_gtf {output.gtf}"
 
