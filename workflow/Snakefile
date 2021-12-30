@@ -34,11 +34,11 @@ def chrom_sizes(wildcards):
     return config['common']['chrom_sizes'].format(genome=genome(wildcards))
 
 
-df_lrgasp = df_lrgasp[
-    (df_lrgasp['file_contents'] == 'reads') &
-    (df_lrgasp['library_prep'] == 'dRNA') &
-    (df_lrgasp['sample'] == 'WTC11')
-]
+# df_lrgasp = df_lrgasp[
+#     (df_lrgasp['file_contents'] == 'reads') &
+#     (df_lrgasp['library_prep'] == 'dRNA') &
+#     (df_lrgasp['sample'] == 'WTC11')
+# ]
 
 
 # def read_annot(wildcards):
@@ -51,93 +51,21 @@ df_lrgasp = df_lrgasp[
 
 include: "common/Snakefile"
 include: "long_reads/Snakefile"
+include: "benchmark/Snakefile"
 
 # include: "quantseq3/Snakefile"
 # include: "wtc11/Snakefile"
-# include: "benchmark/Snakefile"
 # include: "read3/Snakefile"
 # include: "c2c12/Snakefile"
 # include: "pilot/Snakefile"
 
+pb_library_prep = ['cDNA', 'CapTrap']
+ont_library_prep = ['cDNA', 'dRNA', 'CapTrap', 'R2C2']
+
 
 rule all:
     input:
-        expand(config['lapa']['samples'],
-               sample='WTC11',
-               library_prep='dRNA',
-               platform='ONT')
-
-        # expand(config['lapa']['lapa_dir'], sample=['WTC11'],
-        #        method='quantseq', count_read=['end'])
-        # , 'tail'
-        # 'reports/figures/wtc11/ont_rep1_tail_len_dist.png'
-
-        # expand([
-        #     'data/results/quantseq/count/quantseq_{sample}_{rep}.txt',
-        #     'data/results/quantseq/count_polyA/quantseq_{sample}_{rep}.txt'],
-        #     rep=['1', '2', '3'], sample=['WTC11']
-        # ),
-
-        # expand(
-        #     'data/results/quantseq/count/quantseq_{sample}_{rep}.txt',
-        #     rep=['1', '2', '3'], sample=['ES', 'WTC11']
-        # )
-        # config['lapa']['long_rna_dir'].format(sample='pilot')
-        # volcona_plot = '../../reports/figures/c2c12_volcona.png',
-        # heatmap_plot = '../../reports/figures/c2c12_heatmap.png',
-
-        # config['lapa']['long_rna_dir'].format(sample='c2c12')
-
-        # config['lapa']['quantseq_dir'].format(sample='c2c12'),
-
-        # figure-1
-        # rules.read_nums_datasets.output,
-        # rules.plot_hist_read_count.output,
-        # rules.site_motif.output,
-
-        # expand('data/results/gm12878/overlap_cage/{sawmple}_overlap_{platform}_annotation.csv',
-        #       sample='gm12878', platform=['pb']),
-
-        # expand('reports/figures/{sample}_overlap_{platform}_annotation.png',
-        #       sample='gm12878', platform=['pb', 'ont', 'pb_cor', 'ont_cor']),
-
-        # expand('reports/figures/{sample}_overlap_cage_{platform}_annotation.png',
-        #       sample='gm12878', platform=['pb', 'ont', 'pb_cor', 'ont_cor']),
-
-    # [
-    #     expand(
-    #         'reports/figures/overlap/{tool}_{library_prep}_{platform}_{method}_annotation_cage_wtc11.png',
-    #         tool=['talon', 'talon_lapa'],
-    #         platform=platform,
-    #         library_prep=config['long_read']['wtc11']['platform'][platform],
-    #         method=['long'],  # , 'short'
-    #         sample='wtc11'
-    #     )
-    #     for platform in config['long_read']['wtc11']['platform']
-    # ],
-    # [
-    #     expand(
-    #         'reports/figures/overlap/{tool}_{library_prep}_{platform}_{method}_annotation_wtc11.png',
-    #         tool=['talon', 'talon_lapa'],
-    #         platform=platform,
-    #         library_prep=config['long_read']['wtc11']['platform'][platform],
-    #         method=['long'],  # , 'short'
-    #         sample='wtc11'
-    #     )
-    #     for platform in config['long_read']['wtc11']['platform']
-    # ]
-
-    # config['long_read']['gm12878']['gtf_pb_cor']
-
-    # expand(rules.count_gm12_pacbio.output,
-    #        encode_id=config['long_read']['gm12878']['encode_id'])
-
-    # expand(rules.merge_short_reads.output, sample='gm12878')
-
-    # expand(config['lapa']['quantseq_dir'], sample=['gm12878']),
-    # expand(config['lapa']['long_rna_dir'], sample=['gm12878']),
-    # expand(config['lapa']['short_rna_dir'], sample=['gm12878']),
-    # expand(config['lapa']['read3_dir'], sample=['c2c12']),
-    # expand(config['lapa']['long_rna_dir'], sample=['c2c12']),
-
-    # config['c2c12']['read_annot_bulk']
+        expand(config['lapa']['lapa_dir'], sample='WTC11', platform=['PacBio'],
+               counting=['end', 'tail'], library_prep=pb_library_prep),
+        expand(config['lapa']['lapa_dir'], sample='WTC11', platform=['ONT'],
+               counting=['end', 'tail'], library_prep=ont_library_prep)

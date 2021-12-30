@@ -21,13 +21,17 @@ encode:
 lrgasp:
   config: configs/rnaseq-data-matrix.tsv
 
+lapa:
+  samples: data/results/lapa/{sample}/{library_prep}_{platform}.csv
+  lapa_dir: data/results/lapa/{sample}/{library_prep}_{platform}_{counting}/
+  
 quantseq:
   bam: data/results/quantseq/bam_tail/{sample}_rep{rep}/Aligned.sortedByCoord.out.bam
   bam_end: data/resources/quantseq/bam_end/{sample}_rep{rep}/polyA/Aligned.sortedByCoord.out.bam
 
   polya_atlas: data/resources/quantseq/polya_atlas/{sample}/{sample}rep{rep}.bed.gz
 
-
+  
 # gene_id_name_mapping: data/results/common/{specie}_gene_id_name_mapping.csv
   
 # annotation:
@@ -159,9 +163,6 @@ quantseq:
 # pilot:
 #   read_annot: data/resources/pilot/pilot_talon_read_annot.tsv
 
-lapa:
-  samples: data/results/lapa/{sample}/{library_prep}_{platform}_{count_read}.csv
-  lapa_dir: data/results/lapa/{sample}/{library_prep}_{platform}/
 
   # short_rna_dir: data/results/lapa/{sample}/short_rna_lapa
   # quantseq_dir: data/results/lapa/{sample}/quantseq_lapa
