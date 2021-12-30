@@ -3,6 +3,10 @@ genome:
     hg38: data/resources/common/lrgasp_grch38_sirvs.fasta
     mm39: data/resources/common/lrgasp_grcm39_sirvs.fasta
 
+  gtf_raw:
+    mm39: data/resources/common/lrgasp_gencode_vM27_sirvs.gtf
+    hg38: data/resources/common/lrgasp_gencode_v38_sirvs.gtf
+
   gtf:
     mm39: data/resources/common/lrgasp_gencode_vM27_sirvs.utr_fix.gtf
     hg38: data/resources/common/lrgasp_gencode_v38_sirvs.utr_fix.gtf
