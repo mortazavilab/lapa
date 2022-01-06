@@ -55,6 +55,31 @@ short_rnaseq:
       - ENCFF742FDJ
   bam: data/results/short_read/{sample}/{encode_id}/Aligned.sortedByCoord.out.bam
 
+
+wg_encode:
+  drive_id:
+    human:
+      read_annot: 15EuBAFf7WQCd_HybrjKdSvkYoImIe_8F
+      gtf: 1PJW5FYmdqXdS-LDxhfQyMSezD3YO_QWz
+      abundance: 16QVv8ORYI9B8XGP7vIDVeO0hHqrj3r-z
+
+    mouse:
+      read_annot: 1xW2oLzmu2OE2fZwZAO6SUwMebLQP4Ve_
+      gtf: 1iAT5iqcmqUyfjYGQwYyYk6j9KEJbLUz9
+      abundance: 1nGb8NZ4m0a9CqA54bJb-rTrhUrTQeyeo
+
+  human:
+    gtf: data/resources/wg/human_talon.gtf
+    abundance_unfiltered: data/resources/wg/human_talon_abundance.tsv
+    abundance: data/resources/wg/human_talon_abundance_filtered.tsv
+    read_annot: data/resources/wg/human_talon_read_annot.tsv
+
+  mouse:
+    gtf: data/resources/wg/mouse_talon.gtf
+    abundance_unfiltered: data/resources/wg/mouse_talon_abundance.tsv
+    abundance: data/resources/wg/mouse_talon_abundance_filtered.tsv
+    read_annot: data/resources/wg/mouse_talon_read_annot.tsv
+
 # gene_id_name_mapping: data/results/common/{specie}_gene_id_name_mapping.csv
   
 # annotation:

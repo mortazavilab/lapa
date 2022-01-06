@@ -58,6 +58,7 @@ include: "long_reads/Snakefile"
 include: "align_short_rnaseq/Snakefile"
 include: "benchmark/Snakefile"
 include: "correction/Snakefile"
+include: "wg_encode/Snakefile"
 
 # include: "quantseq3/Snakefile"
 # include: "wtc11/Snakefile"
@@ -71,9 +72,17 @@ ont_library_prep = ['cDNA', 'dRNA', 'CapTrap', 'R2C2']
 
 rule all:
     input:
-        expand(rules.plot_overlap_annotation.output,
-               sample='WTC11', library_prep='cDNA',
-               platform='PacBio', counting='end')
+        config['wg_encode']['human']['read_annot'],
+        config['wg_encode']['human']['gtf'],
+        config['wg_encode']['human']['abundance'],
+        config['wg_encode']['mouse']['read_annot'],
+        config['wg_encode']['mouse']['gtf'],
+        config['wg_encode']['mouse']['abundance']
+
+
+        # expand(rules.plot_overlap_annotation.output,
+        #        sample='WTC11', library_prep='cDNA',
+        #        platform='PacBio', counting='end')
 
         # expand(config['talon']['gtf_corrected'],
         #        sample='WTC11', library_prep='cDNA',

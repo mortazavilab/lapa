@@ -1,0 +1,51 @@
+rule download_wg_human_read_annot:
+    params:
+        drive_id = config['wg_encode']['drive_id']['human']['read_annot']
+    output:
+        config['wg_encode']['human']['read_annot']
+    shell:
+        "gdown --id {params.drive_id}"
+
+
+rule download_wg_human_gtf:
+    params:
+        drive_id = config['wg_encode']['drive_id']['human']['gtf']
+    output:
+        config['wg_encode']['human']['gtf']
+    shell:
+        "gdown --id {params.drive_id}"
+
+rule download_wg_human_abundance:
+    params:
+        drive_id = config['wg_encode']['drive_id']['human']['abundance']
+    output:
+        config['wg_encode']['human']['abundance']
+    shell:
+        "gdown --id {params.drive_id}"
+
+
+rule download_wg_mouse_read_annot:
+    params:
+        drive_id = config['wg_encode']['drive_id']['mouse']['read_annot']
+    output:
+        config['wg_encode']['mouse']['read_annot']
+    shell:
+        "gdown --id {params.drive_id}"
+
+
+rule download_wg_mouse_gtf:
+    params:
+        drive_id = config['wg_encode']['drive_id']['mouse']['gtf']
+    output:
+        config['wg_encode']['mouse']['gtf']
+    shell:
+        "gdown --id {params.drive_id}"
+
+
+rule download_wg_mouse_abundance:
+    params:
+        drive_id = config['wg_encode']['drive_id']['mouse']['abundance']
+    output:
+        config['wg_encode']['mouse']['abundance']
+    shell:
+        "gdown --id {params.drive_id}"
