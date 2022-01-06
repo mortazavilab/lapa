@@ -3,6 +3,7 @@ import pandas as pd
 import pyranges as pr
 from tqdm import tqdm
 from lapa.utils.io import read_talon_read_annot
+from lapa.result import LapaResult
 from lapa.cluster import TesClustering
 
 
@@ -86,11 +87,6 @@ def tss_mapping(df_tss_cluster, read_annot, distance=1000):
 def _correct_transcript(df):
     df = df.reset_index(drop=True)
 
-    # transcript_id = df.iloc[0].transcript_id
-    # if '_' in transcript_id:
-    #     import pdb
-    #     pdb.set_trace()
-
     if all(df['polyA_site'].isna()):
         if 'start_site' in df.columns:
             if all(df['start_site'].isna()):
@@ -164,8 +160,7 @@ def sort_gtf(df):
     ], na_position='first', key=_sort_gtf_key)
 
 
-def _transcript_mapping(df_read_tes, df_read_transcript, site, multiple=False,
-                        multiple_threshold=10, minor_threshold=0.5):
+def _transcript_mapping(df_read_tes, df_read_transcript, site, minor_threshold=0.5):
 
     df = df_read_tes.set_index('read_name').join(
         df_read_transcript.set_index('read_name')
@@ -178,26 +173,14 @@ def _transcript_mapping(df_read_tes, df_read_transcript, site, multiple=False,
     df = df.join(df.groupby(['transcript_id', 'Strand'])[['count']].agg('max')
                  .rename(columns={'count': 'threshold'}) * minor_threshold)
 
-    df = df[df['count'] > df['threshold']].reset_index()
-
-    if multiple:
-        # Update transcript ids (create new transcript isoforms) by adding
-        # suffix to transcript id if number of
-        transcript_suffix = df.groupby('transcript_id').cumcount().astype(
-            str).radd('_').mask(df['count'] < multiple_threshold, '')
-        df['transcript_id'] += transcript_suffix
-
-    return df
+    return df[df['count'] > df['threshold']].reset_index()
 
 
-def tes_transcript_mapping(df_read_tes, df_read_transcript, multiple=True,
-                           multiple_threshold=10, minor_threshold=0.5):
+def tes_transcript_mapping(df_read_tes, df_read_transcript,
+                           minor_threshold=0.5):
     site = 'polyA_site'
-
-    df = _transcript_mapping(
-        df_read_tes, df_read_transcript, site,
-        multiple=multiple, multiple_threshold=multiple_threshold,
-        minor_threshold=minor_threshold)
+    df = _transcript_mapping(df_read_tes, df_read_transcript, site,
+                             minor_threshold=minor_threshold)
     return pd.concat([
         df[df['Strand'] == '-'].groupby('transcript_id')[[site]].agg('min'),
         df[df['Strand'] == '+'].groupby('transcript_id')[[site]].agg('max')
@@ -208,7 +191,7 @@ def tss_transcript_mapping(df_read_tss, df_read_transcript,
                            minor_threshold=0.5):
     site = 'start_site'
     df = _transcript_mapping(df_read_tss, df_read_transcript, site,
-                             multiple=False, minor_threshold=minor_threshold)
+                             minor_threshold=minor_threshold)
     return pd.concat([
         df[df['Strand'] == '-'].groupby('transcript_id')[[site]].agg('max'),
         df[df['Strand'] == '+'].groupby('transcript_id')[[site]].agg('min')
@@ -218,10 +201,7 @@ def tss_transcript_mapping(df_read_tss, df_read_transcript,
 def correct_gtf_tes(df_read_tes, df_read_transcript, gtf, gtf_output,
                     df_read_tss=None):
 
-    df_tes = tes_transcript_mapping(
-        df_read_tes, df_read_transcript).reset_index()
-    df_tes['_transcript_id'] = df_tes['transcript_id'].str.split(
-        '_').str.get(0)
+    df_tes = tes_transcript_mapping(df_read_tes, df_read_transcript)
 
     if df_read_tss is not None:
         df_tss = tss_transcript_mapping(df_read_tss, df_read_transcript)
@@ -230,22 +210,48 @@ def correct_gtf_tes(df_read_tes, df_read_transcript, gtf, gtf_output,
     df_transcript = df_gtf[df_gtf['Feature'].isin({'transcript', 'exon'})]
 
     df_transcript = df_transcript.set_index('transcript_id') \
-                                 .join(df_tes.set_index('_transcript_id'), how='left')
+                                 .join(df_tes, how='left')
 
     if df_read_tss is not None:
         df_transcript = df_transcript.join(df_tss, how='left')
 
     tqdm.pandas()
-    df_transcript_cor = df_transcript.groupby('transcript_id').progress_apply(
-        _correct_transcript).reset_index(drop=True)
+    df_transcript_cor = df_transcript.groupby(level=0).progress_apply(
+        _correct_transcript).reset_index()
 
     del df_transcript_cor['polyA_site']
 
     if df_read_tss is not None:
         del df_transcript_cor['start_site']
 
-    df_gene_cor = _correct_gene(df_transcript_cor,
-                                df_gtf[df_gtf['Feature'] == 'gene'])
+    df_gene_cor = _correct_gene(df_transcript_cor, df_gtf[df_gtf['Feature'] == 'gene'])
 
     df_gtf_cor = sort_gtf(pd.concat([df_gene_cor, df_transcript_cor]))
+
     pr.PyRanges(df_gtf_cor).to_gtf(gtf_output)
+
+
+def correct_gtf(gtf, gtf_output, lapa_dir, read_annot,
+                fasta, tss_correct=True):
+    print('TES read mapping (1 / 3)...')
+    df_cluster = LapaResult(lapa_dir).read_cluster()
+    df_mapping = read_tes_mapping(df_cluster, read_annot)
+
+    if tss_correct:
+        print('TSS read mapping (2 / 3)...')
+        df_tss_cluster = tss_cluster(read_annot, fasta)
+        df_tss_mapping = tss_mapping(df_tss_cluster, read_annot)
+    else:
+        df_tss_mapping = None
+
+    df_reads = read_talon_read_annot(read_annot).rename(
+        columns={'annot_transcript_id': 'transcript_id'})
+
+    print('Correcting gtf (3 / 3)...')
+    correct_gtf_tes(
+        df_mapping,
+        df_reads[['read_name', 'transcript_id']],
+        gtf,
+        gtf_output,
+        df_tss_mapping
+    )

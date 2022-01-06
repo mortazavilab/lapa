@@ -34,6 +34,10 @@ def chrom_sizes(wildcards):
     return config['common']['chrom_sizes'].format(genome=genome(wildcards))
 
 
+def star_index(wildcards):
+    return config['genome']['star_index'][genome(wildcards)]
+
+
 # df_lrgasp = df_lrgasp[
 #     (df_lrgasp['file_contents'] == 'reads') &
 #     (df_lrgasp['library_prep'] == 'dRNA') &
@@ -51,7 +55,9 @@ def chrom_sizes(wildcards):
 
 include: "common/Snakefile"
 include: "long_reads/Snakefile"
+include: "align_short_rnaseq/Snakefile"
 include: "benchmark/Snakefile"
+include: "correction/Snakefile"
 
 # include: "quantseq3/Snakefile"
 # include: "wtc11/Snakefile"
@@ -65,7 +71,24 @@ ont_library_prep = ['cDNA', 'dRNA', 'CapTrap', 'R2C2']
 
 rule all:
     input:
-        expand(config['lapa']['lapa_dir'], sample='WTC11', platform=['PacBio'],
-               counting=['end', 'tail'], library_prep=pb_library_prep),
-        expand(config['lapa']['lapa_dir'], sample='WTC11', platform=['ONT'],
-               counting=['end', 'tail'], library_prep=ont_library_prep)
+        expand(rules.plot_overlap_annotation.output,
+               sample='WTC11', library_prep='cDNA',
+               platform='PacBio', counting='end')
+
+        # expand(config['talon']['gtf_corrected'],
+        #        sample='WTC11', library_prep='cDNA',
+        #        platform='PacBio', counting='end')
+
+#        expand(rules.plot_overlap_annotation.output,
+#                sample='WTC11', library_prep='dRNA', platform='ONT'),
+#         expand(rules.plot_overlap_corrected_annotation.output,
+#                sample='WTC11', library_prep='dRNA',
+#                platform='ONT', counting='end')
+# -
+
+    # expand(config['short_rnaseq']['bam'],
+    #        encode_id=config['short_rnaseq']['wtc11']['se'], sample='WTC11')
+    # expand(config['lapa']['lapa_dir'], sample='WTC11', platform=['PacBio'],
+    #        counting=['end', 'tail'], library_prep=pb_library_prep),
+    # expand(config['lapa']['lapa_dir'], sample='WTC11', platform=['ONT'],
+    #        counting=['end', 'tail'], library_prep=ont_library_prep)

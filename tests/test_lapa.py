@@ -67,18 +67,18 @@ def test_TesClustering_cluster(df_tes):
     assert cluster.Start == 100099
     assert cluster.End == 100101
     assert cluster.Strand == '+'
-    assert cluster.counts == [10, 5]
+    assert cluster.counts == [(100100, 10), (100101, 5)]
 
     cluster = clusters[1]
     assert str(cluster) == 'chr17:100199-100200:-'
-    assert cluster.counts == [7]
+    assert cluster.counts == [(100200, 7)]
 
     cluster = clusters[2]
     assert cluster.Chromosome == 'chrM'
     assert cluster.Start == 1100
     assert cluster.End == 1101
     assert cluster.Strand == '+'
-    assert cluster.counts == [11]
+    assert cluster.counts == [(1101, 11)]
 
 
 def test_TesCluster_to_df(df_tes):

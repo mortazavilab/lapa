@@ -31,6 +31,7 @@ setup(
     entry_points='''
         [console_scripts]
         lapa=lapa.main:cli
+        lapa_correct_talon_gtf=lapa.main:lapa_correct_talon_gtf
     ''',
     keywords=['genomics', 'long read RNA-seq', 'APA'],
     name='lapa',

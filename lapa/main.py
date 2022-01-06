@@ -1,5 +1,6 @@
 import click
 from lapa.lapa import lapa
+from lapa.read import correct_gtf
 
 
 @click.command()
@@ -22,5 +23,18 @@ def cli(alignment, fasta, annotation, chrom_sizes, output_dir, counting_method,
          min_tail_len=min_tail_len, min_percent_a=min_percent_a, mapq=mapq)
 
 
-if __name__ == '__main__':
-    cli()
+@click.command()
+@click.option('--gtf_input', help='Input gtf file need to corrected')
+@click.option('--gtf_output', help='Output corrected gtf file')
+@click.option('--lapa_dir', help='LAPA output directory of generated before')
+@click.option('--read_annot', help='read_annot file output by TALON')
+@click.option('--fasta', help='Genome reference (Encode or Ensembl fasta)')
+@click.option('--correct_tss', is_flag=True, help="If TSS corrected as well",
+              default=True, show_default=True)
+def lapa_correct_talon_gtf(gtf_input, gtf_output, lapa_dir,
+                           read_annot, fasta, correct_tss):
+    correct_gtf(gtf_input, gtf_output, lapa_dir,
+                read_annot, fasta, correct_tss)
+
+# if __name__ == '__main__':
+#     cli()

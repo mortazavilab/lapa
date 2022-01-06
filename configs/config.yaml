@@ -12,22 +12,31 @@ genome:
     hg38: data/resources/common/lrgasp_gencode_v38_sirvs.utr_fix.gtf
 
   star_index:
-    mm39: /share/crsp/lab/seyedam/share/lrgasp_quantseq/lrgasp_mouse_star_index/
-    hg38: /share/crsp/lab/seyedam/share/lrgasp_quantseq/lrgasp_human_star_index/
+    mm39: data/resources/common/lrgasp_mouse_star_index/
+    hg38: data/resources/common/lrgasp_human_star_index/
 
 common:
   chrom_sizes: data/results/common/{genome}.chrom_sizes
 
-encode:
-  bam: data/resources/encode/bam/{encode_id}.bam
+encode: 
+  fastq: data/resources/encode/fastq/{encode_id}.fastq.gz
+  fastq_polyA: data/results/encode/fastq_polyA/{encode_id}_polyA.fastq.gz
+  bam: data/resources/encode/bam/{encode_id}.bam  
   bam_read_count: data/results/encode/read_count/{encode_id}.txt
 
 lrgasp:
   config: configs/rnaseq-data-matrix.tsv
 
+talon:
+  read_annot: data/resources/talon/{sample}_{library_prep}_{platform}_read_annot.tsv
+  gtf: data/resources/talon/{sample}_{library_prep}_{platform}.gtf
+  abundance: data/resources/talon/{sample}_{library_prep}_{platform}_abundance_filtered.tsv
+  gtf_corrected: data/results/talon/{sample}_{library_prep}_{platform}_{counting}_corrected.gtf
+  
 lapa:
   samples: data/results/lapa/{sample}/{library_prep}_{platform}.csv
   lapa_dir: data/results/lapa/{sample}/{library_prep}_{platform}_{counting}/
+  lapa_quantseq_dir: data/results/lapa/{sample}/quantseq_Illumina_end/
   
 quantseq:
   bam: data/results/quantseq/bam_tail/{sample}_rep{rep}/Aligned.sortedByCoord.out.bam
@@ -35,7 +44,17 @@ quantseq:
 
   polya_atlas: data/resources/quantseq/polya_atlas/{sample}/{sample}rep{rep}.bed.gz
 
-  
+short_rnaseq:
+  wtc11:
+    se:
+      - ENCFF365HXR
+      - ENCFF492PIB
+      - ENCFF621NOL
+      - ENCFF738DHG
+      - ENCFF235BRN
+      - ENCFF742FDJ
+  bam: data/results/short_read/{sample}/{encode_id}/Aligned.sortedByCoord.out.bam
+
 # gene_id_name_mapping: data/results/common/{specie}_gene_id_name_mapping.csv
   
 # annotation:

@@ -3,7 +3,7 @@ library(dplyr)
 library(ggplot2)
 
 data <- read_csv(snakemake@input[[1]])
-ymax = 32000
+ymax = 42000
 
 data$novelty <- factor(data$novelty,
   levels = rev(c("Known", "prefix ISM", "suffix ISM", 

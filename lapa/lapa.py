@@ -95,22 +95,22 @@ def lapa(alignment, fasta, annotation, chrom_sizes, output_dir, method=None,
             'Unknown file alignment format: supported '
             'file formats are `bam` and `sample.csv`')
 
-    print('Counting TES...')
+    print('Counting TES (1 / 4)...')
     df_tes, tes = agg_tes_samples(df_count, chrom_sizes, output_dir)
     del df_count
 
-    print('Clustering TES and calculating polyA_sites...')
+    print('Clustering TES and calculating polyA_sites (2 / 4)...')
     df_cluster = TesClustering(fasta,
                                extent_cutoff=cluster_extent_cutoff,
                                window=cluster_window).to_df(df_tes)
     del df_tes
 
-    print('Annotating TES cluster...')
+    print('Annotating TES cluster (3 / 4)...')
     df_cluster = tes_cluster_annotate(df_cluster, annotation)
     df_cluster[cluster_col_order].to_csv(output_dir / 'polyA_clusters.bed',
                                          index=False, sep='\t', header=False)
 
-    print('Calculationg APA per samples...')
+    print('Calculationg APA per samples (4 / 4)...')
     for sample, df_tes_sample in tes.items():
         df_apa = tes_sample(df_cluster, df_tes_sample)
         df_apa[sample_col_order].to_csv(output_dir / f'{sample}_apa.bed',

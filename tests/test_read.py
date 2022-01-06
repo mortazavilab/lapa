@@ -123,19 +123,6 @@ def test__transcript_mapping():
         }), df
     )
 
-    df = _transcript_mapping(df_read_tes, df_read_transcript, 'polyA_site',
-                             multiple=True, multiple_threshold=3)
-
-    pd.testing.assert_frame_equal(
-        pd.DataFrame({
-            'transcript_id': ['t1_0', 't1', 't2'],
-            'Strand': ['+', '+', '+'],
-            'polyA_site': [10005, 11010, 100000],
-            'count': [3, 2, 1],
-            'threshold': [1.5, 1.5, 0.5]
-        }), df
-    )
-
 
 def test_tes_transcript_mapping():
     df_read_tes = pd.DataFrame({
@@ -155,24 +142,6 @@ def test_tes_transcript_mapping():
         pd.DataFrame({
             'transcript_id': ['t1', 't2'],
             'polyA_site': [11010, 100000]
-        }).set_index('transcript_id'), df
-    )
-
-    df = tes_transcript_mapping(df_read_tes, df_read_transcript,
-                                multiple=True, multiple_threshold=3)
-    pd.testing.assert_frame_equal(
-        pd.DataFrame({
-            'transcript_id': ['t1', 't1_0', 't2'],
-            'polyA_site': [11010, 10005, 100000]
-        }).set_index('transcript_id'), df
-    )
-
-    df = tes_transcript_mapping(df_read_tes, df_read_transcript,
-                                multiple_threshold=3)
-    pd.testing.assert_frame_equal(
-        pd.DataFrame({
-            'transcript_id': ['t1', 't1_0', 't2'],
-            'polyA_site': [11010, 10005, 100000]
         }).set_index('transcript_id'), df
     )
 

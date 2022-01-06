@@ -17,7 +17,18 @@ rule site_motif:
         "polyA_motif.py"
 
 
+rule download_encode_fastq:
+    threads: 1
+    resources:
+        mem_gb = 4
+    output:
+        config['encode']['fastq']
+    shell:
+        "wget https://www.encodeproject.org/files/{wildcards.encode_id}/@@download/{wildcards.encode_id}.fastq.gz -O {output}"
+
+
 rule download_encode_bam:
+    threads: 1
     resources:
         mem_gb = 4
     output:
@@ -45,6 +56,23 @@ rule utr_fix:
         gtf = 'data/resources/common/{gtf}.utr_fix.gtf'
     shell:
         "gencode_utr_fix --input_gtf {input.gtf} --output_gtf {output.gtf}"
+
+
+rule fastq_polyA_tail:
+    input:
+        fastq = config['encode']['fastq']
+    params:
+        pattern = "A" * 20,
+        mismatch = 0
+    resources:
+        mem_gb = 8
+    output:
+        fastq = config['encode']['fastq_polyA']
+    shell:
+        '''
+        seqkit grep --by-seq --max-mismatch {params.mismatch} \
+        --pattern {params.pattern} {input.fastq} | gzip > {output.fastq}
+        '''
 
 # rule gtf_tes:
 #     input:
