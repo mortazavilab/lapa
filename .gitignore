@@ -138,6 +138,7 @@ dmypy.json
 cython_debug/
 
 data/
-.snakemake
+!tests/data
 
+.snakemake
 *~
