@@ -1,4 +1,4 @@
-def file_acc(wildcards):
+def file_acc_long_reads(wildcards):
     df = pd.read_csv(config['lrgasp']['config'], sep='\t')
     df = df[
         (df['file_contents'] == 'reads') &
@@ -9,25 +9,68 @@ def file_acc(wildcards):
     return df['file_acc'].tolist()
 
 
-def long_reads_bam(wildcards):
-    return expand(config['encode']['bam'], encode_id=file_acc(wildcards))
+def file_acc_short_reads(wildcards):
+    sample = wildcards['sample']
+    library_prep = wildcards['library_prep']
+    return config['short_rnaseq'][sample][library_prep]
 
 
-rule lapa_long_reads_samples:
+def reads_bam(wildcards):
+    platform = wildcards['platform']
+    library_prep = wildcards['library_prep']
+
+    if platform in {'PacBio', 'ONT'}:
+        return expand(config['encode']['bam'],
+                      encode_id=file_acc_long_reads(wildcards))
+
+    elif platform == 'Illumina' and library_prep == 'se':
+        sample = wildcards['sample']
+        encode_id = file_acc_short_reads(wildcards)
+        return expand(config['short_rnaseq']['bam'],
+                      encode_id=encode_id, sample=sample)
+
+    elif platform == 'Illumina' and library_prep == 'quantseq':
+        return expand(config['quantseq']['bam'],
+                      rep=['1', '2', '3'], sample=sample)
+
+    else:
+        raise ValueError('No samples match given wildcards %s'
+                         % str(wildcards))
+
+
+def sample_names(wildcards):
+    platform = wildcards['platform']
+    library_prep = wildcards['library_prep']
+
+    if platform in {'PacBio', 'ONT'}:
+        return file_acc_long_reads(wildcards)
+
+    elif platform == 'Illumina' and library_prep == 'se':
+        return file_acc_short_reads(wildcards)
+
+    elif platform == 'Illumina' and library_prep == 'quantseq':
+        return ['rep1', 'rep2', 'rep3']
+
+    else:
+        raise ValueError('No samples match given wildcards %s'
+                         % str(wildcards))
+
+
+rule lapa_reads_samples:
     input:
-        bams = long_reads_bam
+        bams = reads_bam
     params:
-        encode_id = file_acc
+        sample_names = sample_names
     output:
         csv = config['lapa']['samples']
     run:
         with open(output['csv'], 'w') as f:
             f.write('sample,path\n')
-            for encode_id, bam_file in zip(params['encode_id'], input['bams']):
-                f.write(f'{encode_id},{bam_file}\n')
+            for name, bam_file in zip(params['sample_names'], input['bams']):
+                f.write(f'{name},{bam_file}\n')
 
 
-rule lapa_longreads:
+rule lapa:
     input:
         samples = config['lapa']['samples'],
         fasta = fasta,
@@ -52,9 +95,12 @@ pb_library_prep = ['cDNA', 'CapTrap']
 ont_library_prep = ['cDNA', 'dRNA', 'CapTrap', 'R2C2']
 
 
-rule all_long_rnaseq:
+rule all_lapa:
     input:
         expand(config['lapa']['lapa_dir'], sample='WTC11', platform=['PacBio'],
                counting=['end', 'tail'], library_prep=pb_library_prep),
         expand(config['lapa']['lapa_dir'], sample='WTC11', platform=['ONT'],
                counting=['end', 'tail'], library_prep=ont_library_prep)
+        # expand(config['lapa']['lapa_dir'], sample='WTC11', platform='Illumina',
+        #        counting='end', library_prep='se')
+        

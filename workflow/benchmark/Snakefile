@@ -8,9 +8,10 @@ rule benchmark_lapa:
             platform='ONT', counting='end'),
         drna_ont_tail = config['lapa']['lapa_dir'].format(
             sample='WTC11', library_prep='dRNA',
-            platform='ONT', counting='tail')
-        # short_rna = config['lapa']['lapa_dir'].format(
-        #     sample='wtc11', dataset='short_rna_lapa'),
+            platform='ONT', counting='tail'),
+        short_rna = config['lapa']['lapa_dir'].format(
+            sample='WTC11', platform='Illumina',
+            counting='end', library_prep='se')
         # cdna_ont = config['lapa']['lapa_dir'].format(
         #     sample='WTC11', library_prep='cDNA',
         #     platform='PacBio', counting='end'),

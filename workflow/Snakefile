@@ -67,11 +67,10 @@ include: "wg_encode/Snakefile"
 # include: "pilot/Snakefile"
 
 
-
 rule all:
     input:
         rules.all_short_rnaseq.input,
-        rules.all_long_rnaseq.input,
+        rules.all_lapa.input
         # rules.all_wg_encode.input
 
         # expand(rules.plot_overlap_annotation.output,

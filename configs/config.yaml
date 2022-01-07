@@ -45,7 +45,7 @@ quantseq:
   polya_atlas: data/resources/quantseq/polya_atlas/{sample}/{sample}rep{rep}.bed.gz
 
 short_rnaseq:
-  wtc11:
+  WTC11:
     se:
       - ENCFF365HXR
       - ENCFF492PIB
