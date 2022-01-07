@@ -103,6 +103,13 @@ _df = _df[
     (_df['library_prep'] != 'R2C2')
 ]
 
+_df_r2c2 = _df[
+    (_df['file_contents'] == 'reads') &
+    (_df['sample'] == 'WTC11') &
+    (_df['platform'].isin({'PacBio', 'ONT'})) &
+    (_df['library_prep'] == 'R2C2')
+]
+
 rule all_lapa:
     input:
         expand(config['lapa']['lapa_dir'], sample='WTC11', platform=['PacBio'],
@@ -112,6 +119,6 @@ rule all_lapa:
         expand(config['encode']['fastq_read_count'],
                encode_id=_df['file_acc'].tolist()),
         expand(config['encode']['fasta_read_count'],
-               encode_id=_df['file_acc'].tolist()),
+               encode_id=_df_r2c2['file_acc'].tolist()),
         expand(config['encode']['bam_read_count'],
                encode_id=_df['file_acc'].tolist())
