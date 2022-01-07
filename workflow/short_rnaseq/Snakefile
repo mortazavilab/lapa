@@ -17,12 +17,24 @@ rule star_align:
         "0.74.0/bio/star/align"
 
 
+rule short_read_bam_read_count:
+    input:
+        bam = config['short_rnaseq']['bam']
+    output:
+        txt = config['short_rnaseq']['bam_read_count']
+    threads: 1
+    resources:
+        mem_gb = 4
+    shell:
+        "samtools view -F 4 -c {input.bam} > {output.txt}"
+
+
 rule all_short_rnaseq:
     input:
         expand(config['encode']['fastq_read_count'],
                encode_id=config['short_rnaseq']['WTC11']['se']),
-        expand(config['encode']['bam_read_count'],
-               encode_id=config['short_rnaseq']['WTC11']['se']),
+        expand(config['short_rnaseq']['bam_read_count'],
+               encode_id=config['short_rnaseq']['WTC11']['se'], sample='WTC11'),
         expand(config['short_rnaseq']['bam'],
                encode_id=config['short_rnaseq']['WTC11']['se'], sample='WTC11')
 

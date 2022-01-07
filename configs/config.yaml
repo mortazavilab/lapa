@@ -23,8 +23,8 @@ encode:
   fastq_polyA: data/results/encode/fastq_polyA/{encode_id}_polyA.fastq.gz
   bam: data/resources/encode/bam/{encode_id}.bam
 
-  bam_read_count: data/results/encode/read_count/{encode_id}.txt
-  fastq_read_count: data/results/encode/fastq_read_count/{encode_id}.txt
+  fastq_read_count: data/results/encode/read_count/{encode_id}_fastq.txt  
+  bam_read_count: data/results/encode/read_count/{encode_id}_bam.txt
 
 lrgasp:
   config: configs/rnaseq-data-matrix.tsv
@@ -42,10 +42,12 @@ lapa:
   
 quantseq:
   fastq: data/resources/quantseq/fastq/{sample}_rep{rep}.fastq.gz
-  fastq_read_count: data/resources/quantseq/fastq/{sample}_rep{rep}.txt
   
   bam: data/results/quantseq/bam_tail/{sample}_rep{rep}/Aligned.sortedByCoord.out.bam
   bam_end: data/resources/quantseq/bam_end/{sample}_rep{rep}/polyA/Aligned.sortedByCoord.out.bam
+
+  fastq_read_count: data/results/quantseq/read_count/{sample}_rep{rep}_fastq.txt
+  bam_read_count: data/results/quantseq/read_count/{sample}_rep{rep}_bam.txt
 
   polya_atlas: data/resources/quantseq/polya_atlas/{sample}/{sample}rep{rep}.bed.gz
 
@@ -58,7 +60,9 @@ short_rnaseq:
       - ENCFF738DHG
       - ENCFF235BRN
       - ENCFF742FDJ
+      
   bam: data/results/short_read/{sample}/{encode_id}/Aligned.sortedByCoord.out.bam
+  bam_read_count: data/resources/short_read/read_count/{sample}_{encode_id}_bam.txt
 
 wg_encode:
   drive_id:

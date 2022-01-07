@@ -13,10 +13,24 @@ rule quantseq_count_fastq:
         "expr $(zcat {input.fastq} | wc -l) / 4 > {output.txt}"
 
 
+rule short_read_bam_read_count:
+    input:
+        bam = config['quantseq']['bam_end']
+    output:
+        txt = config['quantseq']['bam_read_count']
+    threads: 1
+    resources:
+        mem_gb = 4
+    shell:
+        "samtools view -F 4 -c {input.bam} > {output.txt}"
+
+
 rule all_quantseq3:
     input:
         expand(config['quantseq']['fastq_read_count'],
-               sample='wtc11', rep=['1', '2', '3'])
+               sample='WTC11', rep=['1', '2', '3'])
+        expand(config['quantseq']['fastq_read_count'],
+               sample='WTC11', rep=['1', '2', '3'])
 
 
 # rule count_quantseq:
