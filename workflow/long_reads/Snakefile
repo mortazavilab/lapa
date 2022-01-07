@@ -95,12 +95,24 @@ pb_library_prep = ['cDNA', 'CapTrap']
 ont_library_prep = ['cDNA', 'dRNA', 'CapTrap', 'R2C2']
 
 
+
+_df = pd.read_csv(config['lrgasp']['config'], sep='\t')
+_df = _df[
+    (_df['file_contents'] == 'reads') &
+    (_df['sample'] == 'WTC11') &
+    (_df['platform'].isin({'PacBio', 'ONT'}))
+]
+
 rule all_lapa:
     input:
         expand(config['lapa']['lapa_dir'], sample='WTC11', platform=['PacBio'],
                counting=['end', 'tail'], library_prep=pb_library_prep),
         expand(config['lapa']['lapa_dir'], sample='WTC11', platform=['ONT'],
-               counting=['end', 'tail'], library_prep=ont_library_prep)
+               counting=['end', 'tail'], library_prep=ont_library_prep),
+        expand(config['encode']['fastq_read_count'],
+               encode_id=_df['file_acc'].tolist()),
+        expand(config['encode']['bam_read_count'],
+               encode_id=_df['file_acc'].tolist())
+
         # expand(config['lapa']['lapa_dir'], sample='WTC11', platform='Illumina',
         #        counting='end', library_prep='se')
-        

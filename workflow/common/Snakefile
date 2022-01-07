@@ -37,6 +37,18 @@ rule download_encode_bam:
         "wget https://www.encodeproject.org/files/{wildcards.encode_id}/@@download/{wildcards.encode_id}.bam -O {output}"
 
 
+rule fastq_read_count:
+    input:
+        fastq = config['encode']['fastq']
+    output:
+        txt = config['encode']['fastq_read_count']
+    threads: 1
+    resources:
+        mem_gb = 4
+    shell:
+        "expr $(zcat {input.fastq} | wc -l) / 4 > {output.txt}"
+
+
 rule bam_read_count:
     input:
         bam = config['encode']['bam']

@@ -21,8 +21,10 @@ common:
 encode: 
   fastq: data/resources/encode/fastq/{encode_id}.fastq.gz
   fastq_polyA: data/results/encode/fastq_polyA/{encode_id}_polyA.fastq.gz
-  bam: data/resources/encode/bam/{encode_id}.bam  
+  bam: data/resources/encode/bam/{encode_id}.bam
+
   bam_read_count: data/results/encode/read_count/{encode_id}.txt
+  fastq_read_count: data/results/encode/fastq_read_count/{encode_id}.txt
 
 lrgasp:
   config: configs/rnaseq-data-matrix.tsv
@@ -39,6 +41,9 @@ lapa:
   lapa_quantseq_dir: data/results/lapa/{sample}/quantseq_Illumina_end/
   
 quantseq:
+  fastq: data/resources/quantseq/fastq/{sample}_rep{rep}.fastq.gz
+  fastq_read_count: data/resources/quantseq/fastq/{sample}_rep{rep}.txt
+  
   bam: data/results/quantseq/bam_tail/{sample}_rep{rep}/Aligned.sortedByCoord.out.bam
   bam_end: data/resources/quantseq/bam_end/{sample}_rep{rep}/polyA/Aligned.sortedByCoord.out.bam
 
@@ -54,7 +59,6 @@ short_rnaseq:
       - ENCFF235BRN
       - ENCFF742FDJ
   bam: data/results/short_read/{sample}/{encode_id}/Aligned.sortedByCoord.out.bam
-
 
 wg_encode:
   drive_id:

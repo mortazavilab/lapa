@@ -59,6 +59,7 @@ include: "short_rnaseq/Snakefile"
 include: "benchmark/Snakefile"
 include: "correction/Snakefile"
 include: "wg_encode/Snakefile"
+include: "plot/Snakefile"
 
 # include: "quantseq3/Snakefile"
 # include: "wtc11/Snakefile"

@@ -19,6 +19,10 @@ rule star_align:
 
 rule all_short_rnaseq:
     input:
+        expand(config['encode']['fastq_read_count'],
+               encode_id=config['short_rnaseq']['WTC11']['se']),
+        expand(config['encode']['bam_read_count'],
+               encode_id=config['short_rnaseq']['WTC11']['se']),
         expand(config['short_rnaseq']['bam'],
                encode_id=config['short_rnaseq']['WTC11']['se'], sample='WTC11')
 
