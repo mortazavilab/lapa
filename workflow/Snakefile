@@ -55,7 +55,7 @@ def star_index(wildcards):
 
 include: "common/Snakefile"
 include: "long_reads/Snakefile"
-include: "align_short_rnaseq/Snakefile"
+include: "short_rnaseq/Snakefile"
 include: "benchmark/Snakefile"
 include: "correction/Snakefile"
 include: "wg_encode/Snakefile"
@@ -66,19 +66,13 @@ include: "wg_encode/Snakefile"
 # include: "c2c12/Snakefile"
 # include: "pilot/Snakefile"
 
-pb_library_prep = ['cDNA', 'CapTrap']
-ont_library_prep = ['cDNA', 'dRNA', 'CapTrap', 'R2C2']
 
 
 rule all:
     input:
-        config['wg_encode']['human']['read_annot'],
-        config['wg_encode']['human']['gtf'],
-        config['wg_encode']['human']['abundance'],
-        config['wg_encode']['mouse']['read_annot'],
-        config['wg_encode']['mouse']['gtf'],
-        config['wg_encode']['mouse']['abundance']
-
+        rules.all_short_rnaseq.input,
+        rules.all_long_rnaseq.input,
+        # rules.all_wg_encode.input
 
         # expand(rules.plot_overlap_annotation.output,
         #        sample='WTC11', library_prep='cDNA',
@@ -87,17 +81,3 @@ rule all:
         # expand(config['talon']['gtf_corrected'],
         #        sample='WTC11', library_prep='cDNA',
         #        platform='PacBio', counting='end')
-
-#        expand(rules.plot_overlap_annotation.output,
-#                sample='WTC11', library_prep='dRNA', platform='ONT'),
-#         expand(rules.plot_overlap_corrected_annotation.output,
-#                sample='WTC11', library_prep='dRNA',
-#                platform='ONT', counting='end')
-# -
-
-    # expand(config['short_rnaseq']['bam'],
-    #        encode_id=config['short_rnaseq']['wtc11']['se'], sample='WTC11')
-    # expand(config['lapa']['lapa_dir'], sample='WTC11', platform=['PacBio'],
-    #        counting=['end', 'tail'], library_prep=pb_library_prep),
-    # expand(config['lapa']['lapa_dir'], sample='WTC11', platform=['ONT'],
-    #        counting=['end', 'tail'], library_prep=ont_library_prep)

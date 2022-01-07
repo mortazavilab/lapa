@@ -46,3 +46,15 @@ rule lapa_longreads:
         --chrom_sizes {input.chrom_sizes} \
         --counting_method {wildcards.counting} \
         --output_dir {output}"
+
+
+pb_library_prep = ['cDNA', 'CapTrap']
+ont_library_prep = ['cDNA', 'dRNA', 'CapTrap', 'R2C2']
+
+
+rule all_long_rnaseq:
+    input:
+        expand(config['lapa']['lapa_dir'], sample='WTC11', platform=['PacBio'],
+               counting=['end', 'tail'], library_prep=pb_library_prep),
+        expand(config['lapa']['lapa_dir'], sample='WTC11', platform=['ONT'],
+               counting=['end', 'tail'], library_prep=ont_library_prep)

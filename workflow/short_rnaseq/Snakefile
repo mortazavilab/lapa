@@ -17,6 +17,12 @@ rule star_align:
         "0.74.0/bio/star/align"
 
 
+rule all_short_rnaseq:
+    input:
+        expand(config['short_rnaseq']['bam'],
+               encode_id=config['short_rnaseq']['wtc11']['se'], sample='WTC11')
+
+
 # rule count_raw_short_reads:
 #     input:
 #         bam = config['short_rnaseq']['bam']

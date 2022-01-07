@@ -7,7 +7,12 @@ rule correct_gtf_pac_talon:
     output:
         gtf = config['talon']['gtf_corrected']
     shell:
-        "lapa_correct_talon_gtf --gtf_input {input.gtf} --gtf_output {output.gtf} --lapa_dir {input.lapa_dir} --read_annot {input.read_annot} --fasta {input.fasta}"
+        "lapa_correct_talon_gtf \
+        --gtf_input {input.gtf} \
+        --gtf_output {output.gtf} \
+        --lapa_dir {input.lapa_dir} \
+        --read_annot {input.read_annot} \
+        --fasta {input.fasta}"
 
 
 rule overlap_tes_talon:

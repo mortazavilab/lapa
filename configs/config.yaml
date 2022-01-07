@@ -68,18 +68,21 @@ wg_encode:
       gtf: 1iAT5iqcmqUyfjYGQwYyYk6j9KEJbLUz9
       abundance: 1nGb8NZ4m0a9CqA54bJb-rTrhUrTQeyeo
 
-  human:
-    gtf: data/resources/wg/human_talon.gtf
-    abundance_unfiltered: data/resources/wg/human_talon_abundance.tsv
-    abundance: data/resources/wg/human_talon_abundance_filtered.tsv
-    read_annot: data/resources/wg/human_talon_read_annot.tsv
+  fasta: data/resources/wg/{specie}.fasta
+  gtf: data/resources/wg/{specie}.gtf
+  chrom_sizes: data/resources/wg/{specie}.chrom_sizes
+    
+  talon:
+    gtf: data/resources/wg/talon/{specie}_talon.gtf
+    abundance_unfiltered: data/resources/wg/talon/{specie}_talon_abundance.tsv
+    abundance: data/resources/wg/talon/{specie}_talon_abundance_filtered.tsv
+    read_annot: data/resources/wg/talon/{specie}_talon_read_annot.tsv
 
-  mouse:
-    gtf: data/resources/wg/mouse_talon.gtf
-    abundance_unfiltered: data/resources/wg/mouse_talon_abundance.tsv
-    abundance: data/resources/wg/mouse_talon_abundance_filtered.tsv
-    read_annot: data/resources/wg/mouse_talon_read_annot.tsv
+    gtf_corrected: data/resources/wg/talon/{specie}_talon.corrected.gtf
+    
+  lapa: data/results/wg/lapa/wg_lapa_{specie}
 
+      
 # gene_id_name_mapping: data/results/common/{specie}_gene_id_name_mapping.csv
   
 # annotation:

@@ -1,51 +1,109 @@
-rule download_wg_human_read_annot:
-    params:
-        drive_id = config['wg_encode']['drive_id']['human']['read_annot']
+rule download_fasta_human:
     output:
-        config['wg_encode']['human']['read_annot']
+        config['wg_encode']['fasta'].format(specie='human')
+    shell:
+        "wget https://www.encodeproject.org/files/GRCh38_no_alt_analysis_set_GCA_000001405.15/@@download/GRCh38_no_alt_analysis_set_GCA_000001405.15.fasta.gz -O {output}"
+
+
+rule download_gtf_human:
+    output:
+        config['wg_encode']['gtf'].format(specie='human')
+    shell:
+        "wget https://www.encodeproject.org/files/ENCFF991WIA/@@download/ENCFF991WIA.gtf.gz -O {output}"
+
+
+rule download_chrom_sizes_human:
+    output:
+        config['wg_encode']['chrom_sizes'].format(specie='human')
+    shell:
+        "wget https://www.encodeproject.org/files/ENCFF667IGK/@@download/ENCFF667IGK.tsv -O {output}"
+
+
+rule download_fasta_mouse:
+    output:
+        config['wg_encode']['fasta'].format(specie='mouse')
+    shell:
+        "wget https://www.encodeproject.org/files/mm10_no_alt_analysis_set_ENCODE/@@download/mm10_no_alt_analysis_set_ENCODE.fasta.gz -O {output}"
+
+
+rule download_gtf_mouse:
+    output:
+        config['wg_encode']['gtf'].format(specie='mouse')
+    shell:
+        "wget https://www.encodeproject.org/files/gencode.vM21.primary_assembly.annotation_UCSC_names/@@download/gencode.vM21.primary_assembly.annotation_UCSC_names.gtf.gz -O {output}"
+
+
+rule download_chrom_sizes_mouse:
+    output:
+        config['wg_encode']['chrom_sizes'].format(specie='mouse')
+    shell:
+        "wget https://www.encodeproject.org/files/mm10_no_alt.chrom.sizes/@@download/mm10_no_alt.chrom.sizes.tsv -O {output}"
+
+
+rule download_wg_read_annot:
+    params:
+        drive_id = lambda wildcards: config['wg_encode']['drive_id'][wildcards.specie]['read_annot']
+    output:
+        config['wg_encode']['talon']['read_annot']
     shell:
         "gdown --id {params.drive_id} -O {output}"
 
 
-rule download_wg_human_gtf:
+rule download_wg_gtf:
     params:
-        drive_id = config['wg_encode']['drive_id']['human']['gtf']
+        drive_id = lambda wildcards: config['wg_encode']['drive_id'][wildcards.specie]['gtf']
     output:
-        config['wg_encode']['human']['gtf']
+        config['wg_encode']['talon']['gtf']
     shell:
         "gdown --id {params.drive_id} -O {output}"
 
-rule download_wg_human_abundance:
+rule download_wg_abundance:
     params:
-        drive_id = config['wg_encode']['drive_id']['human']['abundance']
+        drive_id = lambda wildcards: config['wg_encode']['drive_id'][wildcards.specie]['abundance']
     output:
-        config['wg_encode']['human']['abundance']
-    shell:
-        "gdown --id {params.drive_id} -O {output}"
-
-
-rule download_wg_mouse_read_annot:
-    params:
-        drive_id = config['wg_encode']['drive_id']['mouse']['read_annot']
-    output:
-        config['wg_encode']['mouse']['read_annot']
+        config['wg_encode']['talon']['abundance']
     shell:
         "gdown --id {params.drive_id} -O {output}"
 
 
-rule download_wg_mouse_gtf:
-    params:
-        drive_id = config['wg_encode']['drive_id']['mouse']['gtf']
+rule lapa_wg:
+    input:
+        aligment = config['wg_encode']['talon']['read_annot'],
+        fasta = config['wg_encode']['fasta'],
+        gtf = config['wg_encode']['gtf'],
+        chrom_sizes = config['wg_encode']['chrom_sizes']
+    threads: 4
+    resources:
+        mem_gb = 64
     output:
-        config['wg_encode']['mouse']['gtf']
+        directory(config['wg_encode']['lapa'])
     shell:
-        "gdown --id {params.drive_id} -O {output}"
+        "lapa \
+        --alignment {input.aligment} \
+        --fasta {input.fasta} \
+        --annotation {input.gtf} \
+        --chrom_sizes {input.chrom_sizes} \
+        --output_dir {output}"
 
 
-rule download_wg_mouse_abundance:
-    params:
-        drive_id = config['wg_encode']['drive_id']['mouse']['abundance']
+rule correct_gtf_wg:
+    input:
+        read_annot = config['wg_encode']['talon']['read_annot'],
+        lapa_dir = config['wg_encode']['lapa'],
+        fasta = config['wg_encode']['fasta'],
+        gtf = config['wg_encode']['gtf']
     output:
-        config['wg_encode']['mouse']['abundance']
+        gtf = config['wg_encode']['talon']['gtf_corrected']
     shell:
-        "gdown --id {params.drive_id} -O {output}"
+        "lapa_correct_talon_gtf \
+        --gtf_input {input.gtf} \
+        --gtf_output {output.gtf} \
+        --lapa_dir {input.lapa_dir} \
+        --read_annot {input.read_annot} \
+        --fasta {input.fasta}"
+
+
+rule all_wg_encode:
+    input:
+        expand(config['wg_encode']['talon']['gtf_corrected'],
+               specie=['human', 'mouse'])
