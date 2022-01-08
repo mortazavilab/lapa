@@ -56,12 +56,12 @@ def star_index(wildcards):
 include: "common/Snakefile"
 include: "long_reads/Snakefile"
 include: "short_rnaseq/Snakefile"
+include: "quantseq3/Snakefile"
 include: "benchmark/Snakefile"
 include: "correction/Snakefile"
 include: "wg_encode/Snakefile"
 include: "plot/Snakefile"
 
-# include: "quantseq3/Snakefile"
 # include: "wtc11/Snakefile"
 # include: "read3/Snakefile"
 # include: "c2c12/Snakefile"
@@ -71,7 +71,8 @@ include: "plot/Snakefile"
 rule all:
     input:
         rules.all_short_rnaseq.input,
-        rules.all_lapa.input
+        rules.all_lapa.input,
+        rules.all_quantseq3.input
         # rules.all_wg_encode.input
 
         # expand(rules.plot_overlap_annotation.output,

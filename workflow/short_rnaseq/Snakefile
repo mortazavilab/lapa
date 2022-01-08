@@ -17,7 +17,7 @@ rule star_align:
         "0.74.0/bio/star/align"
 
 
-rule short_read_bam_read_count:
+rule short_rnaseq_bam_read_count:
     input:
         bam = config['short_rnaseq']['bam']
     output:

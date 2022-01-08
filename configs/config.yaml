@@ -24,7 +24,7 @@ encode:
   bam: data/resources/encode/bam/{encode_id}.bam
 
   fastq_read_count: data/results/encode/read_count/{encode_id}_fastq.txt
-  fasta_read_count: data/results/quantseq/read_count/{encode_id}_fasta.txt
+  fasta_read_count: data/results/encode/read_count/{encode_id}_fasta.txt
   bam_read_count: data/results/encode/read_count/{encode_id}_bam.txt
 
 lrgasp:
