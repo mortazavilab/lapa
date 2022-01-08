@@ -7,7 +7,7 @@ rule download_fasta_human:
 
 rule download_gtf_human:
     output:
-        config['wg_encode']['gtf'].format(specie='human')
+        config['wg_encode']['gtf_raw'].format(specie='human')
     shell:
         "wget https://www.encodeproject.org/files/ENCFF991WIA/@@download/ENCFF991WIA.gtf.gz -O {output}"
 
@@ -28,7 +28,7 @@ rule download_fasta_mouse:
 
 rule download_gtf_mouse:
     output:
-        config['wg_encode']['gtf'].format(specie='mouse')
+        config['wg_encode']['gtf_raw'].format(specie='mouse')
     shell:
         "wget https://www.encodeproject.org/files/gencode.vM21.primary_assembly.annotation_UCSC_names/@@download/gencode.vM21.primary_assembly.annotation_UCSC_names.gtf.gz -O {output}"
 
