@@ -2,14 +2,14 @@ rule download_fasta_human:
     output:
         config['wg_encode']['fasta'].format(specie='human')
     shell:
-        "wget https://www.encodeproject.org/files/GRCh38_no_alt_analysis_set_GCA_000001405.15/@@download/GRCh38_no_alt_analysis_set_GCA_000001405.15.fasta.gz -O {output}"
+        "wget -O - https://www.encodeproject.org/files/GRCh38_no_alt_analysis_set_GCA_000001405.15/@@download/GRCh38_no_alt_analysis_set_GCA_000001405.15.fasta.gz | gunzip -c > {output}"
 
 
 rule download_gtf_human:
     output:
         config['wg_encode']['gtf_raw'].format(specie='human')
     shell:
-        "wget https://www.encodeproject.org/files/ENCFF991WIA/@@download/ENCFF991WIA.gtf.gz -O {output}"
+        "wget -O - https://www.encodeproject.org/files/ENCFF991WIA/@@download/ENCFF991WIA.gtf.gz | gunzip -c > {output}"
 
 
 rule download_chrom_sizes_human:
@@ -23,14 +23,14 @@ rule download_fasta_mouse:
     output:
         config['wg_encode']['fasta'].format(specie='mouse')
     shell:
-        "wget https://www.encodeproject.org/files/mm10_no_alt_analysis_set_ENCODE/@@download/mm10_no_alt_analysis_set_ENCODE.fasta.gz -O {output}"
+        "wget -O - https://www.encodeproject.org/files/mm10_no_alt_analysis_set_ENCODE/@@download/mm10_no_alt_analysis_set_ENCODE.fasta.gz | gunzip -c >  {output}"
 
 
 rule download_gtf_mouse:
     output:
         config['wg_encode']['gtf_raw'].format(specie='mouse')
     shell:
-        "wget https://www.encodeproject.org/files/gencode.vM21.primary_assembly.annotation_UCSC_names/@@download/gencode.vM21.primary_assembly.annotation_UCSC_names.gtf.gz -O {output}"
+        "wget -O - https://www.encodeproject.org/files/gencode.vM21.primary_assembly.annotation_UCSC_names/@@download/gencode.vM21.primary_assembly.annotation_UCSC_names.gtf.gz | gunzip -c > {output}"
 
 
 rule download_chrom_sizes_mouse:
