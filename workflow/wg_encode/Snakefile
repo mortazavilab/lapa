@@ -66,6 +66,15 @@ rule download_wg_abundance:
         "gdown --id {params.drive_id} -O {output}"
 
 
+rule wg_utr_fix:
+    input:
+        gtf = config['wg_encode']['gtf_raw']
+    output:
+        gtf = config['wg_encode']['gtf']
+    shell:
+        "gencode_utr_fix --input_gtf {input.gtf} --output_gtf {output.gtf}"
+
+
 rule lapa_wg:
     input:
         aligment = config['wg_encode']['talon']['read_annot'],

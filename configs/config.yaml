@@ -47,7 +47,7 @@ quantseq:
   bam: data/results/quantseq/bam_tail/{sample}_rep{rep}/Aligned.sortedByCoord.out.bam
   bam_end: data/resources/quantseq/bam_end/{sample}_rep{rep}/polyA/Aligned.sortedByCoord.out.bam
 
-  fastq_read_count: data/results/quantseq/read_count/{sample}_rep{rep}_fastq.txt 
+  fastq_read_count: data/results/quantseq/read_count/{sample}_rep{rep}_fastq.txt
   bam_read_count: data/results/quantseq/read_count/{sample}_rep{rep}_bam.txt
 
   polya_atlas: data/resources/quantseq/polya_atlas/{sample}/{sample}rep{rep}.bed.gz
@@ -78,7 +78,9 @@ wg_encode:
       abundance: 1nGb8NZ4m0a9CqA54bJb-rTrhUrTQeyeo
 
   fasta: data/resources/wg/{specie}.fasta
-  gtf: data/resources/wg/{specie}.gtf
+  gtf_raw: data/resources/wg/{specie}.gtf
+  gtf: data/resources/wg/{specie}.utr_fix.gtf
+  
   chrom_sizes: data/resources/wg/{specie}.chrom_sizes
     
   talon:
