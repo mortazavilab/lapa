@@ -51,22 +51,37 @@ def read_counts_fastq(wildcards):
     ]
 
 
+def read_counts_bam(wildcards):
+    _df, _df_r2c2 = _read_counts(wildcards)
+    return [
+        *expand(config['encode']['bam_read_count'],
+                encode_id=_df['file_acc'].tolist()),
+        *expand(config['encode']['bam_read_count'],
+                encode_id=_df_r2c2['file_acc'].tolist())
+    ]
+
+
 rule read_nums_datasets:
     input:
-        short_counts = config['short_rnaseq']['short_count'].format(
-            sample='gm12878'),
-        quantseq = config['quantseq']['quantseq_count'],
-        read3 = config['read3']['read3_count'],
-        c2c12_read_annot = config['c2c12']['read_annot_bulk'],
-        gm12878_read_annot = config['long_read']['gm12878']['read_annot']
+        fastq_counts = read_counts_fastq,
+        bam = read_counts_bam
     output:
-        read_nums = "reports/figures/read_nums_datasets.png"
+        read_nums = "reports/figures/read_nums_datasets_{sample}.png"
+    params:
+        df_lrgasp = df_lrgasp
     threads: 1
     resources:
         mem_gb = 32
     notebook:
         "read_nums_datasets.ipynb"
 
+
+rule all_plot:
+    input:
+        expand(
+            "reports/figures/read_nums_datasets_{sample}.png",
+            sample='WTC11'
+        )
 
 # rule hist_read_counts:
 #     input:

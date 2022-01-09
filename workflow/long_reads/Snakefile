@@ -101,9 +101,9 @@ rule all_lapa:
                counting=['end', 'tail'], library_prep=pb_library_prep),
         expand(config['lapa']['lapa_dir'], sample='WTC11', platform=['ONT'],
                counting=['end', 'tail'], library_prep=ont_library_prep),
-        expand(config['encode']['fastq_read_count'],
-               encode_id=_df['file_acc'].tolist()),
-        expand(config['encode']['fasta_read_count'],
-               encode_id=_df_r2c2['file_acc'].tolist()),
-        expand(config['encode']['bam_read_count'],
-               encode_id=_df['file_acc'].tolist())
+        # expand(config['encode']['fastq_read_count'],
+        #        encode_id=_df['file_acc'].tolist()),
+        # expand(config['encode']['fasta_read_count'],
+        #        encode_id=_df_r2c2['file_acc'].tolist()),
+        # expand(config['encode']['bam_read_count'],
+        #        encode_id=_df['file_acc'].tolist())

@@ -54,13 +54,13 @@ def star_index(wildcards):
 #         raise('readannot is not defined for `%s`' % wildcards.sample)
 
 include: "common/Snakefile"
-# include: "long_reads/Snakefile"
-# include: "short_rnaseq/Snakefile"
-# include: "quantseq3/Snakefile"
-# include: "benchmark/Snakefile"
-# include: "correction/Snakefile"
+include: "long_reads/Snakefile"
+include: "short_rnaseq/Snakefile"
+include: "quantseq3/Snakefile"
+include: "benchmark/Snakefile"
+include: "correction/Snakefile"
 include: "wg_encode/Snakefile"
-# include: "plot/Snakefile"
+include: "plot/Snakefile"
 
 # include: "wtc11/Snakefile"
 # include: "read3/Snakefile"
@@ -70,10 +70,12 @@ include: "wg_encode/Snakefile"
 
 rule all:
     input:
-        rules.all_wg_encode.input
-        # rules.all_short_rnaseq.input,
-        # rules.all_lapa.input,
-        # rules.all_quantseq3.input
+        rules.all_plot.input
+        #rules.all_short_rnaseq.input,
+        #rules.all_lapa.input,
+        # rules.all_quantseq3.input,
+
+        # rules.all_wg_encode.input
 
         # expand(rules.plot_overlap_annotation.output,
         #        sample='WTC11', library_prep='cDNA',

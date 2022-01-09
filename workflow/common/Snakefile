@@ -68,7 +68,7 @@ rule bam_read_count:
     resources:
         mem_gb = 4
     shell:
-        "samtools view -F 4 -c {input.bam} > {output.txt}"
+        "samtools view -F 4 -F 256 -c {input.bam} > {output.txt}"
 
 
 rule utr_fix:
