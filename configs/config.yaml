@@ -90,8 +90,16 @@ wg_encode:
     read_annot: data/resources/wg/talon/{specie}_talon_read_annot.tsv
 
     gtf_corrected: data/resources/wg/talon/{specie}_talon.corrected.gtf
-    
+
+  cage:
+    bed: data/resources/wg/cage/{encode_id}.bed.gz
+
+    wtc11:
+      - ENCFF084VUM
+      - ENCFF604PAM
+
   lapa: data/results/wg/lapa/wg_lapa_{specie}
+
 
       
 # gene_id_name_mapping: data/results/common/{specie}_gene_id_name_mapping.csv

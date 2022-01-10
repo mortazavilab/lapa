@@ -79,10 +79,13 @@ def test_tss_mapping(tmp_path):
 
     df_read = pd.DataFrame({
         'read_name': ['r1', 'r2', 'r3'],
-        'Chromosome': ['chr1', 'chr1', 'chr1'],
-        'Start': [5000, 6000, 90000],
-        'End': [10001, 9750, 100000],
-        'Strand': ['+', '+', '+']
+        'chrom': ['chr1', 'chr1', 'chr1'],
+        'read_start': [5000, 6000, 90000],
+        'read_end': [10001, 9750, 100000],
+        'strand': ['+', '+', '+'],
+        'annot_gene_id': ['g1', 'g1', 'g2'],
+        'annot_transcript_id': ['t1', 't1', 't2'],
+        'dataset': ['a', 'a', 'a']
     })
     read_annot = tmp_path / 't_read_annot.tsv'
     df_read.to_csv(read_annot, sep='\t', index=False)

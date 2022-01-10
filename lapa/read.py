@@ -39,6 +39,9 @@ def read_tes_mapping(df_cluster, read_annot, distance=1000):
 
 
 def read_tss_read_annot(read_annot):
+    # TODO: optimize moe
+    # df_reads = df[[]]
+
     df = read_talon_read_annot(read_annot)
     df['End'] = np.where(df['Strand'] == '-', df['End'], df['Start'])
     del df['Start']

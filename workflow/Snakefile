@@ -14,10 +14,8 @@ def genome(wildcards):
         return 'mm39'
     elif wildcards.sample == 'WTC11':
         return 'hg38'
-    # if wildcards.sample == 'gm12878':
-    #     return 'human'
     # elif wildcards.sample == 'c2c12':
-    #     return 'mouse'
+    #     return 'mm10'
     else:
         raise ValueError(f'{wildcards.sample} is not known sample')
 
@@ -38,21 +36,6 @@ def star_index(wildcards):
     return config['genome']['star_index'][genome(wildcards)]
 
 
-# df_lrgasp = df_lrgasp[
-#     (df_lrgasp['file_contents'] == 'reads') &
-#     (df_lrgasp['library_prep'] == 'dRNA') &
-#     (df_lrgasp['sample'] == 'WTC11')
-# ]
-
-
-# def read_annot(wildcards):
-#     if wildcards.sample == 'gm12878':
-#         return config['pilot']['read_annot']
-#     elif wildcards.sample == 'c2c12':
-#         return config['c2c12']['read_annot_bulk']
-#     else:
-#         raise('readannot is not defined for `%s`' % wildcards.sample)
-
 include: "common/Snakefile"
 include: "long_reads/Snakefile"
 include: "short_rnaseq/Snakefile"
@@ -67,20 +50,11 @@ include: "plot/Snakefile"
 # include: "c2c12/Snakefile"
 # include: "pilot/Snakefile"
 
-
 rule all:
     input:
-        rules.all_plot.input
-        #rules.all_short_rnaseq.input,
-        #rules.all_lapa.input,
-        # rules.all_quantseq3.input,
+        rules.all_wg_encode.input
 
-        # rules.all_wg_encode.input
-
-        # expand(rules.plot_overlap_annotation.output,
-        #        sample='WTC11', library_prep='cDNA',
-        #        platform='PacBio', counting='end')
-
-        # expand(config['talon']['gtf_corrected'],
-        #        sample='WTC11', library_prep='cDNA',
-        #        platform='PacBio', counting='end')
+        # rules.all_plot.input
+        # rules.all_short_rnaseq.input,
+        # rules.all_lapa.input,
+        # rules.all_quantseq3.input

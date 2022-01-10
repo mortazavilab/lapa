@@ -66,6 +66,13 @@ rule download_wg_abundance:
         "gdown --id {params.drive_id} -O {output}"
 
 
+rule download_cage:
+    output:
+        config['wg_encode']['cage']['bed']
+    shell:
+        "wget https://www.encodeproject.org/files/{encode_id}/@@download/{encode_id}.bed.gz -O {output}"
+
+
 rule wg_utr_fix:
     input:
         gtf = config['wg_encode']['gtf_raw']
@@ -98,11 +105,11 @@ rule lapa_wg:
 rule correct_gtf_wg:
     input:
         read_annot = config['wg_encode']['talon']['read_annot'],
+        gtf = config['wg_encode']['talon']['gtf'],
         lapa_dir = config['wg_encode']['lapa'],
-        fasta = config['wg_encode']['fasta'],
-        gtf = config['wg_encode']['gtf']
+        fasta = config['wg_encode']['fasta']
     output:
-        gtf = config['wg_encode']['talon']['gtf_corrected']
+        gtf = protected(config['wg_encode']['talon']['gtf_corrected'])
     shell:
         "lapa_correct_talon_gtf \
         --gtf_input {input.gtf} \
@@ -112,7 +119,71 @@ rule correct_gtf_wg:
         --fasta {input.fasta}"
 
 
+rule wg_overlap_tes_talon:
+    input:
+        lapa_dir = config['lapa']['lapa_quantseq_dir'].format(sample='WTC11'),
+        gtf = config['wg_encode']['talon']['gtf'],
+        abundance = config['wg_encode']['talon']['abundance']
+    params:
+        max_distance = 50
+    output:
+        overlap = 'data/results/wg/overlap/{specie}_overlap_annotation.csv'
+    script:
+        "../common/overlap_talon.py"
+
+
+rule wg_overlap_tss_talon:
+    input:
+        cage = expand(config['wg_encode']['cage']['bed'],
+                      encode_id=config['wg_encode']['cage']['wtc11']),
+        gtf = config['wg_encode']['talon']['gtf'],
+        abundance = config['wg_encode']['talon']['abundance']
+    params:
+        max_distance = 50
+    output:
+        overlap = 'data/results/wg/overlap/{specie}_overlap_tss_annotation.csv'
+    script:
+        "../common/overlap_cage_talon.py"
+
+
+rule wg_overlap_tes_corrected_talon:
+    input:
+        lapa_dir = config['lapa']['lapa_quantseq_dir'].format(sample='WTC11'),
+        gtf = config['wg_encode']['talon']['gtf_corrected'],
+        abundance = config['wg_encode']['talon']['abundance']
+    params:
+        max_distance = 50
+    output:
+        overlap = 'data/results/wg/overlap/{specie}_overlap_corrected_annotation.csv'
+    script:
+        "../common/overlap_talon.py"
+
+
+rule wg_overlap_tss_corrected_talon:
+    input:
+        cage = expand(config['wg_encode']['cage']['bed'],
+                      encode_id=config['wg_encode']['cage']['wtc11']),
+        gtf = config['wg_encode']['talon']['gtf_corrected'],
+        abundance = config['wg_encode']['talon']['abundance']
+    params:
+        max_distance = 50
+    output:
+        overlap = 'data/results/wg/overlap/{specie}_overlap_tss_annotation.csv'
+    script:
+        "../common/overlap_cage_talon.py"
+
+
+rule wg_plot_overlap_annotation:
+    input:
+        uncorrected = 'data/results/wg/overlap/{specie}_overlap_annotation.csv',
+        corrected = 'data/results/wg/overlap/{specie}_overlap_corrected_annotation.csv'
+    output:
+        fig = 'reports/wg/figures/correction/{specie}_overlap_annotation_both.png'
+    notebook:
+        '../correction/plot_overlap_annotation.ipynb'
+
+
 rule all_wg_encode:
     input:
-        expand(config['wg_encode']['talon']['gtf_corrected'],
-               specie=['human', 'mouse'])
+        expand('reports/wg/figures/correction/{specie}_overlap_annotation_both.png',
+               specie=['human'])
