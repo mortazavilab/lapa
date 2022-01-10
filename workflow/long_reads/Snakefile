@@ -18,13 +18,13 @@ def file_acc_short_reads(wildcards):
 def reads_bam(wildcards):
     platform = wildcards['platform']
     library_prep = wildcards['library_prep']
+    sample = wildcards['sample']
 
     if platform in {'PacBio', 'ONT'}:
         return expand(config['encode']['bam'],
                       encode_id=file_acc_long_reads(wildcards))
 
     elif platform == 'Illumina' and library_prep == 'se':
-        sample = wildcards['sample']
         encode_id = file_acc_short_reads(wildcards)
         return expand(config['short_rnaseq']['bam'],
                       encode_id=encode_id, sample=sample)
