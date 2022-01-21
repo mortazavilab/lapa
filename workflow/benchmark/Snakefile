@@ -1,24 +1,18 @@
 rule benchmark_lapa:
     input:
-        quantseq = config['lapa']['lapa_dir'].format(
-            sample='WTC11', library_prep='quantseq',
-            platform='Illumina', counting='end'),
-        drna_ont_end = config['lapa']['lapa_dir'].format(
-            sample='WTC11', library_prep='dRNA',
-            platform='ONT', counting='end'),
-        drna_ont_tail = config['lapa']['lapa_dir'].format(
-            sample='WTC11', library_prep='dRNA',
-            platform='ONT', counting='tail'),
-        short_rna = config['lapa']['lapa_dir'].format(
-            sample='WTC11', platform='Illumina',
-            counting='end', library_prep='se')
-        # cdna_ont = config['lapa']['lapa_dir'].format(
-        #     sample='WTC11', library_prep='cDNA',
-        #     platform='PacBio', counting='end'),
-        # cdna_pacbio = config['lapa']['lapa_dir'].format(
-        #     sample='WTC11', method='cDNA-PacBio', count_read='tail'),
+        lapa_dir = [
+            *expand(config['lapa']['lapa_dir'],
+                    sample='{sample}', platform='PacBio', counting=['end'],
+                    library_prep=pb_library_prep),
+            *expand(config['lapa']['lapa_dir'],
+                    sample='{sample}', platform='ONT', counting=['end'],
+                    library_prep=ont_library_prep)
+        ],
+        quantseq = expand(config['lapa']['lapa_dir'],
+                          sample='{sample}', platform='Illumina', counting='end',
+                          library_prep='quantseq')
     output:
-        pr_curve_plot = 'reports/figures/wtc11_pr_curve.png',
+        pr_curve_plot = 'reports/figures/{sample}_pr_curve.png',
     notebook:
         './benchmark_lapa.ipynb'
 

@@ -17,6 +17,7 @@ genome:
 
 common:
   chrom_sizes: data/results/common/{genome}.chrom_sizes
+  tes: data/results/common/{genome}_tes.csv
 
 encode: 
   fastq: data/resources/encode/fastq/{encode_id}.fastq.gz
@@ -52,11 +53,14 @@ quantseq:
 
   polya_atlas: data/resources/quantseq/polya_atlas/{sample}/{sample}rep{rep}.bed.gz
 
+# cage:
+  # https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE185917
+
 short_rnaseq:
   WTC11:
     se:
-      - ENCFF365HXR
       - ENCFF492PIB
+      - ENCFF365HXR
       - ENCFF621NOL
       - ENCFF738DHG
       - ENCFF235BRN
@@ -64,6 +68,8 @@ short_rnaseq:
       
   bam: data/results/short_read/{sample}/{encode_id}/Aligned.sortedByCoord.out.bam
   bam_read_count: data/resources/short_read/read_count/{sample}_{encode_id}_bam.txt
+
+  gene_exp: data/resources/short_read/gene_exp/{sample}.tsv
 
 wg_encode:
   drive_id:
@@ -98,8 +104,16 @@ wg_encode:
       - ENCFF084VUM
       - ENCFF604PAM
 
-  lapa: data/results/wg/lapa/wg_lapa_{specie}
+    gm12:
+      - ENCFF383NVJ
+      - ENCFF016XXM
+      - ENCFF260HMC
+      - ENCFF103DEY
+      - ENCFF275UYM
+      - ENCFF427KTV
+      - ENCFF189WCY
 
+  lapa: data/results/wg/lapa/wg_lapa_{specie}
 
       
 # gene_id_name_mapping: data/results/common/{specie}_gene_id_name_mapping.csv

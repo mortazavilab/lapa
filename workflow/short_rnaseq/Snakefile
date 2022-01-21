@@ -33,10 +33,6 @@ rule all_short_rnaseq:
     input:
         expand(config['encode']['fastq_read_count'],
                encode_id=config['short_rnaseq']['WTC11']['se']),
-        expand(config['short_rnaseq']['bam_read_count'],
-               encode_id=config['short_rnaseq']['WTC11']['se'], sample='WTC11'),
-        expand(config['short_rnaseq']['bam'],
-               encode_id=config['short_rnaseq']['WTC11']['se'], sample='WTC11')
 
 
 # rule count_raw_short_reads:

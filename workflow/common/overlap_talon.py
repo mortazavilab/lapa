@@ -8,6 +8,8 @@ gr_tes = pr.read_gtf(snakemake.input['gtf']).features.tes()
 
 result = LapaResult(snakemake.input['lapa_dir'])
 
+__import__("pdb").set_trace()
+
 df_quantseq = result.read_cluster().drop_duplicates(
     subset=['Chromosome', 'polyA_site', 'Strand'])
 df_quantseq['Start'] = df_quantseq['polyA_site'] - 1

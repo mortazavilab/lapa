@@ -70,7 +70,7 @@ rule download_cage:
     output:
         config['wg_encode']['cage']['bed']
     shell:
-        "wget https://www.encodeproject.org/files/{encode_id}/@@download/{encode_id}.bed.gz -O {output}"
+        "wget https://www.encodeproject.org/files/{wildcards.encode_id}/@@download/{wildcards.encode_id}.bed.gz -O {output}"
 
 
 rule wg_utr_fix:
@@ -102,21 +102,21 @@ rule lapa_wg:
         --output_dir {output}"
 
 
-rule correct_gtf_wg:
-    input:
-        read_annot = config['wg_encode']['talon']['read_annot'],
-        gtf = config['wg_encode']['talon']['gtf'],
-        lapa_dir = config['wg_encode']['lapa'],
-        fasta = config['wg_encode']['fasta']
-    output:
-        gtf = protected(config['wg_encode']['talon']['gtf_corrected'])
-    shell:
-        "lapa_correct_talon_gtf \
-        --gtf_input {input.gtf} \
-        --gtf_output {output.gtf} \
-        --lapa_dir {input.lapa_dir} \
-        --read_annot {input.read_annot} \
-        --fasta {input.fasta}"
+# rule correct_gtf_wg:
+#     input:
+#         read_annot = config['wg_encode']['talon']['read_annot'],
+#         gtf = config['wg_encode']['talon']['gtf'],
+#         lapa_dir = config['wg_encode']['lapa'],
+#         fasta = config['wg_encode']['fasta']
+#     output:
+#         gtf = protected(config['wg_encode']['talon']['gtf_corrected'])
+#     shell:
+#         "lapa_correct_talon_gtf \
+#         --gtf_input {input.gtf} \
+#         --gtf_output {output.gtf} \
+#         --lapa_dir {input.lapa_dir} \
+#         --read_annot {input.read_annot} \
+#         --fasta {input.fasta}"
 
 
 rule wg_overlap_tes_talon:
@@ -135,11 +135,13 @@ rule wg_overlap_tes_talon:
 rule wg_overlap_tss_talon:
     input:
         cage = expand(config['wg_encode']['cage']['bed'],
-                      encode_id=config['wg_encode']['cage']['wtc11']),
+                      encode_id=config['wg_encode']['cage']['gm12']),
         gtf = config['wg_encode']['talon']['gtf'],
         abundance = config['wg_encode']['talon']['abundance']
     params:
-        max_distance = 50
+        max_distance = 50,
+        samples = ['gm12878_1_1', 'gm12878_1_2', 'gm12878_1_3',
+                   'gm12878_1_4', 'gm12878_3_1', 'gm12878_2_1', 'gm12878_2_2']        
     output:
         overlap = 'data/results/wg/overlap/{specie}_overlap_tss_annotation.csv'
     script:
@@ -162,13 +164,15 @@ rule wg_overlap_tes_corrected_talon:
 rule wg_overlap_tss_corrected_talon:
     input:
         cage = expand(config['wg_encode']['cage']['bed'],
-                      encode_id=config['wg_encode']['cage']['wtc11']),
+                      encode_id=config['wg_encode']['cage']['gm12']),
         gtf = config['wg_encode']['talon']['gtf_corrected'],
         abundance = config['wg_encode']['talon']['abundance']
     params:
-        max_distance = 50
+        max_distance = 50,
+        samples = ['gm12878_1_1', 'gm12878_1_2', 'gm12878_1_3',
+                   'gm12878_1_4', 'gm12878_3_1', 'gm12878_2_1', 'gm12878_2_2']
     output:
-        overlap = 'data/results/wg/overlap/{specie}_overlap_tss_annotation.csv'
+        overlap = 'data/results/wg/overlap/{specie}_overlap_tss_corrected_annotation.csv'
     script:
         "../common/overlap_cage_talon.py"
 
@@ -183,7 +187,20 @@ rule wg_plot_overlap_annotation:
         '../correction/plot_overlap_annotation.ipynb'
 
 
+rule wg_plot_overlap_tss_annotation:
+    input:
+        uncorrected = 'data/results/wg/overlap/{specie}_overlap_tss_annotation.csv',
+        corrected = 'data/results/wg/overlap/{specie}_overlap_tss_corrected_annotation.csv'
+    output:
+        fig = 'reports/wg/figures/correction/{specie}_overlap_annotation_tss_both.png'
+    notebook:
+        '../correction/plot_overlap_annotation.ipynb'
+
+
 rule all_wg_encode:
     input:
-        expand('reports/wg/figures/correction/{specie}_overlap_annotation_both.png',
+        expand('reports/wg/figures/correction/{specie}_overlap_annotation_tss_both.png',
                specie=['human'])
+
+        # expand('reports/wg/figures/correction/{specie}_overlap_annotation_both.png',
+        #        specie=['human']),

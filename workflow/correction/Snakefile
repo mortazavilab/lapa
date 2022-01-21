@@ -1,4 +1,12 @@
-rule correct_gtf_pac_talon:
+# rule geo_download:
+#     input:
+#         ''
+#     output:
+#         ''
+#     shell:
+#         "wget https://www.ncbi.nlm.nih.gov/geo/download/?acc=GSM5625727&format=file&file=GSM5625727%5FWTC11%2D1%5Frep1%2Ecount%2Ebed%2Egz"
+
+rule correct_gtf_talon:
     input:
         gtf = config['talon']['gtf'],
         read_annot = config['talon']['read_annot'],
@@ -39,7 +47,7 @@ rule overlap_tes_corrected_talon:
         overlap = 'data/results/benchmark/overlap/{sample}_{library_prep}_{platform}_{counting}_overlap_corrected_annotation.csv'
     script:
         "../common/overlap_talon.py"
-        
+
 
 rule plot_overlap_annotation:
     input:

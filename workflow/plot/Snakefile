@@ -84,56 +84,93 @@ rule read_nums_datasets:
         "read_nums_datasets.ipynb"
 
 
+rule hist_read_counts:
+    input:
+        tes = (lambda wildcards: config['common']['tes'].format(
+            genome=genome(wildcards))),
+        lapa_dir = config['lapa']['lapa_dir']
+    output:
+        hist = 'data/results/benchmark/hist/{sample}/{library_prep}_{platform}_{counting}_hist.csv',
+        percentage = 'data/results/benchmark/hist/{sample}/{library_prep}_{platform}_{counting}_percentage.txt'
+    threads: 1
+    resources:
+        mem_gb = 4
+    script:
+        'hist_read_counts.py'
+
+
+rule plot_hist_read_count:
+    input:
+        hist = [
+            *expand('data/results/benchmark/hist/{sample}/{library_prep}_{platform}_{counting}_hist.csv',
+                    sample='{sample}', platform='PacBio', counting=['end'],
+                    library_prep=pb_library_prep),
+            *expand('data/results/benchmark/hist/{sample}/{library_prep}_{platform}_{counting}_hist.csv',
+                    sample='{sample}', platform='ONT', counting=['end'],
+                    library_prep=ont_library_prep),
+            *expand('data/results/benchmark/hist/{sample}/{library_prep}_{platform}_{counting}_hist.csv',
+                    sample='{sample}', platform='Illumina', counting='end',
+                    library_prep='quantseq'),
+            # *expand('data/results/benchmark/hist/{sample}/{library_prep}_{platform}_{counting}_hist.csv',
+            #         sample='{sample}', platform='Illumina', counting='end',
+            #         library_prep='se')
+        ],
+        percentage = [
+            *expand('data/results/benchmark/hist/{sample}/{library_prep}_{platform}_{counting}_percentage.txt',
+                    sample='{sample}', platform='PacBio', counting=['end'],
+                    library_prep=pb_library_prep),
+            *expand('data/results/benchmark/hist/{sample}/{library_prep}_{platform}_{counting}_percentage.txt',
+                    sample='{sample}', platform='ONT', counting=['end'],
+                    library_prep=ont_library_prep),
+            *expand('data/results/benchmark/hist/{sample}/{library_prep}_{platform}_{counting}_percentage.txt',
+                    sample='{sample}', platform='Illumina', counting=['end'],
+                    library_prep='quantseq'),
+            # *expand('data/results/benchmark/hist/{sample}/{library_prep}_{platform}_{counting}_percentage.txt',
+            #         sample='{sample}', platform='Illumina', counting=['end'],
+            #         library_prep='se')
+        ]
+    output:
+        hist = 'reports/figures/{sample}_hist_read_counts.png',
+        percent = 'reports/figures/{sample}_percentage_of_reads_tes.png'
+    threads: 1
+    resources:
+        mem_gb = 4
+    notebook:
+        'hist_read_count.ipynb'
+
+
+rule plot_major_isoform_gene_exp:
+    input:
+        lapa_dir = [
+            *expand(config['lapa']['lapa_dir'],
+                    sample='{sample}', platform='PacBio', counting=['end'],
+                    library_prep=pb_library_prep),
+            *expand(config['lapa']['lapa_dir'],
+                    sample='{sample}', platform='ONT', counting=['end'],
+                    library_prep=ont_library_prep),
+            *expand(config['lapa']['lapa_dir'],
+                    sample='{sample}', platform='Illumina', counting='end',
+                    library_prep='quantseq')
+        ],
+        gene_exp = config['short_rnaseq']['gene_exp']
+    output:
+        hist = 'reports/figures/{sample}_plot_major_isoform_gene_exp.png',
+        fracA = 'reports/figures/{sample}_plot_fracA.png'
+    notebook:
+        'plot_major_isoform_gene_exp.ipynb'
+
+
 rule all_plot:
     input:
         expand(
-            "reports/figures/read_nums_datasets_{sample}.png",
+            'reports/figures/{sample}_plot_major_isoform_gene_exp.png',
+            sample='WTC11'
+        ),
+        expand(
+            'reports/figures/read_nums_datasets_{sample}.png',
+            sample='WTC11'
+        ),
+        expand(
+            'reports/figures/{sample}_hist_read_counts.png',
             sample='WTC11'
         )
-
-# rule hist_read_counts:
-#     input:
-#         tes = (lambda wildcards: config['annotation']['tes'].format(
-#             specie=get_specie(wildcards))),
-#         lapa_dir = config['lapa']['lapa_dir']
-#     output:
-#         hist = 'data/results/temp/hist/{sample}/{dataset}.csv',
-#         percentage = 'data/results/temp/hist/{sample}/{dataset}.txt'
-#     threads: 1
-#     resources:
-#         mem_gb = 4
-#     script:
-#         'hist_read_counts.py'
-
-
-# rule plot_hist_read_count:
-#     input:
-#         short_rna_hist = 'data/results/temp/hist/{sample}/{dataset}.csv'.format(
-#             sample='gm12878', dataset='short_rna_lapa'),
-#         quantseq_hist = 'data/results/temp/hist/{sample}/{dataset}.csv'.format(
-#             sample='gm12878', dataset='quantseq_lapa'),
-#         long_rna_gm12_hist = 'data/results/temp/hist/{sample}/{dataset}.csv'.format(
-#             sample='gm12878', dataset='long_rna_lapa'),
-#         read3 = 'data/results/temp/hist/{sample}/{dataset}.csv'.format(
-#             sample='c2c12', dataset='read3_lapa'),
-#         long_rna_c2c12_hist = 'data/results/temp/hist/{sample}/{dataset}.csv'.format(
-#             sample='c2c12', dataset='long_rna_lapa'),
-
-#         short_rna_percent = 'data/results/temp/hist/{sample}/{dataset}.txt'.format(
-#             sample='gm12878', dataset='short_rna_lapa'),
-#         quantseq_percent = 'data/results/temp/hist/{sample}/{dataset}.txt'.format(
-#             sample='gm12878', dataset='quantseq_lapa'),
-#         long_rna_gm12_percent = 'data/results/temp/hist/{sample}/{dataset}.txt'.format(
-#             sample='gm12878', dataset='long_rna_lapa'),
-#         read3_percent = 'data/results/temp/hist/{sample}/{dataset}.txt'.format(
-#             sample='c2c12', dataset='read3_lapa'),
-#         long_rna_c2c12_percent = 'data/results/temp/hist/{sample}/{dataset}.txt'.format(
-#             sample='c2c12', dataset='long_rna_lapa')
-#     output:
-#         hist = 'reports/figures/hist_read_counts.png',
-#         percent = 'reports/figures/percentage_of_reads_tes.png'
-#     threads: 1
-#     resources:
-#         mem_gb = 4
-#     notebook:
-#         'hist_read_count.ipynb'
