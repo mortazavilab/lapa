@@ -1,0 +1,56 @@
+
+# rule overlap_polyA_wtc11:
+#     input:
+#         polyA = config['polyA_seq']['wtc11'],
+#         gtf = config['long_read']['wtc11']['tool_gtf'],
+#         abundance = config['long_read']['wtc11']['abundance']
+#     params:
+#         max_distance = 50
+#     output:
+#         overlap = 'data/results/wtc11/overlap/{tool}_{library_prep}_{platform}_{method}_annotation.csv'
+#     script:
+#         "../common/overlap_polyA_talon.py"
+
+
+# rule overlap_cage_wtc11:
+#     input:
+#         cage = [
+#             config['cage']['h1']['rep1'],
+#             config['cage']['h1']['rep2']
+#         ],
+#         gtf = config['long_read']['wtc11']['tool_gtf'],
+#         abundance = config['long_read']['wtc11']['abundance']
+#     params:
+#         max_distance = 50
+#     output:
+#         overlap = 'data/results/wtc11/overlap_cage/{tool}_{library_prep}_{platform}_{method}_annotation.csv'
+#     script:
+#         "../common/overlap_cage_talon.py"
+
+
+# rule plot_cage_overlap_wtc11:
+#     input:
+#         'data/results/wtc11/overlap_cage/{tool}_{library_prep}_{platform}_{method}_annotation.csv'
+#     output:
+#         'reports/figures/overlap/{tool}_{library_prep}_{platform}_{method}_annotation_cage_wtc11.png'
+#     script:
+#         "../common/plot_fig4.R"
+
+
+# rule plot_overlap_wtc11:
+#     input:
+#         'data/results/wtc11/overlap/{tool}_{library_prep}_{platform}_{method}_annotation.csv'
+#     output:
+#         'reports/figures/overlap/{tool}_{library_prep}_{platform}_{method}_annotation_wtc11.png'
+#     script:
+#         "../common/plot_fig4.R"
+
+
+
+rule tail_len_dist:
+    input:
+        'data/resources/wtc11/bam/ENCFF155CFF.bam'
+    output:
+        'reports/figures/wtc11/ont_rep1_tail_len_dist.png'
+    script:
+        "./tail_len_dist.py"

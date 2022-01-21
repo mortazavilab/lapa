@@ -2,9 +2,9 @@ import pyranges as pr
 
 
 def get_tes_from_gtf(gtf):
-    df_gtf = pr.read_gtf(snakemake.input['gtf'])
+    gr_gtf = pr.read_gtf(gtf)
 
-    df_tes = df_gtf.features.tes().df[[
+    df_tes = gr_gtf.features.tes().df[[
         'Chromosome', 'Start', 'End', 'Strand', 'gene_id', 'gene_type'
     ]].drop_duplicates()
 

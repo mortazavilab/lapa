@@ -1,4 +1,4 @@
-name: longread_postprocessing
+name: lapa
 channels:
   - defaults
   - conda-forge
@@ -9,6 +9,7 @@ dependencies:
   - ucsc-bedtobigbed
   - seqkit
   - sra-tools
+  - star
   - pip:
     - snakemake
     - biopython
@@ -20,4 +21,3 @@ dependencies:
     - seaborn
     - snakemk_util
     - -e .
-

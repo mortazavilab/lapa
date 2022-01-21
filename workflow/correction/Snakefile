@@ -1,0 +1,77 @@
+# rule geo_download:
+#     input:
+#         ''
+#     output:
+#         ''
+#     shell:
+#         "wget https://www.ncbi.nlm.nih.gov/geo/download/?acc=GSM5625727&format=file&file=GSM5625727%5FWTC11%2D1%5Frep1%2Ecount%2Ebed%2Egz"
+
+rule correct_gtf_talon:
+    input:
+        gtf = config['talon']['gtf'],
+        read_annot = config['talon']['read_annot'],
+        fasta = fasta,
+        lapa_dir = config['lapa']['lapa_dir']
+    output:
+        gtf = config['talon']['gtf_corrected']
+    shell:
+        "lapa_correct_talon_gtf \
+        --gtf_input {input.gtf} \
+        --gtf_output {output.gtf} \
+        --lapa_dir {input.lapa_dir} \
+        --read_annot {input.read_annot} \
+        --fasta {input.fasta}"
+
+
+rule overlap_tes_talon:
+    input:
+        lapa_dir = config['lapa']['lapa_quantseq_dir'],
+        gtf = config['talon']['gtf'],
+        abundance = config['talon']['abundance']
+    params:
+        max_distance = 50
+    output:
+        overlap = 'data/results/benchmark/overlap/{sample}_{library_prep}_{platform}_overlap_annotation.csv'
+    script:
+        "../common/overlap_talon.py"
+
+
+rule overlap_tes_corrected_talon:
+    input:
+        lapa_dir = config['lapa']['lapa_quantseq_dir'],
+        gtf = config['talon']['gtf_corrected'],
+        abundance = config['talon']['abundance']
+    params:
+        max_distance = 50
+    output:
+        overlap = 'data/results/benchmark/overlap/{sample}_{library_prep}_{platform}_{counting}_overlap_corrected_annotation.csv'
+    script:
+        "../common/overlap_talon.py"
+
+
+rule plot_overlap_annotation:
+    input:
+        uncorrected = 'data/results/benchmark/overlap/{sample}_{library_prep}_{platform}_overlap_annotation.csv',
+        corrected = 'data/results/benchmark/overlap/{sample}_{library_prep}_{platform}_{counting}_overlap_corrected_annotation.csv'
+    output:
+        fig = 'reports/figures/correction/{sample}_{library_prep}_{platform}_{counting}_overlap_annotation_both.png'
+    notebook:
+        './plot_overlap_annotation.ipynb'
+
+
+# rule plot_overlap_annotation:
+#     input:
+#         'data/results/benchmark/overlap/{sample}_{library_prep}_{platform}_overlap_annotation.csv'
+#     output:
+#         'reports/figures/correction/{sample}_{library_prep}_{platform}_overlap_annotation.png'
+#     script:
+#         "../common/plot_fig4.R"
+
+# rule plot_overlap_corrected_annotation:
+#     input:
+#         'data/results/benchmark/overlap/{sample}_{library_prep}_{platform}_{counting}_overlap_corrected_annotation.csv'
+#     output:
+#         'reports/figures/correction/{sample}_{library_prep}_{platform}_{counting}_overlap_corrected_annotation.png'
+#     script:
+#         "../common/plot_fig4.R"
+

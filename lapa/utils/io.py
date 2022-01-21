@@ -22,8 +22,11 @@ def remove_chr(df):
     return df
 
 
-def read_talon_read_annot(path):
-    df = pd.read_csv(path, sep='\t')
+def read_talon_read_annot(path, usecols=(
+        'read_name', 'chrom', 'read_start', 'read_end',
+        'strand', 'annot_gene_id', 'annot_transcript_id', 'dataset')):
+
+    df = pd.read_csv(path, sep='\t', usecols=usecols)
     df = df.rename(columns={
         'chrom': 'Chromosome',
         'read_start': 'Start',
@@ -35,11 +38,21 @@ def read_talon_read_annot(path):
 
     start = np.where(df['Start'] < df['End'], df['Start'], df['End'])
     end = np.where(df['Start'] > df['End'], df['Start'], df['End'])
-    df['End'] = np.where(df['Strand'] == '-', start, end)
-    del df['Start']
+    df['Start'] = start.copy()
+    df['End'] = end.copy()
 
-    # TO FIX: start end strand may not be correct
     return df
+
+
+def read_talon_read_annot_count(path):
+    df = read_talon_read_annot(path)
+
+    df['End'] = np.where(df['Strand'] == '-', df['Start'], df['End'])
+    del df['Start']
+    df['Start'] = df['End'] - 1
+    df['count'] = 1
+
+    return df[['Chromosome', 'Start', 'End', 'Strand', 'count', 'sample']]
 
 
 def read_bam_ends(path, mapq=10, sample=None):

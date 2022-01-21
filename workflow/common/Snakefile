@@ -1,11 +1,22 @@
-
 rule chrom_sizes:
     input:
         fasta = fasta
+    threads: 1
+    resources:
+        mem_gb = 4
     output:
         chrom_sizes = config['common']['chrom_sizes']
     shell:
         "faidx {input.fasta} -i chromsizes > {output.chrom_sizes}"
+
+
+rule gtf_tes:
+    input:
+        gtf = gtf
+    output:
+        tes = config['common']['tes']
+    script:
+        "gtf_tes.py"
 
 
 rule site_motif:
@@ -15,10 +26,98 @@ rule site_motif:
         "polyA_motif.py"
 
 
-rule gtf_tes:
-    input:
-        gtf = gtf
+rule download_encode_fastq:
+    threads: 1
+    resources:
+        mem_gb = 4
     output:
-        tes = config['annotation']['tes']
-    script:
-        "gtf_tes.py"
+        config['encode']['fastq']
+    shell:
+        "wget https://www.encodeproject.org/files/{wildcards.encode_id}/@@download/{wildcards.encode_id}.fastq.gz -O {output}"
+
+
+rule download_encode_bam:
+    threads: 1
+    resources:
+        mem_gb = 4
+    output:
+        bam = config['encode']['bam']
+    shell:
+        "wget https://www.encodeproject.org/files/{wildcards.encode_id}/@@download/{wildcards.encode_id}.bam -O {output}"
+
+
+rule download_gene_exp:
+    output:
+        config['short_rnaseq']['gene_exp'].format(sample='WTC11')
+    shell:
+        "wget https://www.encodeproject.org/files/ENCFF178KKE/@@download/ENCFF178KKE.tsv -O {output}"
+
+
+rule fastq_read_count:
+    input:
+        fastq = config['encode']['fastq']
+    output:
+        txt = config['encode']['fastq_read_count']
+    threads: 1
+    resources:
+        mem_gb = 4
+    shell:
+        "expr $(zcat {input.fastq} | wc -l) / 4 > {output.txt}"
+
+
+rule fasta_read_count:
+    output:
+        txt = config['encode']['fasta_read_count']
+    threads: 1
+    resources:
+        mem_gb = 4
+    shell:
+        "wget -O - https://www.encodeproject.org/files/{wildcards.encode_id}/@@download/{wildcards.encode_id}.fasta.gz | grep '>' | wc -l > {output.txt}"
+
+
+rule bam_read_count:
+    input:
+        bam = config['encode']['bam']
+    output:
+        txt = config['encode']['bam_read_count']
+    threads: 1
+    resources:
+        mem_gb = 4
+    shell:
+        "samtools view -F 4 -F 256 -c {input.bam} > {output.txt}"
+
+
+rule utr_fix:
+    input:
+        gtf = 'data/resources/common/{gtf}.gtf'
+    output:
+        gtf = 'data/resources/common/{gtf}.utr_fix.gtf'
+    shell:
+        "gencode_utr_fix --input_gtf {input.gtf} --output_gtf {output.gtf}"
+
+
+rule fastq_polyA_tail:
+    input:
+        fastq = config['encode']['fastq']
+    params:
+        pattern = "A" * 20,
+        mismatch = 0
+    resources:
+        mem_gb = 8
+    output:
+        fastq = config['encode']['fastq_polyA']
+    shell:
+        '''
+        seqkit grep --by-seq --max-mismatch {params.mismatch} \
+        --pattern {params.pattern} {input.fastq} | gzip > {output.fastq}
+        '''
+
+
+
+# rule gene_name_id_mapping:
+#     input:
+#         gtf = gtf
+#     output:
+#         mapping = config['gene_id_name_mapping']
+#     script:
+#         "gene_id_name_mapping.py"

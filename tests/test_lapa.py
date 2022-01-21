@@ -2,10 +2,48 @@ from collections import Counter
 import pytest
 import pandas as pd
 from lapa import lapa, read_polyA_cluster, read_apa_sample
-from lapa.lapa import TesClustering, tes_cluster_annotate, tes_sample
-from lapa.utils.io import cluster_col_order, sample_col_order
+from lapa.lapa import tes_cluster_annotate, tes_sample
+from lapa.cluster import TesClustering
+from lapa.utils.io import cluster_col_order, sample_col_order, \
+    read_talon_read_annot
 from conftest import fasta, gtf, chrom_sizes, \
-    quantseq_gm12_bam, sample_csv, quantseq_both_gm12_bam
+    quantseq_gm12_bam, sample_csv, quantseq_both_gm12_bam, \
+    read_annot
+
+
+def test_lapa(tmp_path):
+    output_dir = tmp_path / 'lapa'
+
+    df_read_annot = read_talon_read_annot(read_annot)
+
+    lapa(read_annot, fasta, gtf, chrom_sizes, output_dir)
+
+    df_cluster = read_polyA_cluster(str(output_dir / 'polyA_clusters.bed'))
+
+    assert all(df_cluster.columns == cluster_col_order)
+
+    assert all(df_cluster['polyA_site'] <= df_cluster['End'])
+    assert all(df_cluster['polyA_site'] >= df_cluster['Start'])
+
+    assert (df_cluster['End'] - df_cluster['Start']).max() < 150
+
+    assert set(df_cluster['Chromosome']) == {'chr17', 'ERCC-00060'}
+
+    counts = df_cluster.drop_duplicates([
+        'Chromosome', 'Start', 'End', 'Strand'])['count'].sum()
+
+    assert df_read_annot.shape[0] * 0.8 < counts
+
+    df_apa = read_apa_sample(str(output_dir / 'gm12878_apa.bed'))
+    assert all(df_apa == sample_col_order)
+
+    counts = pd.Series(Counter(df_apa['Feature']))
+    assert counts.idxmax() == 'three_prime_utr'
+
+    counts = df_apa.drop_duplicates([
+        'Chromosome', 'Start', 'End', 'Strand'])['count'].sum()
+    _df = df_read_annot[df_read_annot['sample'] == 'gm12878']
+    assert _df.shape[0] > counts
 
 
 @pytest.fixture
@@ -20,7 +58,7 @@ def df_tes():
 
 
 def test_TesClustering_cluster(df_tes):
-    clusters = list(TesClustering(fasta).cluster(df_tes))
+    clusters = list(TesClustering(fasta, extent_cutoff=5).cluster(df_tes))
 
     assert len(clusters) == 3
 
@@ -29,22 +67,22 @@ def test_TesClustering_cluster(df_tes):
     assert cluster.Start == 100099
     assert cluster.End == 100101
     assert cluster.Strand == '+'
-    assert cluster.counts == [10, 5]
+    assert cluster.counts == [(100100, 10), (100101, 5)]
 
     cluster = clusters[1]
     assert str(cluster) == 'chr17:100199-100200:-'
-    assert cluster.counts == [7]
+    assert cluster.counts == [(100200, 7)]
 
     cluster = clusters[2]
     assert cluster.Chromosome == 'chrM'
     assert cluster.Start == 1100
     assert cluster.End == 1101
     assert cluster.Strand == '+'
-    assert cluster.counts == [11]
+    assert cluster.counts == [(1101, 11)]
 
 
 def test_TesCluster_to_df(df_tes):
-    df_clusters = TesClustering(fasta).to_df(df_tes)
+    df_clusters = TesClustering(fasta, extent_cutoff=5).to_df(df_tes)
 
     df_expected = pd.DataFrame({
         'Chromosome': ['chr17', 'chr17', 'chrM'],

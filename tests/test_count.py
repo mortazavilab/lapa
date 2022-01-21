@@ -3,11 +3,9 @@ import pysam
 import pyBigWig
 import pandas as pd
 import numpy as np
-from lapa.count import TailTesCounter, count_tes_samples
-
-# detect_polyA_tail, bam_detect_polyA_tail, \
-#     tail_len_dist, save_tailed_reads
-from conftest import quantseq_gm12_bam, short_bam, chrom_sizes, chr17_chrom_sizes
+from lapa.count import TailTesCounter, \
+    count_tes_bam_samples, agg_tes_samples
+from conftest import quantseq_gm12_bam, short_bam, chr17_chrom_sizes
 
 
 def load_reads(seq, cigar, flag, pos):
@@ -133,7 +131,8 @@ def test_count_tes_samples(tmp_path):
         'sample': ['short_rep1', 'short_rep2', 'short', 'short'],
         'path': [short_bam, short_bam, short_bam, short_bam]
     })
-    df_all, tes = count_tes_samples(df, chr17_chrom_sizes, output_dir, 'tail')
+    df_count = count_tes_bam_samples(df, 'tail')
+    df_all, tes = agg_tes_samples(df_count, chr17_chrom_sizes, output_dir)
 
     pd.testing.assert_frame_equal(
         tes['short_rep1'],
@@ -170,7 +169,21 @@ def test_count_tes_samples(tmp_path):
                       df_all['End'].max())
     )
 
-    assert df_all['count'].sum() / 4 == count
+    assert df_all['count'].sum() == count
+
+    bw_pos = pyBigWig.open(str(output_dir / 'short_tes_counts_pos.bw'))
+    bw_neg = pyBigWig.open(str(output_dir / 'short_tes_counts_neg.bw'))
+    count = np.nansum(
+        bw_pos.values('chr17',
+                      df_all['End'].min() - 1,
+                      df_all['End'].max())
+    ) + np.nansum(
+        bw_neg.values('chr17',
+                      df_all['End'].min() - 1,
+                      df_all['End'].max())
+    )
+
+    assert df_all['count'].sum() / 2 == count
 
     output_dir = tmp_path / 'single_sample'
     output_dir.mkdir()
@@ -179,6 +192,8 @@ def test_count_tes_samples(tmp_path):
         'sample': ['short', 'short'],
         'path': [short_bam, short_bam]
     })
-    df_all, tes = count_tes_samples(df, chr17_chrom_sizes, output_dir, 'tail')
+
+    df_count = count_tes_bam_samples(df, 'tail')
+    df_all, tes = agg_tes_samples(df_count, chr17_chrom_sizes, output_dir)
     assert {i.name for i in output_dir.iterdir()} == {
         'all_tes_counts_pos.bw', 'all_tes_counts_neg.bw'}

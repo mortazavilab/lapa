@@ -137,7 +137,9 @@ dmypy.json
 # Cython debug symbols
 cython_debug/
 
-./data
-.snakemake
+data
+data/
+!tests/data
 
+.snakemake
 *~

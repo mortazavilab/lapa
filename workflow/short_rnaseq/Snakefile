@@ -1,0 +1,94 @@
+rule star_align:
+    input:
+        fq1 = config['encode']['fastq_polyA'],
+        index = star_index
+    output:
+        bam = config['short_rnaseq']['bam']
+    log:
+        "logs/star/illumina_{sample}_{encode_id}.log"
+    params:
+        index = star_index,
+        extra = "--outSAMtype BAM SortedByCoordinate --alignSJoverhangMin 10 --outSAMattributes All"
+    threads: 8
+    resources:
+        threads = 4,
+        mem_gb = 16
+    wrapper:
+        "0.74.0/bio/star/align"
+
+
+rule short_rnaseq_bam_read_count:
+    input:
+        bam = config['short_rnaseq']['bam']
+    output:
+        txt = config['short_rnaseq']['bam_read_count']
+    threads: 1
+    resources:
+        mem_gb = 4
+    shell:
+        "samtools view -F 4 -c {input.bam} > {output.txt}"
+
+
+rule all_short_rnaseq:
+    input:
+        expand(config['encode']['fastq_read_count'],
+               encode_id=config['short_rnaseq']['WTC11']['se']),
+
+
+# rule count_raw_short_reads:
+#     input:
+#         bam = config['short_rnaseq']['bam']
+#     resources:
+#         mem_gb = 4
+#     output:
+#         txt = 'data/results/short_rnaseq/{sample}/counts/{encode_id}.txt'
+#     shell:
+#         "samtools view -F 4 -c {input.bam} > {output.txt}"
+
+
+# rule count_read3_tailed:
+#     input:
+#         bam = config['short_rnaseq']['bam']
+#     output:
+#         txt = 'data/results/short_rnaseq/{sample}/counts_polyA/{encode_id}.txt'
+#     threads: 1
+#     resources:
+#         mem_gb = 16
+#     script:
+#         "../common/lapa_count_tail.py"
+
+
+# rule count_short_read:
+#     input:
+#         count_raw_dir = (lambda wildcards: expand(
+#             'data/results/short_rnaseq/{sample}/counts/{encode_id}.txt',
+#             sample=wildcards['sample'],
+#             encode_id=config['short_rnaseq']['data'][wildcards['sample']]
+#         )),
+#         count_dir = (lambda wildcards: expand(
+#             'data/results/short_rnaseq/{sample}/counts_polyA/{encode_id}.txt',
+#             sample=wildcards['sample'],
+#             encode_id=config['short_rnaseq']['data'][wildcards['sample']]
+#         ))
+#     resources:
+#         mem_gb = 4
+#     output:
+#         csv = config['short_rnaseq']['short_count']
+#     script:
+#         "count.py"
+
+
+# rule merge_short_reads:
+#     input:
+#         bams = (lambda wildcards: expand(
+#             config['short_rnaseq']['bam'],
+#             encode_id=config['short_rnaseq']['data'][wildcards.sample],
+#             sample=wildcards.sample))
+#     threads: 1
+#     resources:
+#         mem_gb = 32
+#     output:
+#         bam = config['short_rnaseq']['merged_bam']
+#     run:
+#         bams = ' '.join(input['bams'])
+#         shell("samtools merge {output.bam} {bams}")

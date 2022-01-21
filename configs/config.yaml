@@ -1,121 +1,255 @@
-human:
-  fasta: data/resources/common/human/GRCh38.primary_assembly.genome.fa
-  gtf: data/resources/common/human/gencode.v38.annotation_utr_fixed.gtf
+genome:
+  fasta:
+    hg38: data/resources/common/lrgasp_grch38_sirvs.fasta
+    mm39: data/resources/common/lrgasp_grcm39_sirvs.fasta
 
-mouse:
-  fasta: data/resources/common/mouse/GRCm38.primary_assembly.genome.fa
-  gtf: data/resources/common/mouse/gencode.vM25.annotation_utr_fixed.gtf
+  gtf_raw:
+    mm39: data/resources/common/lrgasp_gencode_vM27_sirvs.gtf
+    hg38: data/resources/common/lrgasp_gencode_v38_sirvs.gtf
 
-annotation:
-  tes: data/results/common/{specie}_tes.csv
-  
+  gtf:
+    mm39: data/resources/common/lrgasp_gencode_vM27_sirvs.utr_fix.gtf
+    hg38: data/resources/common/lrgasp_gencode_v38_sirvs.utr_fix.gtf
+
+  star_index:
+    mm39: data/resources/common/lrgasp_mouse_star_index/
+    hg38: data/resources/common/lrgasp_human_star_index/
+
 common:
-  chrom_sizes: data/results/common/{specie}_chrom_sizes
-  
-pilot:
-  abundance: data/resources/pilot_talon_abundance_filtered.tsv
-  gtf: data/resources/pilot_talon_observedOnly.gtf
-  read_annot: data/resources/pilot_talon_read_annot.tsv
+  chrom_sizes: data/results/common/{genome}.chrom_sizes
+  tes: data/results/common/{genome}_tes.csv
 
+encode: 
+  fastq: data/resources/encode/fastq/{encode_id}.fastq.gz
+  fastq_polyA: data/results/encode/fastq_polyA/{encode_id}_polyA.fastq.gz
+  bam: data/resources/encode/bam/{encode_id}.bam
+
+  fastq_read_count: data/results/encode/read_count/{encode_id}_fastq.txt
+  fasta_read_count: data/results/encode/read_count/{encode_id}_fasta.txt
+  bam_read_count: data/results/encode/read_count/{encode_id}_bam.txt
+
+lrgasp:
+  config: configs/rnaseq-data-matrix.tsv
+
+talon:
+  read_annot: data/resources/talon/{sample}_{library_prep}_{platform}_read_annot.tsv
+  gtf: data/resources/talon/{sample}_{library_prep}_{platform}.gtf
+  abundance: data/resources/talon/{sample}_{library_prep}_{platform}_abundance_filtered.tsv
+  gtf_corrected: data/results/talon/{sample}_{library_prep}_{platform}_{counting}_corrected.gtf
+  
+lapa:
+  samples: data/results/lapa/{sample}/{library_prep}_{platform}.csv
+  lapa_dir: data/results/lapa/{sample}/{library_prep}_{platform}_{counting}/
+  lapa_quantseq_dir: data/results/lapa/{sample}/quantseq_Illumina_end/
+  
 quantseq:
-  fastq_raw: data/resources/quantseq3/GM12878_rep{rep}_polyA_S{rep}_R1.fastq.gz
-  fastq: data/resources/quantseq3/GM12878_{rep}.trimmed.fastq.gz
-  truseq_adaptor: data/resources/quantseq3/truseq_rna.fa.gz
-  quantseq_count: data/resources/quantseq3/counts.csv
+  fastq: data/resources/quantseq/fastq/{sample}_rep{rep}.fastq.gz
   
-  bam: data/resources/quantseq3/GM12878_rep{rep}/Aligned.sortedByCoord.out.bam
-  polyA_atlas: data/resources/quantseq3/GM12878{rep}.clusters.hg38.GM12878.bed.gz
-  
+  bam: data/results/quantseq/bam_tail/{sample}_rep{rep}/Aligned.sortedByCoord.out.bam
+  bam_end: data/resources/quantseq/bam_end/{sample}_rep{rep}/polyA/Aligned.sortedByCoord.out.bam
 
-read3:
-  fastq_dir: data/resources/read3/fastq/
-  fastq: data/resources/read3/fastq/{srr_id}.fastq
-  bam: data/resources/read3/bam/{geo_id}/Aligned.sortedByCoord.out.bam
-  # fastq_polyA: data/resources/read3/fastq/{geo_id}/{geo_id}.trimmed_tail.fa.gz
-  
-  
-  read3_count: data/resources/read3/counts.csv
-  
-  geo_ids:
-    GSM1518115:
-      - SRR1596187
-    GSM1518116:
-      - SRR1596188
-      - SRR1596189
-    GSM1518117:
-      - SRR1596190
-    GSM1518118:
-      - SRR1596191
-      - SRR1596192
+  fastq_read_count: data/results/quantseq/read_count/{sample}_rep{rep}_fastq.txt
+  bam_read_count: data/results/quantseq/read_count/{sample}_rep{rep}_bam.txt
 
-  lapa: data/results/read3/lapa_dir
+  polya_atlas: data/resources/quantseq/polya_atlas/{sample}/{sample}rep{rep}.bed.gz
 
-star:
-  mouse_index: data/resources/mouse_star_index/
-  star_index: data/resources/star_index/
-
-
-long_read:
-  bam: data/resources/{sample}/bam/{encode_id}.bam
-
-  gm12878:
-    bam: data/resources/gm12878/bam/{encode_id}.bam
-
-    encode_id:
-      - ENCFF277NCZ
-      - ENCFF592BQN
-      - ENCFF407TMX
-      - ENCFF234YIJ
-      - ENCFF810UWA
-      - ENCFF132HLS
-      - ENCFF615XZM
-
-  wtc11:
-    bam: data/resources/wtc11/bam/{encode_id}.bam    
+# cage:
+  # https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE185917
 
 short_rnaseq:
-  fastq: data/resources/short_rnaseq/{sample}/fastq/{encode_id}.fastq.gz
-  # polyA_trimmed: data/results/short_rnaseq/{sample}/polyA_trimmed_fastq/{encode_id}.polyA.fastq.gz
-  bam: data/resources/short_rnaseq/{sample}/bam/{encode_id}/Aligned.sortedByCoord.out.bam
-  short_count: data/results/short_rnaseq/{sample}/counts.csv
-  merged_bam: data/results/short_rnaseq/{sample}/bam/{sample}.bam
+  WTC11:
+    se:
+      - ENCFF492PIB
+      - ENCFF365HXR
+      - ENCFF621NOL
+      - ENCFF738DHG
+      - ENCFF235BRN
+      - ENCFF742FDJ
+      
+  bam: data/results/short_read/{sample}/{encode_id}/Aligned.sortedByCoord.out.bam
+  bam_read_count: data/resources/short_read/read_count/{sample}_{encode_id}_bam.txt
 
-  data:
-    gm12878:
-      - ENCFF824LLV
-      - ENCFF729YAX
-      - ENCFF974EKR
-      - ENCFF481BWJ
+  gene_exp: data/resources/short_read/gene_exp/{sample}.tsv
 
-      - ENCFF286QHA
-      - ENCFF436TWZ
-      - ENCFF930QFA
-      - ENCFF887HOU
+wg_encode:
+  drive_id:
+    human:
+      read_annot: 15EuBAFf7WQCd_HybrjKdSvkYoImIe_8F
+      gtf: 1PJW5FYmdqXdS-LDxhfQyMSezD3YO_QWz
+      abundance: 16QVv8ORYI9B8XGP7vIDVeO0hHqrj3r-z
 
-      - ENCFF000CXI
-      - ENCFF000CXH
+    mouse:
+      read_annot: 1xW2oLzmu2OE2fZwZAO6SUwMebLQP4Ve_
+      gtf: 1iAT5iqcmqUyfjYGQwYyYk6j9KEJbLUz9
+      abundance: 1nGb8NZ4m0a9CqA54bJb-rTrhUrTQeyeo
 
-
-c2c12:
-  read_annot_bulk_sc: data/resources/c2c12/c2c12_bulk_sc_talon_read_annot.tsv
-  read_annot_bulk: data/resources/c2c12/c2c12_bulk_talon_read_annot.tsv
-  read_annot_sc: data/resources/c2c12/c2c12_sc_talon_read_annot.tsv
+  fasta: data/resources/wg/{specie}.fasta
+  gtf_raw: data/resources/wg/{specie}.gtf
+  gtf: data/resources/wg/{specie}.utr_fix.gtf
   
-  read3:
-    bam: data/resources/c2c12/C2C12_{rep}_bowtie2.bam
+  chrom_sizes: data/resources/wg/{specie}.chrom_sizes
+    
+  talon:
+    gtf: data/resources/wg/talon/{specie}_talon.gtf
+    abundance_unfiltered: data/resources/wg/talon/{specie}_talon_abundance.tsv
+    abundance: data/resources/wg/talon/{specie}_talon_abundance_filtered.tsv
+    read_annot: data/resources/wg/talon/{specie}_talon_read_annot.tsv
 
-    rep:
-      - Diff_4d_1
-      - Diff_4d_2
-      - Pro_1
-      - Pro_2
+    gtf_corrected: data/resources/wg/talon/{specie}_talon.corrected.gtf
 
-lapa:
-  samples: data/results/lapa/{sample}/{sample}_{method}.csv
+  cage:
+    bed: data/resources/wg/cage/{encode_id}.bed.gz
 
-  lapa_dir: data/results/lapa/{sample}/{dataset}/
+    wtc11:
+      - ENCFF084VUM
+      - ENCFF604PAM
 
-  short_rna_dir: data/results/lapa/{sample}/short_rna_lapa
-  quantseq_dir: data/results/lapa/{sample}/quantseq_lapa
-  read3_dir: data/results/lapa/{sample}/read3_lapa
-  long_rna_dir: data/results/lapa/{sample}/long_rna_lapa
+    gm12:
+      - ENCFF383NVJ
+      - ENCFF016XXM
+      - ENCFF260HMC
+      - ENCFF103DEY
+      - ENCFF275UYM
+      - ENCFF427KTV
+      - ENCFF189WCY
+
+  lapa: data/results/wg/lapa/wg_lapa_{specie}
+
+      
+# gene_id_name_mapping: data/results/common/{specie}_gene_id_name_mapping.csv
+  
+# annotation:
+#   tes: data/results/common/{specie}_tes.csv
+
+# pilot:
+#   abundance: data/resources/pilot_talon_abundance_filtered.tsv
+#   gtf: data/resources/pilot_talon_observedOnly.gtf
+#   read_annot: data/resources/pilot_talon_read_annot.tsv
+
+# quantseq3:
+#   fastq_raw: data/resources/quantseq3/GM12878_rep{rep}_polyA_S{rep}_R1.fastq.gz
+#   fastq: data/resources/quantseq3/GM12878_{rep}.trimmed.fastq.gz
+#   truseq_adaptor: data/resources/quantseq3/truseq_rna.fa.gz
+#   quantseq_count: data/resources/quantseq3/counts.csv
+  
+#   bam: data/resources/quantseq3/GM12878_rep{rep}/Aligned.sortedByCoord.out.bam
+#   polyA_atlas: data/resources/quantseq3/GM12878{rep}.clusters.hg38.GM12878.bed.gz
+
+# read3:
+#   fastq_dir: data/resources/read3/fastq/
+#   fastq: data/resources/read3/fastq/{srr_id}.fastq
+#   bam: data/resources/read3/bam/{geo_id}/Aligned.sortedByCoord.out.bam
+  
+#   read3_count: data/resources/read3/counts.csv
+  
+#   geo_ids:
+#     GSM1518115:
+#       - SRR1596187
+#     GSM1518116:
+#       - SRR1596188
+#       - SRR1596189
+#     GSM1518117:
+#       - SRR1596190
+#     GSM1518118:
+#       - SRR1596191
+#       - SRR1596192
+
+#   lapa: data/results/read3/lapa_dir
+
+# star:
+#   mouse_index: data/resources/mouse_star_index/
+#   star_index: data/resources/star_index/
+
+# long_read:
+#   bam: data/resources/{sample}/bam/{encode_id}.bam
+
+#   gm12878:
+#     bam: data/resources/gm12878/bam/{encode_id}.bam
+
+#     gtf_pb: data/resources/gm12878/pb_talon.gtf
+#     gtf_ont: data/resources/gm12878/ont_talon.gtf
+
+#     gtf_pb_cor: data/results/talon/gm12878/pb_talon_cor.gtf
+#     gtf_ont_cor: data/results/talon/gm12878/ont_talon_cor.gtf
+    
+#     abundance: data/resources/gm12878/pb_ont_talon_abundance_filtered.tsv
+#     read_annot: data/resources/gm12878/GM12878_talon_read_annot.tsv
+    
+#     encode_id:
+#       - ENCFF277NCZ
+#       - ENCFF592BQN
+#       - ENCFF407TMX
+#       - ENCFF234YIJ
+#       - ENCFF810UWA
+#       - ENCFF132HLS
+#       - ENCFF615XZM
+
+#   wtc11:
+#     bam: data/resources/wtc11/bam/{encode_id}.bam
+
+#     tool_gtf: data/resources/wtc11/correction/{tool}/human/WTC11/{platform}/{library_prep}/{method}/human_WTC11_{library_prep}_{platform}_{method}_{tool}.gtf
+#     abundance: data/resources/wtc11/correction/talon/human/WTC11/{platform}/{library_prep}/{method}/human_WTC11_{library_prep}_{platform}_{method}_talon_abundance_filtered.tsv
+   
+#     platform:
+#       PacBio:
+#         - cDNA
+#         - CapTrap
+#       ONT:
+#         - cDNA
+#         - dRNA
+#         - R2C2
+#         # - CapTrap
+   
+# cage:
+#   h1:
+#     rep1: data/resources/h1/cage/ENCFF084VUM.bed.gz
+#     rep2: data/resources/h1/cage/ENCFF604PAM.bed.gz
+
+# short_rnaseq:
+#   fastq: data/resources/short_rnaseq/{sample}/fastq/{encode_id}.fastq.gz
+#   # polyA_trimmed: data/results/short_rnaseq/{sample}/polyA_trimmed_fastq/{encode_id}.polyA.fastq.gz
+#   bam: data/resources/short_rnaseq/{sample}/bam/{encode_id}/Aligned.sortedByCoord.out.bam
+#   short_count: data/results/short_rnaseq/{sample}/counts.csv
+#   merged_bam: data/results/short_rnaseq/{sample}/bam/{sample}.bam
+
+#   data:
+#     gm12878:
+#       - ENCFF824LLV
+#       - ENCFF729YAX
+#       - ENCFF974EKR
+#       - ENCFF481BWJ
+
+#       - ENCFF286QHA
+#       - ENCFF436TWZ
+#       - ENCFF930QFA
+#       - ENCFF887HOU
+
+#       - ENCFF000CXI
+#       - ENCFF000CXH
+
+# c2c12:
+#   read_annot_bulk_sc: data/resources/c2c12/c2c12_bulk_sc_talon_read_annot.tsv
+#   read_annot_bulk: data/resources/c2c12/c2c12_bulk_talon_read_annot.tsv
+#   read_annot_sc: data/resources/c2c12/c2c12_sc_talon_read_annot.tsv
+#   abundance: data/resources/c2c12/bulk_talon_abundance.tsv
+  
+#   read3:
+#     bam: data/resources/c2c12/C2C12_{rep}_bowtie2.bam
+
+#     rep:
+#       - Diff_4d_1
+#       - Diff_4d_2
+#       - Pro_1
+#       - Pro_2
+
+#   sig: data/results/c2c12/long_sig.csv
+
+# pilot:
+#   read_annot: data/resources/pilot/pilot_talon_read_annot.tsv
+
+
+  # short_rna_dir: data/results/lapa/{sample}/short_rna_lapa
+  # quantseq_dir: data/results/lapa/{sample}/quantseq_lapa
+  # read3_dir: data/results/lapa/{sample}/read3_lapa
+  # long_rna_dir: data/results/lapa/{sample}/long_rna_lapa
+  # pilot_dir: data/results/lapa/{sample}/long_rna_lapa

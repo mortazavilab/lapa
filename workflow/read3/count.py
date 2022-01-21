@@ -10,4 +10,11 @@ for path in snakemake.input['count_raw']:
             'count': int(f.read())
         })
 
+for path in snakemake.input['count_polyA']:
+    with open(path) as f:
+        rows.append({
+            'type': 'polyA',
+            'count': int(f.read())
+        })
+
 pd.DataFrame(rows).to_csv(snakemake.output['csv'], index=False)
