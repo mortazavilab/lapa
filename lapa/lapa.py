@@ -70,9 +70,10 @@ def prepare_alignment(alignment):
         })
     elif alignment.endswith('.csv'):
         df = pd.read_csv(alignment)
-        assert all(df.columns == ['sample', 'path']), \
-            'provided csv file should be consist of columns `sample` and `path`'
-        return df
+        assert all(pd.Series(['sample', 'path']).isin(df.columns)), \
+            'provided csv file should contain the columns `sample` and `path`'
+
+        return df[['sample', 'path']]
 
 
 def lapa(alignment, fasta, annotation, chrom_sizes, output_dir, method=None,
