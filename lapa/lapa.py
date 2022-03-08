@@ -83,7 +83,10 @@ def tes_sample(df_cluster, df_tes_sample,
 
 def prepare_alignment(alignment):
     '''
-    Read alignmnet
+    Prepare dataframe containing information about alignment files parameter.
+
+    Args:
+        alignment (str): Alignment file either bam or csv.
     '''
     if alignment.endswith('.bam'):
         alignments = alignment.split(',')
@@ -101,7 +104,24 @@ def prepare_alignment(alignment):
 def lapa(alignment, fasta, annotation, chrom_sizes, output_dir, method=None,
          min_tail_len=10, min_percent_a=0.9, mapq=10,
          cluster_extent_cutoff=3, cluster_window=25):
+    '''
+    Runs lapa with given alignment files and this is the main function of lapa.
 
+    Args:
+        alignment (str): Alignment files either Bam, Sam or csv file.
+        fasta (str): Path to fasta file of genome reference
+            (GENCODE or Ensembl fasta).
+        annotation (str): Path to GTF file standart transcriptome Annotation 
+            (GENCODE or Ensembl gtf)
+        chrom_sizes (str): GTF
+        output_dir (str): GTF
+        counting_method (str): GTF
+        min_tail_len (str): GTF
+        min_percent_a (str): 
+        mapq (str): 
+        cluster_extent_cutoff (str): 
+        cluster_window:
+    '''
     output_dir = Path(output_dir)
     output_dir.mkdir(exist_ok=True)
     print('Reading the alignment file...')

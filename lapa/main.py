@@ -4,9 +4,9 @@ from lapa.read import correct_gtf
 
 
 @click.command()
-@click.option('--alignment', help='Bam or Sam files')
-@click.option('--fasta', help='Genome reference (Encode or Ensembl fasta)')
-@click.option('--annotation', help='Standart transcriptome Annotation (Encode or Ensembl gtf)')
+@click.option('--alignment', help='Bam, Sam or csv file')
+@click.option('--fasta', help='Genome reference (GENCODE or Ensembl fasta)')
+@click.option('--annotation', help='Standart transcriptome Annotation (GENCODE or Ensembl gtf)')
 @click.option('--chrom_sizes', help='Chrom sizes files (can be generated with `faidx fasta -i chromsizes > chrom_sizes`)')
 @click.option('--output_dir', help='Output directory')
 @click.option('--counting_method', help='Counting method either `end` or `tail`',
