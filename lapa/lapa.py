@@ -9,6 +9,14 @@ from lapa.utils.io import read_talon_read_annot_count, \
 
 
 def tes_cluster_annotate(df_cluster, annotation):
+    '''
+    Annotate polya-clusters for genetic features (UTR, exon, intron).
+
+    Args:
+        df_cluster (pd.DataFrame): dataframe of polya-cluster 
+            obtained with clustering features.
+        annotation (str): GTF file path
+    '''
     gr_apa = pr.PyRanges(df_cluster)
 
     total = gr_apa.count.sum()
@@ -26,7 +34,19 @@ def tes_cluster_annotate(df_cluster, annotation):
 def tes_sample(df_cluster, df_tes_sample,
                filter_intergenic=True,
                filter_internal_priming=True):
+    '''
+    Provide information about polyadenlation in each sample
+    given clusters and samples counts.
 
+    Args:
+        df_cluster (pd.DataFrame): dataframe of polya-cluster
+            obtained with clustering features.
+        df_tes_sample (pd.DataFrame): Sample counts obtained
+            with sample counting.
+        filter_intergenic (bool): Filter intergenic clusters.
+        filter_internal_priming (bool): Filter internal priming sites
+            while converting cluster info to samples.
+    '''
     columns = ['Chromosome', 'Start', 'End', 'Strand', 'gene_id']
     gr = pr.PyRanges(df_tes_sample)
 
@@ -62,6 +82,9 @@ def tes_sample(df_cluster, df_tes_sample,
 
 
 def prepare_alignment(alignment):
+    '''
+    Read alignmnet
+    '''
     if alignment.endswith('.bam'):
         alignments = alignment.split(',')
         return pd.DataFrame({
