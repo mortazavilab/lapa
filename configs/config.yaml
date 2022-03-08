@@ -2,15 +2,18 @@ genome:
   fasta:
     hg38: data/resources/common/lrgasp_grch38_sirvs.fasta
     mm39: data/resources/common/lrgasp_grcm39_sirvs.fasta
-
+    mm10: data/resources/common/mm10.fasta
+      
   gtf_raw:
     mm39: data/resources/common/lrgasp_gencode_vM27_sirvs.gtf
     hg38: data/resources/common/lrgasp_gencode_v38_sirvs.gtf
-
+    mm10: data/resources/common/mm10.gtf
+    
   gtf:
     mm39: data/resources/common/lrgasp_gencode_vM27_sirvs.utr_fix.gtf
     hg38: data/resources/common/lrgasp_gencode_v38_sirvs.utr_fix.gtf
-
+    mm10: data/resources/common/mm10.utr_fix.gtf
+    
   star_index:
     mm39: data/resources/common/lrgasp_mouse_star_index/
     hg38: data/resources/common/lrgasp_human_star_index/
@@ -18,7 +21,8 @@ genome:
 common:
   chrom_sizes: data/results/common/{genome}.chrom_sizes
   tes: data/results/common/{genome}_tes.csv
-
+  gene_id_name_mapping: data/results/common/{genome}_gene_id_name_mapping.csv
+  
 encode: 
   fastq: data/resources/encode/fastq/{encode_id}.fastq.gz
   fastq_polyA: data/results/encode/fastq_polyA/{encode_id}_polyA.fastq.gz
@@ -53,9 +57,6 @@ quantseq:
 
   polya_atlas: data/resources/quantseq/polya_atlas/{sample}/{sample}rep{rep}.bed.gz
 
-# cage:
-  # https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE185917
-
 short_rnaseq:
   WTC11:
     se:
@@ -70,6 +71,28 @@ short_rnaseq:
   bam_read_count: data/resources/short_read/read_count/{sample}_{encode_id}_bam.txt
 
   gene_exp: data/resources/short_read/gene_exp/{sample}.tsv
+
+c2c12:
+  read_annot_bulk_sc: data/resources/c2c12/c2c12_bulk_sc_talon_read_annot.tsv
+  read_annot_bulk: data/resources/c2c12/c2c12_bulk_talon_read_annot.tsv
+  read_annot_sc: data/resources/c2c12/c2c12_sc_talon_read_annot.tsv
+  abundance: data/resources/c2c12/bulk_talon_abundance.tsv
+
+  lapa_bulk_dir: data/results/c2c12/lapa/bulk/
+  lapa_bulksc_dir: data/results/c2c12/lapa/bulksc/
+
+  diff_polya: data/results/c2c12/diff_polya.csv
+  
+cage:
+  bed: data/resources/cage/{geo_id}.count.bed.gz
+
+  WTC11:
+    - GSM5625727_WTC11-1_rep1
+    - GSM5625728_WTC11-1_rep2
+    - GSM5625729_WTC11-1_rep3
+    - GSM5625730_WTC11-3_rep1
+    - GSM5625731_WTC11-3_rep2
+    - GSM5625732_WTC11-3_rep3
 
 wg_encode:
   drive_id:
@@ -97,7 +120,16 @@ wg_encode:
 
     gtf_corrected: data/resources/wg/talon/{specie}_talon.corrected.gtf
 
+  cCREs:
+    promotors: data/resources/wg/cCREs/GRCh38-PLS.bed
+    proximal_enhancers: data/resources/wg/cCREs/GRCh38-ccREs.pELS.bed
+    distal_enhancers: data/resources/wg/cCREs/GRCh38-ccREs.dELS.bed
+    
+  fantom: data/resources/wg/fantom/hg38_CAGE.bed
+
   cage:
+  # https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE185917
+      
     bed: data/resources/wg/cage/{encode_id}.bed.gz
 
     wtc11:
@@ -227,11 +259,6 @@ wg_encode:
 #       - ENCFF000CXI
 #       - ENCFF000CXH
 
-# c2c12:
-#   read_annot_bulk_sc: data/resources/c2c12/c2c12_bulk_sc_talon_read_annot.tsv
-#   read_annot_bulk: data/resources/c2c12/c2c12_bulk_talon_read_annot.tsv
-#   read_annot_sc: data/resources/c2c12/c2c12_sc_talon_read_annot.tsv
-#   abundance: data/resources/c2c12/bulk_talon_abundance.tsv
   
 #   read3:
 #     bam: data/resources/c2c12/C2C12_{rep}_bowtie2.bam

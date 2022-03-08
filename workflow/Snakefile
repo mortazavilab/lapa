@@ -14,8 +14,8 @@ def genome(wildcards):
         return 'mm39'
     elif wildcards.sample == 'WTC11':
         return 'hg38'
-    # elif wildcards.sample == 'c2c12':
-    #     return 'mm10'
+    elif wildcards.sample == 'c2c12':
+        return 'mm10'
     else:
         raise ValueError(f'{wildcards.sample} is not known sample')
 
@@ -39,13 +39,14 @@ def star_index(wildcards):
 pb_library_prep = ['cDNA', 'CapTrap']
 ont_library_prep = ['cDNA', 'dRNA', 'CapTrap', 'R2C2']
 
-
+include: "download/Snakefile"
 include: "common/Snakefile"
 include: "long_reads/Snakefile"
 include: "short_rnaseq/Snakefile"
 include: "quantseq3/Snakefile"
 include: "benchmark/Snakefile"
 include: "correction/Snakefile"
+include: "c2c12/Snakefile"
 include: "wg_encode/Snakefile"
 include: "plot/Snakefile"
 
@@ -56,8 +57,12 @@ include: "plot/Snakefile"
 
 rule all:
     input:
-        rules.all_plot.input
+        rules.all_c2c12.input
+
         # rules.all_wg_encode.input
+        # rules.all_plot.input,
+        # rules.all_benchmark.input,
+        # rules.all_correction.input
         # rules.all_short_rnaseq.input,
         # rules.all_lapa.input,
         # rules.all_quantseq3.input

@@ -39,7 +39,7 @@ def read_tes_mapping(df_cluster, read_annot, distance=1000):
 
 
 def read_tss_read_annot(read_annot):
-    # TODO: optimize moe
+    # TODO: optimize memory
     # df_reads = df[[]]
 
     df = read_talon_read_annot(read_annot)
@@ -227,7 +227,8 @@ def correct_gtf_tes(df_read_tes, df_read_transcript, gtf, gtf_output,
     if df_read_tss is not None:
         del df_transcript_cor['start_site']
 
-    df_gene_cor = _correct_gene(df_transcript_cor, df_gtf[df_gtf['Feature'] == 'gene'])
+    df_gene_cor = _correct_gene(
+        df_transcript_cor, df_gtf[df_gtf['Feature'] == 'gene'])
 
     df_gtf_cor = sort_gtf(pd.concat([df_gene_cor, df_transcript_cor]))
 

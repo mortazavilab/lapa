@@ -112,12 +112,10 @@ rule fastq_polyA_tail:
         --pattern {params.pattern} {input.fastq} | gzip > {output.fastq}
         '''
 
-
-
-# rule gene_name_id_mapping:
-#     input:
-#         gtf = gtf
-#     output:
-#         mapping = config['gene_id_name_mapping']
-#     script:
-#         "gene_id_name_mapping.py"
+rule gene_name_id_mapping:
+    input:
+        gtf = gtf
+    output:
+        mapping = config['common']['gene_id_name_mapping']
+    script:
+        "gene_id_name_mapping.py"

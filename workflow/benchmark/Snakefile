@@ -13,19 +13,12 @@ rule benchmark_lapa:
                           library_prep='quantseq')
     output:
         pr_curve_plot = 'reports/figures/{sample}_pr_curve.png',
+        heatmap = 'reports/figures/{sample}_heatmap.png'
     notebook:
         './benchmark_lapa.ipynb'
 
 
-# rule overlap_gm12_pc_talon:
-#     input:
-#         clusters = config['lapa']['quantseq_dir'].format(sample='gm12878'),
-#         gtf = config['long_read']['gm12878']['gtf_talon'],
-#         abundance = config['long_read']['gm12878']['abundance']
-#     params:
-#         max_distance = 50,
-#         tpm_columns = ['PB_GM12878_R1', 'PB_GM12878_R2']
-#     output:
-#         overlap = 'data/processed/annotation_overlap/gm12_overlap.tsv'
-#     script:
-#         "./overlap_talon_quanseq.py"
+rule all_benchmark:
+    input:
+        expand('reports/figures/{sample}_pr_curve.png', sample='WTC11'),
+        expand('reports/figures/{sample}_heatmap.png', sample='WTC11')

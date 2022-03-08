@@ -49,6 +49,38 @@ rule overlap_tes_corrected_talon:
         "../common/overlap_talon.py"
 
 
+rule overlap_tss_talon:
+    input:
+        cage = (lambda wildcards:
+                expand(config['cage']['bed'],
+                       geo_id=config['cage'][wildcards.sample])),
+        gtf = config['talon']['gtf'],
+        abundance = config['talon']['abundance']
+    params:
+        max_distance = 50,
+        samples = []
+    output:
+        overlap = 'data/results/benchmark/overlap/{sample}_{library_prep}_{platform}_overlapcage_annotation.csv'
+    script:
+        "../common/overlap_cage_talon.py"
+
+
+rule overlap_tss_corrected_talon:
+    input:
+        cage = (lambda wildcards:
+                expand(config['cage']['bed'],
+                       geo_id=config['cage'][wildcards.sample])),
+        gtf = config['talon']['gtf_corrected'],
+        abundance = config['talon']['abundance']
+    params:
+        max_distance = 50,
+        samples = []
+    output:
+        overlap = 'data/results/benchmark/overlap/{sample}_{library_prep}_{platform}_{counting}_overlapcage_corrected_annotation.csv'
+    script:
+        "../common/overlap_cage_talon.py"
+
+
 rule plot_overlap_annotation:
     input:
         uncorrected = 'data/results/benchmark/overlap/{sample}_{library_prep}_{platform}_overlap_annotation.csv',
@@ -58,6 +90,90 @@ rule plot_overlap_annotation:
     notebook:
         './plot_overlap_annotation.ipynb'
 
+
+rule plot_overlap_tss_annotation:
+    input:
+        uncorrected = 'data/results/benchmark/overlap/{sample}_{library_prep}_{platform}_overlapcage_annotation.csv',
+        corrected = 'data/results/benchmark/overlap/{sample}_{library_prep}_{platform}_{counting}_overlapcage_corrected_annotation.csv'
+    output:
+        fig = 'reports/figures/correction/{sample}_{library_prep}_{platform}_{counting}_overlap_tss_annotation_both.png'
+    notebook:
+        './plot_overlap_annotation.ipynb'
+
+
+rule plot_correction_percentage:
+    input:
+        uncorrected = [
+            *expand(
+                'data/results/benchmark/overlap/{sample}_{library_prep}_{platform}_overlap_annotation.csv',
+                platform='ONT', counting=['end'], library_prep=ont_library_prep, sample='{sample}'
+            ),
+            *expand(
+                'data/results/benchmark/overlap/{sample}_{library_prep}_{platform}_overlap_annotation.csv',
+                platform='PacBio', counting=['end'], library_prep=pb_library_prep, sample='{sample}'
+            )
+        ],
+        corrected = [
+            *expand(
+                'data/results/benchmark/overlap/{sample}_{library_prep}_{platform}_{counting}_overlap_corrected_annotation.csv',
+                platform='ONT', counting=['end'], library_prep=ont_library_prep, sample='{sample}'
+            ),
+            *expand(
+                'data/results/benchmark/overlap/{sample}_{library_prep}_{platform}_{counting}_overlap_corrected_annotation.csv',
+                platform='PacBio', counting=['end'], library_prep=pb_library_prep, sample='{sample}'
+            )
+        ]
+    output:
+        fig = 'reports/figures/correction/{sample}_correction_percentage.png'
+    notebook:
+        './plot_correction_percentage.ipynb'
+
+
+rule plot_correction_tss_percentage:
+    input:
+        uncorrected = [
+            *expand(
+                'data/results/benchmark/overlap/{sample}_{library_prep}_{platform}_overlapcage_annotation.csv',
+                platform='ONT', counting=['end'], library_prep=ont_library_prep, sample='{sample}'
+            ),
+            *expand(
+                'data/results/benchmark/overlap/{sample}_{library_prep}_{platform}_overlapcage_annotation.csv',
+                platform='PacBio', counting=['end'], library_prep=pb_library_prep, sample='{sample}'
+            )
+        ],
+        corrected = [
+            *expand(
+                'data/results/benchmark/overlap/{sample}_{library_prep}_{platform}_{counting}_overlapcage_corrected_annotation.csv',
+                platform='ONT', counting=['end'], library_prep=ont_library_prep, sample='{sample}'
+            ),
+            *expand(
+                'data/results/benchmark/overlap/{sample}_{library_prep}_{platform}_{counting}_overlapcage_corrected_annotation.csv',
+                platform='PacBio', counting=['end'], library_prep=pb_library_prep, sample='{sample}'
+            )
+        ]
+    output:
+        fig = 'reports/figures/correction/{sample}_correction_tss_percentage.png'
+    notebook:
+        './plot_correction_percentage.ipynb'
+
+
+rule all_correction:
+    input:
+        'reports/figures/correction/WTC11_correction_percentage.png',
+        'reports/figures/correction/WTC11_correction_tss_percentage.png',
+
+        expand(rules.plot_overlap_annotation.output, sample='WTC11',
+               platform='PacBio', counting=['end'],
+               library_prep=pb_library_prep),
+        expand(rules.plot_overlap_tss_annotation.output, sample='WTC11',
+               platform='PacBio', counting=['end'],
+               library_prep=pb_library_prep),
+        expand(rules.plot_overlap_annotation.output, sample='WTC11',
+               platform='ONT', counting=['end'],
+               library_prep=ont_library_prep),
+        expand(rules.plot_overlap_tss_annotation.output, sample='WTC11',
+               platform='ONT', counting=['end'],
+               library_prep=ont_library_prep)
 
 # rule plot_overlap_annotation:
 #     input:
