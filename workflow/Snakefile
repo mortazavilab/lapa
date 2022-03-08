@@ -39,7 +39,10 @@ def star_index(wildcards):
 pb_library_prep = ['cDNA', 'CapTrap']
 ont_library_prep = ['cDNA', 'dRNA', 'CapTrap', 'R2C2']
 
+pb_library_prep = ['cDNA', 'CapTrap']
+ont_library_prep = ['cDNA', 'dRNA', 'CapTrap', 'R2C2']
 
+include: "download/Snakefile"
 include: "common/Snakefile"
 include: "long_reads/Snakefile"
 include: "short_rnaseq/Snakefile"

@@ -1,6 +1,11 @@
 from pathlib import Path
+import numpy as np
 import pandas as pd
 import pyranges as pr
+from tqdm import tqdm
+from scipy.stats import fisher_exact
+from statsmodels.stats.multitest import multipletests
+# from betabinomial import BetaBinomial, pval_adj
 from lapa.utils.io import read_apa_sample, read_polyA_cluster
 
 

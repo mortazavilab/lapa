@@ -1,40 +1,3 @@
-
-# rule sample_c2c12_read3:
-#     output:
-#         csv = config['lapa']['samples'].format(
-#             sample='c2c12', method='read3')
-#     run:
-#         bam = config['c2c12']['read3']['bam']
-
-#         with open(output['csv'], 'w') as f:
-#             f.write('sample,path\n')
-#             for i in config['c2c12']['read3']['rep']:
-#                 f.write(f'c2c12_{i},{bam.format(rep=i)}\n')
-
-
-# rule lapa_c2c12_read3:
-#     input:
-#         bam = expand(config['c2c12']['read3']['bam'],
-#                      rep=config['c2c12']['read3']['rep']),
-#         sample_csv = config['lapa']['samples'].format(
-#             method='read3', sample='{sample}'),
-#         fasta = fasta,
-#         gtf = gtf,
-#         chrom_sizes = chrom_sizes
-#     threads: 1
-#     resources:
-#         mem_gb = 16
-#     output:
-#         directory(config['lapa']['read3_dir'])
-#     shell:
-#         "lapa \
-#         --alignment {input.sample_csv} \
-#         --fasta {input.fasta} \
-#         --annotation {input.gtf} \
-#         --chrom_sizes {input.chrom_sizes} \
-#         --output_dir {output}"
-
-
 rule split_c2c12_read_annot:
     input:
         read_annot = config['c2c12']['read_annot_bulk_sc']
@@ -45,7 +8,28 @@ rule split_c2c12_read_annot:
         "split_annot.py"
 
 
-rule lapa_longreads_c2c12:
+rule lapa_longreads_c2c12_bulk:
+    input:
+        aligment = config['c2c12']['read_annot_bulk'],
+        fasta = config['genome']['fasta']['mm10'],
+        gtf = config['genome']['gtf']['mm10'],
+        chrom_sizes = config['common']['chrom_sizes'].format(genome='mm10')
+    threads: 1
+    resources:
+        mem_gb = 16
+    output:
+        directory(config['c2c12']['lapa_bulk_dir'])
+    shell:
+        "lapa \
+        --alignment {input.aligment} \
+        --fasta {input.fasta} \
+        --annotation {input.gtf} \
+        --chrom_sizes {input.chrom_sizes} \
+        --counting_method end \
+        --output_dir {output}"
+
+
+rule lapa_longreads_c2c12_bulksc:
     input:
         aligment = config['c2c12']['read_annot_bulk'],
         fasta = config['mouse']['fasta'],
