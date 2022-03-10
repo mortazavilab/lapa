@@ -161,28 +161,26 @@ def test_count_tes_samples(tmp_path):
     bw_neg = pyBigWig.open(str(output_dir / 'all_tes_counts_neg.bw'))
     count = np.nansum(
         bw_pos.values('chr17',
-                      df_all['End'].min() - 1,
-                      df_all['End'].max())
+                      int(df_all['End'].min() - 1),
+                      int(df_all['End'].max()))
     ) + np.nansum(
         bw_neg.values('chr17',
-                      df_all['End'].min() - 1,
-                      df_all['End'].max())
+                      int(df_all['End'].min() - 1),
+                      int(df_all['End'].max()))
     )
-
     assert df_all['count'].sum() == count
 
     bw_pos = pyBigWig.open(str(output_dir / 'short_tes_counts_pos.bw'))
     bw_neg = pyBigWig.open(str(output_dir / 'short_tes_counts_neg.bw'))
     count = np.nansum(
         bw_pos.values('chr17',
-                      df_all['End'].min() - 1,
-                      df_all['End'].max())
+                      int(df_all['End'].min() - 1),
+                      int(df_all['End'].max()))
     ) + np.nansum(
         bw_neg.values('chr17',
-                      df_all['End'].min() - 1,
-                      df_all['End'].max())
+                      int(df_all['End'].min() - 1),
+                      int(df_all['End'].max()))
     )
-
     assert df_all['count'].sum() / 2 == count
 
     output_dir = tmp_path / 'single_sample'

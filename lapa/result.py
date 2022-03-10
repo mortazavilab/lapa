@@ -103,6 +103,17 @@ class LapaResult:
     def fisher_exact_test(self, groups, min_gene_count=10,
                           correction_method='fdr_bh'):
         '''
+        Fis
+        Args:
+            groups (Dict[str, List[str]]): dict of two elements
+                as assinging groups. Two keys are group names
+                and values are list of keys annotating samples
+                belong to each group.
+            min_gene_count (int): Number of reads in the gene to
+                be consider in analysis.
+            correction_method (str): multiple testing correction method.
+                methods in `statsmodels.stats.multitest.multipletests`
+                are valid.
         '''
         if len(groups) != 2:
             raise 'Two groups are need for fisher_exact test'
