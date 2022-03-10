@@ -31,28 +31,28 @@ def test_LapaResult_fisher_exact_test(tmp_path):
         'odds_ratio', 'pval', 'delta_usage', 'gene_id', 'pval_adj'
     ]
     assert df[(df['pval_adj'] < 0.05) & (
-        df['usage_diff'].abs() > 0.3)].shape[0]
+        df['delta_usage'].abs() > 0.3)].shape[0]
 
 
-def test_LapaResult__count_per_group():
-    df = LapaResult._counts_per_groups(
-        pd.DataFrame({
-            'a': [1, 2, 3],
-            'b': [3, 4, 5],
-            'x': [0, 0, 1],
-            'y': [1, 1, 2]
+# def test_LapaResult__count_per_group():
+#     df = LapaResult._counts_per_groups(
+#         pd.DataFrame({
+#             'a': [1, 2, 3],
+#             'b': [3, 4, 5],
+#             'x': [0, 0, 1],
+#             'y': [1, 1, 2]
 
-        }),
-        groups={
-            'c': ['a', 'b'],
-            'z': ['x', 'y']
-        }
-    )
+#         }),
+#         groups={
+#             'c': ['a', 'b'],
+#             'z': ['x', 'y']
+#         }
+#     )
 
-    pd.testing.assert_frame_equal(
-        df,
-        pd.DataFrame({
-            'c': [4, 6, 8],
-            'z': [1, 1, 3]
-        })
-    )
+#     pd.testing.assert_frame_equal(
+#         df,
+#         pd.DataFrame({
+#             'c': [4, 6, 8],
+#             'z': [1, 1, 3]
+#         })
+#     )
