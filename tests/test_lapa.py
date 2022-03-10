@@ -41,7 +41,7 @@ def test_lapa(tmp_path):
     assert counts.idxmax() == 'three_prime_utr'
 
     counts = df_apa.drop_duplicates([
-        'Chromosome', 'Start', 'End', 'Strand', 'pval_adj'
+        'Chromosome', 'Start', 'End', 'Strand'
     ])['count'].sum()
 
     _df = df_read_annot[df_read_annot['sample'] == 'gm12878']
