@@ -9,10 +9,7 @@ df_lrgasp = pd.read_csv(config['lrgasp']['config'], sep='\t')
 def genome(wildcards):
     if 'genome' in wildcards.keys():
         return wildcards.genome
-
-    if wildcards.sample == 'ES':
-        return 'mm39'
-    elif wildcards.sample == 'WTC11':
+    if wildcards.sample == 'WTC11':
         return 'hg38'
     elif wildcards.sample == 'c2c12':
         return 'mm10'
@@ -47,8 +44,6 @@ include: "quantseq3/Snakefile"
 include: "benchmark/Snakefile"
 include: "correction/Snakefile"
 include: "c2c12/Snakefile"
-include: "wg_encode/Snakefile"
-include: "plot/Snakefile"
 
 # include: "wtc11/Snakefile"
 # include: "read3/Snakefile"

@@ -26,33 +26,6 @@ rule site_motif:
         "polyA_motif.py"
 
 
-rule download_encode_fastq:
-    threads: 1
-    resources:
-        mem_gb = 4
-    output:
-        config['encode']['fastq']
-    shell:
-        "wget https://www.encodeproject.org/files/{wildcards.encode_id}/@@download/{wildcards.encode_id}.fastq.gz -O {output}"
-
-
-rule download_encode_bam:
-    threads: 1
-    resources:
-        mem_gb = 4
-    output:
-        bam = config['encode']['bam']
-    shell:
-        "wget https://www.encodeproject.org/files/{wildcards.encode_id}/@@download/{wildcards.encode_id}.bam -O {output}"
-
-
-rule download_gene_exp:
-    output:
-        config['short_rnaseq']['gene_exp'].format(sample='WTC11')
-    shell:
-        "wget https://www.encodeproject.org/files/ENCFF178KKE/@@download/ENCFF178KKE.tsv -O {output}"
-
-
 rule fastq_read_count:
     input:
         fastq = config['encode']['fastq']

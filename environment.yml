@@ -20,4 +20,5 @@ dependencies:
     - pyfaidx
     - seaborn
     - snakemk_util
-    - -e .
+    - git+https://github.com/mortazavilab/lapa.git#egg=lapa
+    - adjustText
