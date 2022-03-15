@@ -53,7 +53,7 @@ setup(
         lapa=lapa.main:cli
         lapa_correct_talon_gtf=lapa.main:lapa_correct_talon_gtf
     ''',
-    packages=find_packages(include=['lapa']),
+    packages=find_packages(include=['lapa*']),
     include_package_data=True,
 
     test_suite='tests',
