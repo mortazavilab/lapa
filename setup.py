@@ -25,7 +25,7 @@ test_requirements = ['pytest']
 
 setup(
     name='lapa',
-    version='0.0.1',
+    version='0.0.2',
 
     author="M. Hasan Çelik",
     author_email='muhammedhasancelik@gmail.com',
@@ -47,7 +47,7 @@ setup(
 
     install_requires=requirements,
     setup_requires=setup_requirements,
-    
+
     entry_points='''
         [console_scripts]
         lapa=lapa.main:cli
