@@ -1,8 +1,8 @@
 import pandas as pd
 from tqdm import tqdm
-from lapa.utils.common import pad_series, polyA_signal_seqs
 from kipoiseq import Interval
 from kipoiseq.extractors import FastaStringExtractor
+from lapa.utils.common import pad_series, polyA_signal_seqs
 
 
 class Cluster:

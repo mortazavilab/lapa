@@ -6,6 +6,8 @@
 
 Alternative polyadenylation detection from diverse data sources such as 3'-seq, long-read and short-reads.
 
+![method](docs/method.png)
+
 ## Installation
 
 ```
