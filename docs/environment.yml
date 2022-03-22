@@ -5,7 +5,7 @@ channels:
   - defaults
 dependencies:
   - pip=21.2
-  - python=3.8
+  - python=3.7
   - pip:
     - cython==0.29.28
     - sphinx==4.4.0
@@ -19,4 +19,3 @@ dependencies:
     - sphinxcontrib-napoleon==0.7
     - sphinxcontrib-qthelp==1.0.3
     - sphinxcontrib-serializinghtml==1.1.5
-    - -e .
