@@ -4,4 +4,4 @@ sphinx-autoapi
 nbsphinx
 sphinx-rtd-theme
 sphinx-click
--e ..
+-e .
