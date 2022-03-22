@@ -25,18 +25,26 @@ from lapa.read import correct_gtf
               type=click.Choice(['end', 'tail'], case_sensitive=True),
               default='end')
 @click.option('--min_tail_len',
+              help='Minimum tail length for tail counting strategy.'
+              'This parameter will be ignored for end counting',
               default=10,
               type=int)
 @click.option('--min_percent_a',
+              help='Minimum percentage of A bp while seeking for tails. '
+              'This parameter will be ignored for end counting',
               default=0.9,
               type=float)
 @click.option('--mapq',
+              help='Minimum percentage of A bp while seeking for tails. ',
               default=10,
               type=int)
 @click.option('--cluster_extent_cutoff',
+              help='Number of reads to initialized and terminated cluster',
               default=3,
               type=int)
 @click.option('--cluster_window',
+              help='Patience threshold to wait for termination cluster'
+              'if number of reads subceed `the cluster_extent_cutoff`',
               default=25,
               type=int)
 def cli(alignment, fasta, annotation, chrom_sizes, output_dir, counting_method,
