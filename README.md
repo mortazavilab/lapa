@@ -1,6 +1,6 @@
 # LAPA (Alpha release)
 
-![tests](https://github.com/mortazavilab/lapa/actions/workflows/python-app.yml/badge.svg)
+[![tests](https://github.com/mortazavilab/lapa/actions/workflows/python-app.yml/badge.svg)](https://github.com/mortazavilab/lapa/actions)
 [![codecov](https://codecov.io/gh/mortazavilab/lapa/branch/master/graph/badge.svg?token=MJQ88T8JWK)](https://codecov.io/gh/mortazavilab/lapa)
 [![Documentation Status](https://readthedocs.org/projects/lapa/badge/?version=latest)](https://lapa.readthedocs.io/en/latest/?badge=latest)
 
