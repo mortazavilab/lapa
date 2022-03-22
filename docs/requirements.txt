@@ -1,8 +1,0 @@
-cython
-m2r2
-sphinxcontrib-napoleon
-sphinx-autoapi
-nbsphinx
-sphinx-rtd-theme
-sphinx-click
--e .
