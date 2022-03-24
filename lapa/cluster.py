@@ -37,7 +37,7 @@ class Cluster:
             count_arr[pos - min_pos] = c
         return count_arr
 
-    def polyA_site(self, window=5, std=1):
+    def peak(self, window=5, std=1):
         pad_size = window // 2
         counts = self._count_arr(self.counts)
         # counts = pd.Series(dict(self.counts)).sort_index()
@@ -46,6 +46,29 @@ class Cluster:
                                     win_type='gaussian').sum(std=std)
         return self.Start + moving_sum.idxmax() + 1
 
+    def to_dict(self, fasta):
+        total = self.total_count        
+        return {
+            'Chromosome': self.Chromosome,
+            'Start': self.Start,
+            'End': self.End,
+            'peak': self.peak(),
+            'count': total,
+            'Strand': self.Strand,
+        }
+
+    def __str__(self):
+        return f'{self.Chromosome}:{self.Start}-{self.End}:{self.Strand}'
+
+    def __repr__(self):
+        return f'Cluster({str(self)})'
+
+
+class PolyACluster(Cluster):
+
+    def polyA_site(self, window=5, std=1):
+        return self.peak(window=window, std=std)
+    
     def polyA_signal_sequence(self, fasta, polyA_site):
         # the list of poly(A) signals
         # that are annotated for single 3' end processing sites
@@ -92,34 +115,28 @@ class Cluster:
 
     def bed_line(self, fasta):
         row = self.to_dict(fasta)
-        return f'{row["Chromosome"]}\t{row["Start"]}\t{row["End"]}\t{row["polyA_site"]}\t{row["coubt"]}\t{row["Strand"]}\t{row["fracA"]}\t{row["signal"]}\n'
+        return f'{row["Chromosome"]}\t{row["Start"]}\t{row["End"]}\t{row["polyA_site"]}\t{row["count"]}\t{row["Strand"]}\t{row["fracA"]}\t{row["signal"]}\n'
 
     def to_dict(self, fasta):
-        total = self.total_count
-        polyA = self.polyA_site()
-        fracA = self.fraction_A(fasta, polyA)
-        signal_seq_loc, signal_seq = self.polyA_signal_sequence(fasta, polyA)
-        signal = f'{signal_seq_loc}@{signal_seq}'
-        return {
-            'Chromosome': self.Chromosome,
-            'Start': self.Start,
-            'End': self.End,
-            'polyA_site': polyA,
-            'count': total,
-            'Strand': self.Strand,
-            'fracA': fracA,
-            'signal': signal
-        }
-
-    def __str__(self):
-        return f'{self.Chromosome}:{self.Start}-{self.End}:{self.Strand}'
-
-    def __repr__(self):
-        return f'Cluster({str(self)})'
+        cluster = super().to_dict(fasta)
+        cluster['polyA_site'] = cluster['peak']
+        del cluster['peak']
+        
+        cluster['fracA'] = self.fraction_A(fasta, cluster['polyA_site'])
+        signal_seq_loc, signal_seq = self.polyA_signal_sequence(fasta, cluster['polyA_site'])
+        cluster['signal'] = f'{signal_seq_loc}@{signal_seq}'
+        
+        return cluster
 
 
-class TesClustering:
+class TssCluster(Cluster):
+    pass
+    
 
+class Clustering:
+
+    Cluster = Cluster
+    
     def __init__(self, fasta, extent_cutoff=3, window=25,
                  groupby=None, fields=None, progress=True):
         self.fasta = FastaStringExtractor(fasta, use_strand=True)
@@ -147,8 +164,8 @@ class TesClustering:
                 # if enough reads supporting TES, create or extent cluster
                 if row['count'] >= self.extent_cutoff:
                     if cluster is None:
-                        cluster = Cluster(row['Chromosome'], row['End'] - 1,
-                                          row['End'], row['Strand'])
+                        cluster = self.Cluster(row['Chromosome'], row['End'] - 1,
+                                               row['End'], row['Strand'])
                         cluster.fields = {i: list() for i in self.fields}
 
                     cluster.extend(row['End'], row['count'])
@@ -168,3 +185,13 @@ class TesClustering:
             cluster.to_dict(self.fasta)
             for cluster in self.cluster(df_tes)
         ])
+
+
+class PolyAClustering(Clustering):
+
+    Cluster = PolyACluster
+
+
+class TssClustering(Clustering):
+
+    Cluster = TssCluster

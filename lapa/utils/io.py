@@ -44,15 +44,24 @@ def read_talon_read_annot(path, usecols=(
     return df
 
 
-def read_talon_read_annot_count(path):
-    df = read_talon_read_annot(path)
-
-    df['End'] = np.where(df['Strand'] == '-', df['Start'], df['End'])
+def _read_talon_read_counts(df):
     del df['Start']
     df['Start'] = df['End'] - 1
     df['count'] = 1
 
     return df[['Chromosome', 'Start', 'End', 'Strand', 'count', 'sample']]
+
+
+def read_talon_read_annot_three_prime_count(path):
+    df = read_talon_read_annot(path)
+    df['End'] = np.where(df['Strand'] == '-', df['Start'], df['End'])
+    return _read_talon_read_counts(df)
+
+
+def read_talon_read_annot_five_prime_count(path):
+    df = read_talon_read_annot(path)
+    df['End'] = np.where(df['Strand'] == '-', df['End'], df['Start'])
+    return _read_talon_read_counts(df)
 
 
 def read_bam_ends(path, mapq=10, sample=None):

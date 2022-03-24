@@ -3,9 +3,9 @@ import pysam
 import pyBigWig
 import pandas as pd
 import numpy as np
-from lapa.count import TailTesCounter, \
-    count_tes_bam_samples, agg_tes_samples
-from conftest import quantseq_gm12_bam, short_bam, chr17_chrom_sizes
+from lapa.count import PolyaTailCounter, FivePrimeCounter, ThreePrimeCounter, \
+    TesMultiCounter, TssMultiCounter
+from conftest import quantseq_gm12_bam, short_bam, chr17_chrom_sizes, read_annot
 
 
 def load_reads(seq, cigar, flag, pos):
@@ -34,7 +34,7 @@ def test_detect_polyA():
     pos = '143694'
     read = load_reads(seq, cigar, flag, pos)
 
-    polyA_site, tail_len, percent_A = TailTesCounter.detect_polyA_tail(read)
+    polyA_site, tail_len, percent_A = PolyaTailCounter.detect_polyA_tail(read)
 
     assert polyA_site is None
     assert tail_len == 0
@@ -46,7 +46,7 @@ def test_detect_polyA():
     pos = '410323'
     read = load_reads(seq, cigar, flag, pos)
 
-    polyA_site, tail_len, percent_A = TailTesCounter.detect_polyA_tail(read)
+    polyA_site, tail_len, percent_A = PolyaTailCounter.detect_polyA_tail(read)
 
     assert polyA_site == 421002
     assert tail_len == 100
@@ -58,7 +58,7 @@ def test_detect_polyA():
     pos = '143699'
     read = load_reads(seq, cigar, flag, pos)
 
-    polyA_site, tail_len, percent_A = TailTesCounter.detect_polyA_tail(read)
+    polyA_site, tail_len, percent_A = PolyaTailCounter.detect_polyA_tail(read)
 
     assert polyA_site == 143698
     assert tail_len == 104
@@ -70,7 +70,7 @@ def test_detect_polyA():
     pos = '716075'
     read = load_reads(seq, cigar, flag, pos)
 
-    polyA_site, tail_len, percent_A = TailTesCounter.detect_polyA_tail(read)
+    polyA_site, tail_len, percent_A = PolyaTailCounter.detect_polyA_tail(read)
 
     assert polyA_site == 716193
     assert tail_len == 1
@@ -82,7 +82,7 @@ def test_detect_polyA():
     pos = '515042'
     read = load_reads(seq, cigar, flag, pos)
 
-    polyA_site, tail_len, percent_A = TailTesCounter.detect_polyA_tail(read)
+    polyA_site, tail_len, percent_A = PolyaTailCounter.detect_polyA_tail(read)
 
     assert polyA_site == 515041
     assert tail_len == 17
@@ -90,50 +90,51 @@ def test_detect_polyA():
 
 
 @pytest.fixture
-def tes_counter_short():
-    return TailTesCounter(short_bam)
+def tail_counter_short():
+    return PolyaTailCounter(short_bam)
 
 
-def test_TailTesCounter_iter_tailed_reads(tes_counter_short):
-    tailed = sum(1 for i in tes_counter_short.iter_tailed_reads())
+def test_PolyaTailCounter_iter_tailed_reads(tail_counter_short):
+    tailed = sum(1 for i in tail_counter_short.iter_tailed_reads())
     assert tailed > 3900
 
 
-def test_TailTesCounter_tail_len_dist(tes_counter_short):
-    tail_len = tes_counter_short.tail_len_dist()
+def test_PolyaTailCounter_tail_len_dist(tail_counter_short):
+    tail_len = tail_counter_short.tail_len_dist()
     assert tail_len.shape[0] > 20
 
 
-def test_TailTesCounter_save_tailed_reads(tes_counter_short, tmp_path):
+def test_PolyaTailCounter_save_tailed_reads(tail_counter_short, tmp_path):
     tailed_bam = str(tmp_path / 'tailed.bam')
-    tes_counter_short.save_tailed_reads(tailed_bam)
+    tail_counter_short.save_tailed_reads(tailed_bam)
 
     tailed_bam = pysam.AlignmentFile(tailed_bam, 'rb')
     tailed = sum(1 for i in tailed_bam)
     assert tailed > 3900
 
 
-def test_TailTesCounter_count(tes_counter_short):
-    tes = tes_counter_short.count()
+def test_PolyaTailCounter_count(tail_counter_short):
+    tes = tail_counter_short.count()
     assert len(tes) > 1000
 
 
-def test_TailTesCounter_to_df(tes_counter_short):
-    df = tes_counter_short.to_df()
+def test_PolyaTailCounter_to_df(tail_counter_short):
+    df = tail_counter_short.to_df()
     assert df.shape[0] > 1000
 
 
-def test_count_tes_samples(tmp_path):
-    output_dir = tmp_path / 'multi_sample'
-    output_dir.mkdir()
-
+def test_TesMultiCounter_samples(tmp_path):
+    # Test multiple samples
     df = pd.DataFrame({
         'sample': ['short_rep1', 'short_rep2', 'short', 'short'],
         'path': [short_bam, short_bam, short_bam, short_bam]
     })
-    df_count = count_tes_bam_samples(df, 'tail')
-    df_all, tes = agg_tes_samples(df_count, chr17_chrom_sizes, output_dir)
+    csv_path = tmp_path / 'samples.csv'
+    df.to_csv(csv_path)
 
+    counter = TesMultiCounter(csv_path, method='tail')
+    df_all, tes = counter.to_df()
+   
     pd.testing.assert_frame_equal(
         tes['short_rep1'],
         tes['short_rep2']
@@ -145,6 +146,12 @@ def test_count_tes_samples(tmp_path):
     _df = tes['short_rep1'].copy()
     _df['count'] *= 2
     pd.testing.assert_frame_equal(tes['short'], _df)
+
+    # Test bigwig exporting
+    output_dir = tmp_path / 'multi_sample'
+    output_dir.mkdir()    
+    TesMultiCounter._to_bigwig(df_all, tes, chr17_chrom_sizes,
+                               output_dir, prefix='tes_counts')
 
     assert {i.name for i in output_dir.iterdir()} == {
         'all_tes_counts_pos.bw',
@@ -183,15 +190,58 @@ def test_count_tes_samples(tmp_path):
     )
     assert df_all['count'].sum() / 2 == count
 
-    output_dir = tmp_path / 'single_sample'
-    output_dir.mkdir()
-
+    # Test single sample
     df = pd.DataFrame({
         'sample': ['short', 'short'],
         'path': [short_bam, short_bam]
     })
+    df.to_csv(csv_path)
 
-    df_count = count_tes_bam_samples(df, 'tail')
-    df_all, tes = agg_tes_samples(df_count, chr17_chrom_sizes, output_dir)
+    counter = TesMultiCounter(csv_path, method='tail')
+    df_all, tes = counter.to_df()
+
+    output_dir = tmp_path / 'single_sample'
+    output_dir.mkdir()
+    TesMultiCounter._to_bigwig(df_all, tes, chr17_chrom_sizes,
+                               output_dir, prefix='tes_counts')
     assert {i.name for i in output_dir.iterdir()} == {
         'all_tes_counts_pos.bw', 'all_tes_counts_neg.bw'}
+
+    # Test read_annot
+    counter = TesMultiCounter(read_annot)
+    df_all, tes = counter.to_df()
+
+    output_dir = tmp_path / 'read_annot_dir'
+    output_dir.mkdir()
+    TesMultiCounter._to_bigwig(df_all, tes, chr17_chrom_sizes,
+                               output_dir, prefix='tes_counts')
+
+    assert {i.name for i in output_dir.iterdir()} == {
+        'all_tes_counts_pos.bw',
+        'all_tes_counts_neg.bw',        
+        'gm12878_tes_counts_neg.bw',
+        'gm12878_tes_counts_pos.bw',
+        'hepg2_tes_counts_neg.bw',
+        'hepg2_tes_counts_pos.bw'
+    }
+    
+
+
+def test_TssMultiCounter_samples(tmp_path):
+    # Test read_annot
+    counter = TssMultiCounter(read_annot)
+    df_all, tes = counter.to_df()
+
+    output_dir = tmp_path / 'read_annot_dir'
+    output_dir.mkdir()
+    TssMultiCounter._to_bigwig(df_all, tes, chr17_chrom_sizes,
+                               output_dir, prefix='tss_counts')
+
+    assert {i.name for i in output_dir.iterdir()} == {
+        'all_tss_counts_pos.bw',
+        'all_tss_counts_neg.bw',
+        'gm12878_tss_counts_neg.bw',
+        'gm12878_tss_counts_pos.bw',
+        'hepg2_tss_counts_neg.bw',
+        'hepg2_tss_counts_pos.bw'
+    }

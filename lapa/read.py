@@ -4,7 +4,6 @@ import pyranges as pr
 from tqdm import tqdm
 from lapa.utils.io import read_talon_read_annot
 from lapa.result import LapaResult
-from lapa.cluster import TesClustering
 
 
 def read_tes_mapping(df_cluster, read_annot, distance=1000):
@@ -36,41 +35,6 @@ def read_tes_mapping(df_cluster, read_annot, distance=1000):
 
     return df.reset_index()[['read_name', 'Chromosome',
                              'polyA_site', 'Strand']]
-
-
-def read_tss_read_annot(read_annot):
-    # TODO: optimize memory
-    # df_reads = df[[]]
-
-    df = read_talon_read_annot(read_annot)
-    df['End'] = np.where(df['Strand'] == '-', df['End'], df['Start'])
-    del df['Start']
-    df['Start'] = df['End'] - 1
-    return df
-
-
-def read_tss_read_annot_count(read_annot):
-    df = read_tss_read_annot(read_annot)
-    df['count'] = 1
-
-    columns = ['Chromosome', 'Start', 'End', 'Strand']
-    df = df.groupby(columns).agg('sum')[['count']].reset_index()
-    return df
-
-
-def tss_cluster(read_annot, fasta, extent_cutoff=3):
-    df_reads = read_tss_read_annot_count(read_annot)
-
-    tss_clusters = list(TesClustering(
-        fasta, extent_cutoff=extent_cutoff).cluster(df_reads))
-    return pd.DataFrame({
-        'Chromosome': [c.Chromosome for c in tss_clusters],
-        'Start': [c.Start for c in tss_clusters],
-        'End': [c.End for c in tss_clusters],
-        'Strand': [c.Strand for c in tss_clusters],
-        'count': [c.total_count for c in tss_clusters],
-        'start_site': [c.polyA_site() for c in tss_clusters]
-    })
 
 
 def tss_mapping(df_tss_cluster, read_annot, distance=1000):
@@ -235,18 +199,15 @@ def correct_gtf_tes(df_read_tes, df_read_transcript, gtf, gtf_output,
     pr.PyRanges(df_gtf_cor).to_gtf(gtf_output)
 
 
-def correct_gtf(gtf, gtf_output, lapa_dir, read_annot,
-                fasta, tss_correct=True):
+def correct_gtf(gtf, gtf_output, lapa_dir, lapa_tss_dir,
+                read_annot, fasta, tss_correct=True):
     print('TES read mapping (1 / 3)...')
     df_cluster = LapaResult(lapa_dir).read_cluster()
     df_mapping = read_tes_mapping(df_cluster, read_annot)
 
-    if tss_correct:
-        print('TSS read mapping (2 / 3)...')
-        df_tss_cluster = tss_cluster(read_annot, fasta)
-        df_tss_mapping = tss_mapping(df_tss_cluster, read_annot)
-    else:
-        df_tss_mapping = None
+    print('TSS read mapping (2 / 3)...')  
+    df_tss_cluster = pd.read_csv(Path(lapa_tss_dir) / 'tss_clusters.bed')
+    df_tss_mapping = tss_mapping(df_tss_cluster, read_annot)
 
     df_reads = read_talon_read_annot(read_annot).rename(
         columns={'annot_transcript_id': 'transcript_id'})

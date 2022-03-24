@@ -1,9 +1,9 @@
 from collections import Counter
 import pytest
 import pandas as pd
-from lapa import lapa, read_polyA_cluster, read_apa_sample
+from lapa import lapa, lapa_tss, read_polyA_cluster, read_apa_sample
 from lapa.lapa import tes_cluster_annotate, tes_sample
-from lapa.cluster import TesClustering
+from lapa.cluster import PolyAClustering, TssClustering
 from lapa.utils.io import cluster_col_order, sample_col_order, \
     read_talon_read_annot
 from conftest import fasta, gtf, chrom_sizes, \
@@ -46,57 +46,6 @@ def test_lapa(tmp_path):
 
     _df = df_read_annot[df_read_annot['sample'] == 'gm12878']
     assert _df.shape[0] > counts
-
-
-@pytest.fixture
-def df_tes():
-    return pd.DataFrame({
-        'Chromosome': ['chr17', 'chr17', 'chrM', 'chr17', 'chr17'],
-        'Start': [100099, 100100, 1100, 100150, 100199],
-        'End': [100100, 100101, 1101, 100151, 100200],
-        'Strand': ['+', '+', '+', '-', '-'],
-        'count': [10, 5, 11, 3, 7]
-    })
-
-
-def test_TesClustering_cluster(df_tes):
-    clusters = list(TesClustering(fasta, extent_cutoff=5).cluster(df_tes))
-
-    assert len(clusters) == 3
-
-    cluster = clusters[0]
-    assert cluster.Chromosome == 'chr17'
-    assert cluster.Start == 100099
-    assert cluster.End == 100101
-    assert cluster.Strand == '+'
-    assert cluster.counts == [(100100, 10), (100101, 5)]
-
-    cluster = clusters[1]
-    assert str(cluster) == 'chr17:100199-100200:-'
-    assert cluster.counts == [(100200, 7)]
-
-    cluster = clusters[2]
-    assert cluster.Chromosome == 'chrM'
-    assert cluster.Start == 1100
-    assert cluster.End == 1101
-    assert cluster.Strand == '+'
-    assert cluster.counts == [(1101, 11)]
-
-
-def test_TesCluster_to_df(df_tes):
-    df_clusters = TesClustering(fasta, extent_cutoff=5).to_df(df_tes)
-
-    df_expected = pd.DataFrame({
-        'Chromosome': ['chr17', 'chr17', 'chrM'],
-        'Start': [100099, 100199, 1100],
-        'End': [100101, 100200, 1101],
-        'polyA_site': [100100, 100200, 1101],
-        'count': [15, 7, 11],
-        'Strand': ['+', '-', '+'],
-        'fracA': [6, 2, -1],
-        'signal': ['100157@GATAAA', 'None@None', 'None@None']
-    })
-    pd.testing.assert_frame_equal(df_clusters, df_expected)
 
 
 def test_tes_cluster_annotation():
@@ -192,40 +141,6 @@ def test_tes_sample():
     assert row['Strand'] == '+'
 
 
-# def test_lapa(tmp_path):
-#     output_dir = tmp_path / 'lapa'
-
-#     df_read_annot = read_talon_read_annot(read_annot)
-
-#     lapa(read_annot, fasta, gtf, chrom_sizes, output_dir)
-
-#     df_cluster = read_polyA_cluster(str(output_dir / 'polyA_clusters.bed'))
-
-#     assert all(df_cluster.columns == cluster_col_order)
-
-#     assert all(df_cluster['polyA_site'] <= df_cluster['End'])
-#     assert all(df_cluster['polyA_site'] >= df_cluster['Start'])
-
-#     assert (df_cluster['End'] - df_cluster['Start']).max() < 150
-
-#     assert set(df_cluster['Chromosome']) == {'chr17', 'ERCC-00060'}
-
-#     counts = df_cluster.drop_duplicates([
-#         'Chromosome', 'Start', 'End', 'Strand'])['count'].sum()
-#     assert df_read_annot.shape[0] > counts
-
-#     df_apa = read_apa_sample(str(output_dir / 'gm12878_apa.bed'))
-#     assert all(df_apa == sample_col_order)
-
-#     counts = pd.Series(Counter(df_apa['Feature']))
-#     assert counts.idxmax() == 'three_prime_utr'
-
-#     counts = df_apa.drop_duplicates([
-#         'Chromosome', 'Start', 'End', 'Strand'])['count'].sum()
-#     _df = df_read_annot[df_read_annot['sample'] == 'gm12878']
-#     assert _df.shape[0] > counts
-
-
 def test_lapa_bam(tmp_path):
     output_dir = tmp_path / 'lapa'
 
@@ -293,3 +208,33 @@ def test_lapa_read_csv(tmp_path):
 
     counts = pd.Series(Counter(df_apa['Feature']))
     assert counts.idxmax() == 'three_prime_utr'
+
+
+
+def test_lapa_tss(tmp_path):
+    output_dir = tmp_path / 'lapa_tss'
+    df_read_annot = read_talon_read_annot(read_annot)
+    
+    lapa_tss(read_annot, fasta, gtf, chrom_sizes, output_dir)
+
+    cols = ['Chromosome', 'Start', 'End', 'peak', 'count', 'Strand']
+    df_cluster = pd.read_csv(str(output_dir / 'tss_clusters.bed'),
+                             sep='\t', header=None)
+    df_cluster.columns = cols
+    assert all(df_cluster.columns == cols)
+
+    assert all(df_cluster['peak'] <= df_cluster['End'])
+    assert all(df_cluster['peak'] >= df_cluster['Start'])
+
+    assert (df_cluster['End'] - df_cluster['Start']).max() < 300
+    assert set(df_cluster['Chromosome']) == {'chr17', 'ERCC-00060'}
+
+
+    counts = df_cluster.drop_duplicates([
+        'Chromosome', 'Start', 'End', 'Strand'])['count'].sum()
+    
+    df_tss = pd.read_csv(str(output_dir / 'gm12878_tss.bed'),
+                         sep='\t', header=None)
+
+    df_tss = pd.read_csv(str(output_dir / 'hepg2_tss.bed'),
+                         sep='\t', header=None)    

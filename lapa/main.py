@@ -14,7 +14,7 @@ from lapa.read import correct_gtf
               help='Standart transcriptome Annotation (Encode or Ensembl gtf)',
               required=True)
 @click.option('--chrom_sizes',
-              help='Chrom sizes files (can be generated with'
+              help='Chrom sizes files (can be generated with)'
               '`faidx fasta -i chromsizes > chrom_sizes`)',
               required=True)
 @click.option('--output_dir',

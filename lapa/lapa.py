@@ -1,11 +1,10 @@
 from pathlib import Path
 import pandas as pd
 import pyranges as pr
-from lapa.cluster import TesClustering
+from lapa.cluster import PolyAClustering, TssClustering
 from lapa.genomic_regions import GenomicRegions
-from lapa.count import count_tes_bam_samples, agg_tes_samples
-from lapa.utils.io import read_talon_read_annot_count, \
-    cluster_col_order, sample_col_order
+from lapa.count import TesMultiCounter, TssMultiCounter
+from lapa.utils.io import cluster_col_order, sample_col_order
 
 
 def tes_cluster_annotate(df_cluster, annotation):
@@ -61,46 +60,38 @@ def tes_sample(df_cluster, df_tes_sample,
     return df_apa.reset_index()
 
 
-def prepare_alignment(alignment):
-    if alignment.endswith('.bam'):
-        alignments = alignment.split(',')
-        return pd.DataFrame({
-            'sample': ['all'] * len(alignments),
-            'path': alignments
-        })
-    elif alignment.endswith('.csv'):
-        df = pd.read_csv(alignment)
-        assert all(df.columns == ['sample', 'path']), \
-            'provided csv file should be consist of columns `sample` and `path`'
-        return df
+def tss_sample(df_cluster, df_tss_sample):
+    columns = ['Chromosome', 'Start', 'End', 'Strand']
+    gr = pr.PyRanges(df_tss_sample)
+    
+    gr_cluster = pr.PyRanges(df_cluster[columns])
+    df_join = gr_cluster.join(gr, suffix='_sample').df
+
+    df_join = df_join.groupby(columns, observed=True) \
+                     .agg({'count': 'sum'}).reset_index()
+    df_join = df_join[df_join['count'] > 0]
+
+    df_tss = df_join.set_index(columns).join(
+        df_cluster.set_index(columns), rsuffix='_cluster').reset_index()
+
+    cols = ['Chromosome', 'Start', 'End', 'peak', 'count', 'Strand']
+    return df_tss[cols]
 
 
-def lapa(alignment, fasta, annotation, chrom_sizes, output_dir, method=None,
+def lapa(alignment, fasta, annotation, chrom_sizes, output_dir, method='end',
          min_tail_len=10, min_percent_a=0.9, mapq=10,
          cluster_extent_cutoff=3, cluster_window=25):
 
     output_dir = Path(output_dir)
     output_dir.mkdir(exist_ok=True)
-    print('Reading the alignment file...')
-    if alignment.endswith('_read_annot.tsv'):
-        df_count = read_talon_read_annot_count(alignment)
-    elif alignment.endswith('.bam') or alignment.endswith('.csv'):
-        if method not in {'tail', 'end'}:
-            raise ValueError('method need to be either `tail` or `end`')
-        df_alignment = prepare_alignment(alignment)
-        df_count = count_tes_bam_samples(df_alignment, method, min_tail_len,
-                                         min_percent_a, mapq)
-    else:
-        raise ValueError(
-            'Unknown file alignment format: supported '
-            'file formats are `bam` and `sample.csv`')
 
     print('Counting TES (1 / 4)...')
-    df_tes, tes = agg_tes_samples(df_count, chrom_sizes, output_dir)
-    del df_count
+    counter = TesMultiCounter(alignment, method, mapq, min_tail_len, min_percent_a)
+    df_tes, tes = counter.to_df()
+    counter._to_bigwig(df_tes, tes, chrom_sizes, output_dir, prefix='tes_counts')
 
     print('Clustering TES and calculating polyA_sites (2 / 4)...')
-    df_cluster = TesClustering(fasta,
+    df_cluster = PolyAClustering(fasta,
                                extent_cutoff=cluster_extent_cutoff,
                                window=cluster_window).to_df(df_tes)
     del df_tes
@@ -115,3 +106,30 @@ def lapa(alignment, fasta, annotation, chrom_sizes, output_dir, method=None,
         df_apa = tes_sample(df_cluster, df_tes_sample)
         df_apa[sample_col_order].to_csv(output_dir / f'{sample}_apa.bed',
                                         index=False, sep='\t', header=False)
+
+
+def lapa_tss(alignment, fasta, annotation, chrom_sizes, output_dir,
+             method='start', mapq=10, cluster_extent_cutoff=3, cluster_window=25):
+
+    output_dir = Path(output_dir)
+    output_dir.mkdir(exist_ok=True)
+
+    print('Counting TSS (1 / 4)...')
+    counter = TssMultiCounter(alignment, method, mapq)
+    df_tss, tss = counter.to_df()
+    counter._to_bigwig(df_tss, tss, chrom_sizes, output_dir, prefix='tss_counts')
+
+    print('Clustering TES and calculating polyA_sites (2 / 4)...')
+    df_cluster = TssClustering(fasta,
+                               extent_cutoff=cluster_extent_cutoff,
+                               window=cluster_window).to_df(df_tss)
+    del df_tss
+
+    cluster_cols = ['Chromosome', 'Start', 'End', 'peak', 'count', 'Strand']    
+    df_cluster[cluster_cols].to_csv(output_dir / 'tss_clusters.bed',
+                                         index=False, sep='\t', header=False)
+
+    for sample, df_tss_sample in tss.items():
+        df_tss = tss_sample(df_cluster, df_tss_sample)
+        df_tss[cluster_cols].to_csv(output_dir / f'{sample}_tss.bed',
+                                    index=False, sep='\t', header=False)
