@@ -50,8 +50,9 @@ setup(
 
     entry_points='''
         [console_scripts]
-        lapa=lapa.main:cli
-        lapa_correct_talon_gtf=lapa.main:lapa_correct_talon_gtf
+        lapa=lapa.main:cli_lapa
+        lapa_tss=lapa.main:cli_lapa_tss
+        lapa_correct_talon_gtf=lapa.main:cli_lapa_correct_talon_gtf
     ''',
     packages=find_packages(include=['lapa*']),
     include_package_data=True,

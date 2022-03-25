@@ -6,9 +6,10 @@ from conftest import read_annot, fasta, gtf, chrom_sizes, \
 from lapa import lapa
 from lapa.utils.io import read_talon_read_annot
 from lapa.read import read_tes_mapping, correct_gtf_tes, sort_gtf, \
-    read_tss_read_annot_count, tss_cluster, tss_mapping, _transcript_mapping, \
+    read_tss_mapping, _transcript_mapping, read_tss_mapping, \
     tes_transcript_mapping
 from lapa.result import LapaResult
+
 
 tqdm.pandas()
 
@@ -51,24 +52,7 @@ def test_read_tes_mapping_uncluster():
     }))
 
 
-def test_read_tss_read_annot_count():
-    df_read_annot = pd.read_csv(read_annot, sep='\t')
-
-    df = read_tss_read_annot_count(read_annot)
-    assert df_read_annot.shape[0] == df['count'].sum()
-    assert df.set_index(['Chromosome', 'End']).loc[
-        ('ERCC-00060', 1), 'count'][0] == df_read_annot[
-        (df_read_annot['chrom'] == 'ERCC-00060')
-        & (df_read_annot['read_start'] == 1)].shape[0]
-
-
-def test_tss_cluster():
-    df_tss = tss_cluster(read_annot, fasta)
-    assert df_tss.set_index(['Chromosome', 'start_site']).loc[
-        ('ERCC-00060', 1), 'count'] == 110
-
-
-def test_tss_mapping(tmp_path):
+def test_read_tss_mapping(tmp_path):
     df_cluster = pd.DataFrame({
         'Chromosome': ['chr1', 'chr1'],
         'Start': [4990, 100],
@@ -87,10 +71,10 @@ def test_tss_mapping(tmp_path):
         'annot_transcript_id': ['t1', 't1', 't2'],
         'dataset': ['a', 'a', 'a']
     })
-    read_annot = tmp_path / 't_read_annot.tsv'
+    read_annot = tmp_path / 'tss_read_annot.tsv'
     df_read.to_csv(read_annot, sep='\t', index=False)
 
-    df = tss_mapping(df_cluster, read_annot)
+    df = read_tss_mapping(df_cluster, read_annot)
     pd.testing.assert_frame_equal(
         df,
         pd.DataFrame({

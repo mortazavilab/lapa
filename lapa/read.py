@@ -1,19 +1,14 @@
+from pathlib import Path
 import numpy as np
 import pandas as pd
 import pyranges as pr
 from tqdm import tqdm
-from lapa.utils.io import read_talon_read_annot
 from lapa.result import LapaResult
+from lapa.utils.io import read_talon_read_annot, \
+    read_tss_cluster
 
 
-def read_tes_mapping(df_cluster, read_annot, distance=1000):
-    if type(read_annot) == str:
-        df_reads = read_talon_read_annot(read_annot)
-    elif type(read_annot) == pd.DataFrame:
-        df_reads = read_annot
-    else:
-        raise ValueError('`read_annot` should be `str` or `pd.DataFrame`')
-
+def read_tes_mapping(df_cluster, df_reads, distance=1000):
     df_reads['End'] = np.where(df_reads['Strand'] == '-',
                                df_reads['Start'],
                                df_reads['End'])
@@ -29,7 +24,6 @@ def read_tes_mapping(df_cluster, read_annot, distance=1000):
 
     unclustered = df['polyA_site'].isna()
     df.loc[unclustered, 'polyA_site'] = df.loc[unclustered, 'End']
-    # df.loc[unclustered, 'count'] = 1
 
     df['polyA_site'] = df['polyA_site'].astype(int)
 
@@ -37,8 +31,11 @@ def read_tes_mapping(df_cluster, read_annot, distance=1000):
                              'polyA_site', 'Strand']]
 
 
-def tss_mapping(df_tss_cluster, read_annot, distance=1000):
-    df_reads = read_tss_read_annot(read_annot)
+def read_tss_mapping(df_tss_cluster, df_reads, distance=1000):
+    df_reads['End'] = np.where(df_reads['Strand'] == '-',
+                               df_reads['End'],
+                               df_reads['Start'])
+    df_reads['Start'] = df_reads['End'] - 1
     gr_reads = pr.PyRanges(df_reads)
 
     df = gr_reads.nearest(pr.PyRanges(df_tss_cluster), how='upstream').df
@@ -177,19 +174,16 @@ def correct_gtf_tes(df_read_tes, df_read_transcript, gtf, gtf_output,
     df_transcript = df_gtf[df_gtf['Feature'].isin({'transcript', 'exon'})]
 
     df_transcript = df_transcript.set_index('transcript_id') \
-                                 .join(df_tes, how='left')
-
-    if df_read_tss is not None:
-        df_transcript = df_transcript.join(df_tss, how='left')
+                                 .join(df_tes, how='left') \
+                                 .join(df_tss, how='left')
 
     tqdm.pandas()
-    df_transcript_cor = df_transcript.groupby(level=0).progress_apply(
-        _correct_transcript).reset_index()
-
+    df_transcript_cor = df_transcript.groupby(level=0) \
+                                     .progress_apply(_correct_transcript) \
+                                     .reset_index()
+   
     del df_transcript_cor['polyA_site']
-
-    if df_read_tss is not None:
-        del df_transcript_cor['start_site']
+    del df_transcript_cor['start_site']
 
     df_gene_cor = _correct_gene(
         df_transcript_cor, df_gtf[df_gtf['Feature'] == 'gene'])
@@ -200,17 +194,18 @@ def correct_gtf_tes(df_read_tes, df_read_transcript, gtf, gtf_output,
 
 
 def correct_gtf(gtf, gtf_output, lapa_dir, lapa_tss_dir,
-                read_annot, fasta, tss_correct=True):
-    print('TES read mapping (1 / 3)...')
-    df_cluster = LapaResult(lapa_dir).read_cluster()
-    df_mapping = read_tes_mapping(df_cluster, read_annot)
-
-    print('TSS read mapping (2 / 3)...')  
-    df_tss_cluster = pd.read_csv(Path(lapa_tss_dir) / 'tss_clusters.bed')
-    df_tss_mapping = tss_mapping(df_tss_cluster, read_annot)
-
+                read_annot, fasta):
     df_reads = read_talon_read_annot(read_annot).rename(
         columns={'annot_transcript_id': 'transcript_id'})
+
+    print('TES read mapping (1 / 3)...')
+    df_cluster = LapaResult(lapa_dir, tpm_cutoff=1).read_cluster()
+    df_mapping = read_tes_mapping(df_cluster, df_reads.copy())
+
+    print('TSS read mapping (2 / 3)...')
+    df_tss_cluster = read_tss_cluster(
+        Path(lapa_tss_dir) / 'tss_clusters.bed')
+    df_tss_mapping = read_tss_mapping(df_tss_cluster, df_reads.copy())
 
     print('Correcting gtf (3 / 3)...')
     correct_gtf_tes(

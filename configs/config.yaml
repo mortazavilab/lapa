@@ -19,7 +19,10 @@ common:
   chrom_sizes: data/results/common/{genome}.chrom_sizes
   tes: data/results/common/{genome}_tes.csv
   gene_id_name_mapping: data/results/common/{genome}_gene_id_name_mapping.csv
-  
+
+lrgasp:
+  config: configs/rnaseq-data-matrix.tsv
+
 encode: 
   fastq: data/resources/encode/fastq/{encode_id}.fastq.gz
   fastq_polyA: data/results/encode/fastq_polyA/{encode_id}_polyA.fastq.gz
@@ -28,9 +31,6 @@ encode:
   fastq_read_count: data/results/encode/read_count/{encode_id}_fastq.txt
   fasta_read_count: data/results/encode/read_count/{encode_id}_fasta.txt
   bam_read_count: data/results/encode/read_count/{encode_id}_bam.txt
-
-lrgasp:
-  config: configs/rnaseq-data-matrix.tsv
 
 talon:
   read_annot: data/resources/talon/{sample}_{library_prep}_{platform}_read_annot.tsv
@@ -41,6 +41,7 @@ talon:
 lapa:
   samples: data/results/lapa/{sample}/{library_prep}_{platform}.csv
   lapa_dir: data/results/lapa/{sample}/{library_prep}_{platform}_{counting}/
+  lapa_tss_dir: data/results/lapa_tss/{sample}/{library_prep}_{platform}_{counting}/  
   lapa_quantseq_dir: data/results/lapa/{sample}/quantseq_Illumina_end/
   
 quantseq:

@@ -26,6 +26,8 @@ def read_talon_read_annot(path, usecols=(
         'read_name', 'chrom', 'read_start', 'read_end',
         'strand', 'annot_gene_id', 'annot_transcript_id', 'dataset')):
 
+    # {'annot_transcript_id': 'transcript_id'} rename
+    
     df = pd.read_csv(path, sep='\t', usecols=usecols)
     df = df.rename(columns={
         'chrom': 'Chromosome',
@@ -44,14 +46,6 @@ def read_talon_read_annot(path, usecols=(
     return df
 
 
-def _read_talon_read_counts(df):
-    del df['Start']
-    df['Start'] = df['End'] - 1
-    df['count'] = 1
-
-    return df[['Chromosome', 'Start', 'End', 'Strand', 'count', 'sample']]
-
-
 def read_talon_read_annot_three_prime_count(path):
     df = read_talon_read_annot(path)
     df['End'] = np.where(df['Strand'] == '-', df['Start'], df['End'])
@@ -62,6 +56,14 @@ def read_talon_read_annot_five_prime_count(path):
     df = read_talon_read_annot(path)
     df['End'] = np.where(df['Strand'] == '-', df['End'], df['Start'])
     return _read_talon_read_counts(df)
+
+
+def _read_talon_read_counts(df):
+    del df['Start']
+    df['Start'] = df['End'] - 1
+    df['count'] = 1
+
+    return df[['Chromosome', 'Start', 'End', 'Strand', 'count', 'sample']]
 
 
 def read_bam_ends(path, mapq=10, sample=None):
@@ -113,6 +115,13 @@ def read_polyA_cluster(path):
     df = pd.read_csv(path, header=None, sep='\t')
     df.columns = cluster_col_order
     return df
+
+def read_tss_cluster(path):
+    df = pd.read_csv(path, header=None, sep='\t')
+    df.columns = ['Chromosome', 'Start', 'End',
+                  'start_site', 'count', 'Strand']
+    return df
+    
 
 
 def read_apa_sample(path):

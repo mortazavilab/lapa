@@ -164,7 +164,8 @@ class Clustering:
                 # if enough reads supporting TES, create or extent cluster
                 if row['count'] >= self.extent_cutoff:
                     if cluster is None:
-                        cluster = self.Cluster(row['Chromosome'], row['End'] - 1,
+                        start = max(row['End'] - 1, 0) # avoid -1
+                        cluster = self.Cluster(row['Chromosome'], start,
                                                row['End'], row['Strand'])
                         cluster.fields = {i: list() for i in self.fields}
 

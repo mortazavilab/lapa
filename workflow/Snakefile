@@ -52,12 +52,10 @@ include: "c2c12/Snakefile"
 
 rule all:
     input:
-        rules.all_c2c12.input
-
-        # rules.all_wg_encode.input
-        # rules.all_plot.input,
-        # rules.all_benchmark.input,
-        # rules.all_correction.input
+        rules.all_lapa.input,
+        rules.all_correction.input,
+        # rules.all_quantseq3.input,
         # rules.all_short_rnaseq.input,
-        # rules.all_lapa.input,
-        # rules.all_quantseq3.input
+        # rules.all_benchmark.input,
+        # rules.all_c2c12.input,
+        # rules.all_plot.input

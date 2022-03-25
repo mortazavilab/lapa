@@ -1,5 +1,5 @@
 import click
-from lapa.lapa import lapa
+from lapa.lapa import lapa, lapa_tss
 from lapa.read import correct_gtf
 
 
@@ -47,12 +47,52 @@ from lapa.read import correct_gtf
               'if number of reads subceed `the cluster_extent_cutoff`',
               default=25,
               type=int)
-def cli(alignment, fasta, annotation, chrom_sizes, output_dir, counting_method,
+def cli_lapa(alignment, fasta, annotation, chrom_sizes, output_dir, counting_method,
         min_tail_len=10, min_percent_a=0.9, mapq=10,
         cluster_extent_cutoff=3, cluster_window=25):
     lapa(alignment, fasta, annotation, chrom_sizes, output_dir,
          counting_method, min_tail_len=min_tail_len,
-         min_percent_a=min_percent_a, mapq=mapq)
+         min_percent_a=min_percent_a,         
+         cluster_extent_cutoff=cluster_extent_cutoff,
+         cluster_window=cluster_window, mapq=mapq)
+
+
+@click.command()
+@click.option('--alignment',
+              help='Bam or Sam files',
+              required=True)
+@click.option('--fasta',
+              help='Genome reference (Encode or Ensembl fasta)',
+              required=True)
+@click.option('--annotation',
+              help='Standart transcriptome Annotation (Encode or Ensembl gtf)',
+              required=True)
+@click.option('--chrom_sizes',
+              help='Chrom sizes files (can be generated with)'
+              '`faidx fasta -i chromsizes > chrom_sizes`)',
+              required=True)
+@click.option('--output_dir',
+              help='Output directory',
+              required=True)
+@click.option('--mapq',
+              help='Minimum percentage of A bp while seeking for tails. ',
+              default=10,
+              type=int)
+@click.option('--cluster_extent_cutoff',
+              help='Number of reads to initialized and terminated cluster',
+              default=3,
+              type=int)
+@click.option('--cluster_window',
+              help='Patience threshold to wait for termination cluster'
+              'if number of reads subceed `the cluster_extent_cutoff`',
+              default=25,
+              type=int)
+def cli_lapa_tss(alignment, fasta, annotation, chrom_sizes, output_dir, mapq=10,
+                 cluster_extent_cutoff=3, cluster_window=25):
+    lapa_tss(alignment, fasta, annotation, chrom_sizes, output_dir,
+             cluster_extent_cutoff=cluster_extent_cutoff,
+             cluster_window=cluster_window, mapq=mapq)
+
 
 
 @click.command()
@@ -63,7 +103,10 @@ def cli(alignment, fasta, annotation, chrom_sizes, output_dir, counting_method,
               help='Output corrected gtf file',
               required=True)
 @click.option('--lapa_dir',
-              help='LAPA output directory of generated before',
+              help='LAPA output directory of generated before with `lapa` command',
+              required=True)
+@click.option('--lapa_tss_dir',
+              help='LAPA output directory of generated before with `lapa_tss` command',
               required=True)
 @click.option('--read_annot',
               help='read_annot file output by TALON',
@@ -71,10 +114,7 @@ def cli(alignment, fasta, annotation, chrom_sizes, output_dir, counting_method,
 @click.option('--fasta',
               help='Genome reference (Encode or Ensembl fasta)',
               required=True)
-@click.option('--correct_tss', is_flag=True,
-              help="If TSS corrected as well",
-              default=True, show_default=True)
-def lapa_correct_talon_gtf(gtf_input, gtf_output, lapa_dir,
-                           read_annot, fasta, correct_tss):
-    correct_gtf(gtf_input, gtf_output, lapa_dir,
-                read_annot, fasta, correct_tss)
+def cli_lapa_correct_talon_gtf(gtf_input, gtf_output, lapa_dir, lapa_tss_dir,
+                               read_annot, fasta):
+    correct_gtf(gtf_input, gtf_output, lapa_dir, lapa_tss_dir,
+                read_annot, fasta)

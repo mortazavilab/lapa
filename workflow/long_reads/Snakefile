@@ -91,12 +91,36 @@ rule lapa:
         --output_dir {output}"
 
 
+rule lapa_tss:
+    input:
+        samples = config['lapa']['samples'],
+        fasta = fasta,
+        gtf = gtf,
+        chrom_sizes = chrom_sizes
+    threads: 1
+    resources:
+        mem_gb = 16
+    output:
+        directory(config['lapa']['lapa_tss_dir'])
+    shell:
+        "lapa_tss \
+        --alignment {input.samples} \
+        --fasta {input.fasta} \
+        --annotation {input.gtf} \
+        --chrom_sizes {input.chrom_sizes} \
+        --output_dir {output}"
+
+
 rule all_lapa:
     input:
-        expand(config['lapa']['lapa_dir'], sample='WTC11', platform=['PacBio'],
-               counting=['end', 'tail'], library_prep=pb_library_prep),
-        expand(config['lapa']['lapa_dir'], sample='WTC11', platform=['ONT'],
-               counting=['end', 'tail'], library_prep=ont_library_prep),
+        expand([config['lapa']['lapa_dir'], config['lapa']['lapa_tss_dir']],
+               sample='WTC11', platform=['PacBio'],
+               counting=['end'], library_prep=['cDNA']),
+
+        # expand(config['lapa']['lapa_dir'], sample='WTC11', platform=['PacBio'],
+        #        counting=['end', 'tail'], library_prep=pb_library_prep),
+        # expand(config['lapa']['lapa_dir'], sample='WTC11', platform=['ONT'],
+        #        counting=['end', 'tail'], library_prep=ont_library_prep),
         # expand(config['encode']['fastq_read_count'],
         #        encode_id=_df['file_acc'].tolist()),
         # expand(config['encode']['fasta_read_count'],
