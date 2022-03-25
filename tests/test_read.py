@@ -1,15 +1,15 @@
+from pathlib import Path
 import pandas as pd
 import pyranges as pr
 from tqdm import tqdm
 from conftest import read_annot, fasta, gtf, chrom_sizes, \
     read_annot_gm12_pb, gtf_gm12_pb
-from lapa import lapa
-from lapa.utils.io import read_talon_read_annot
-from lapa.read import read_tes_mapping, correct_gtf_tes, sort_gtf, \
+from lapa import lapa, lapa_tss
+from lapa.utils.io import read_talon_read_annot, read_tss_cluster
+from lapa.read import read_tes_mapping, correct_gtf, sort_gtf, \
     read_tss_mapping, _transcript_mapping, read_tss_mapping, \
     tes_transcript_mapping
 from lapa.result import LapaResult
-
 
 tqdm.pandas()
 
@@ -20,7 +20,7 @@ def test_read_tes_mapping(tmp_path):
 
     df_read_annot = read_talon_read_annot(read_annot)
     df_cluster = LapaResult(output_dir).read_cluster()
-    df_mapping = read_tes_mapping(df_cluster, read_annot)
+    df_mapping = read_tes_mapping(df_cluster, df_read_annot)
 
     assert (df_mapping.shape[0] / df_read_annot.shape[0]) > 0.9
 
@@ -63,18 +63,16 @@ def test_read_tss_mapping(tmp_path):
 
     df_read = pd.DataFrame({
         'read_name': ['r1', 'r2', 'r3'],
-        'chrom': ['chr1', 'chr1', 'chr1'],
-        'read_start': [5000, 6000, 90000],
-        'read_end': [10001, 9750, 100000],
-        'strand': ['+', '+', '+'],
-        'annot_gene_id': ['g1', 'g1', 'g2'],
-        'annot_transcript_id': ['t1', 't1', 't2'],
-        'dataset': ['a', 'a', 'a']
+        'Chromosome': ['chr1', 'chr1', 'chr1'],
+        'Start': [5000, 6000, 90000],
+        'End': [10001, 9750, 100000],
+        'Strand': ['+', '+', '+'],
+        'gene_id': ['g1', 'g1', 'g2'],
+        'transcript_id': ['t1', 't1', 't2'],
+        'sample': ['a', 'a', 'a']
     })
-    read_annot = tmp_path / 'tss_read_annot.tsv'
-    df_read.to_csv(read_annot, sep='\t', index=False)
 
-    df = read_tss_mapping(df_cluster, read_annot)
+    df = read_tss_mapping(df_cluster, df_read)
     pd.testing.assert_frame_equal(
         df,
         pd.DataFrame({
@@ -154,20 +152,17 @@ def test_correct_gtf_tes():
 
 
 def test_correct_gtf_tes_integration(tmp_path):
-    df_read_annot = read_talon_read_annot(read_annot_gm12_pb)
-
     output_dir = tmp_path / 'lapa'
     lapa(read_annot_gm12_pb, fasta, gtf, chrom_sizes, output_dir)
-    df_cluster = LapaResult(output_dir).read_cluster()
 
-    df_mapping = read_tes_mapping(df_cluster, read_annot_gm12_pb)
+    output_tss_dir = tmp_path / 'lapa_tss'
+
+    lapa_tss(read_annot_gm12_pb, fasta, gtf, chrom_sizes, output_tss_dir)
+
     gtf_corrected = tmp_path / 'corrected.gtf'
 
-    df_read_transcript = df_read_annot.rename(
-        columns={'annot_transcript_id': 'transcript_id'})[
-        ['read_name', 'transcript_id']]
-
-    correct_gtf_tes(df_mapping, df_read_transcript, gtf_gm12_pb, gtf_corrected)
+    correct_gtf(gtf_gm12_pb, gtf_corrected, output_dir,
+                output_tss_dir, read_annot_gm12_pb, fasta)
 
     df_gtf = pr.read_gtf(gtf_gm12_pb).df
     df_gtf_corrected = pr.read_gtf(gtf_corrected).df

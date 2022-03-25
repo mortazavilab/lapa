@@ -63,7 +63,7 @@ def tes_sample(df_cluster, df_tes_sample,
 def tss_sample(df_cluster, df_tss_sample):
     columns = ['Chromosome', 'Start', 'End', 'Strand']
     gr = pr.PyRanges(df_tss_sample)
-    
+
     gr_cluster = pr.PyRanges(df_cluster[columns])
     df_join = gr_cluster.join(gr, suffix='_sample').df
 
@@ -86,14 +86,16 @@ def lapa(alignment, fasta, annotation, chrom_sizes, output_dir, method='end',
     output_dir.mkdir(exist_ok=True)
 
     print('Counting TES (1 / 4)...')
-    counter = TesMultiCounter(alignment, method, mapq, min_tail_len, min_percent_a)
+    counter = TesMultiCounter(alignment, method, mapq,
+                              min_tail_len, min_percent_a)
     df_tes, tes = counter.to_df()
-    counter._to_bigwig(df_tes, tes, chrom_sizes, output_dir, prefix='tes_counts')
+    counter._to_bigwig(df_tes, tes, chrom_sizes,
+                       output_dir, prefix='tes_counts')
 
     print('Clustering TES and calculating polyA_sites (2 / 4)...')
     df_cluster = PolyAClustering(fasta,
-                               extent_cutoff=cluster_extent_cutoff,
-                               window=cluster_window).to_df(df_tes)
+                                 extent_cutoff=cluster_extent_cutoff,
+                                 window=cluster_window).to_df(df_tes)
     del df_tes
 
     print('Annotating TES cluster (3 / 4)...')
@@ -117,7 +119,8 @@ def lapa_tss(alignment, fasta, annotation, chrom_sizes, output_dir,
     print('Counting TSS (1 / 4)...')
     counter = TssMultiCounter(alignment, method, mapq)
     df_tss, tss = counter.to_df()
-    counter._to_bigwig(df_tss, tss, chrom_sizes, output_dir, prefix='tss_counts')
+    counter._to_bigwig(df_tss, tss, chrom_sizes,
+                       output_dir, prefix='tss_counts')
 
     print('Clustering TES and calculating polyA_sites (2 / 4)...')
     df_cluster = TssClustering(fasta,
@@ -125,9 +128,9 @@ def lapa_tss(alignment, fasta, annotation, chrom_sizes, output_dir,
                                window=cluster_window).to_df(df_tss)
     del df_tss
 
-    cluster_cols = ['Chromosome', 'Start', 'End', 'peak', 'count', 'Strand']    
+    cluster_cols = ['Chromosome', 'Start', 'End', 'peak', 'count', 'Strand']
     df_cluster[cluster_cols].to_csv(output_dir / 'tss_clusters.bed',
-                                         index=False, sep='\t', header=False)
+                                    index=False, sep='\t', header=False)
 
     for sample, df_tss_sample in tss.items():
         df_tss = tss_sample(df_cluster, df_tss_sample)

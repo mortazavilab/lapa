@@ -27,7 +27,7 @@ def read_talon_read_annot(path, usecols=(
         'strand', 'annot_gene_id', 'annot_transcript_id', 'dataset')):
 
     # {'annot_transcript_id': 'transcript_id'} rename
-    
+
     df = pd.read_csv(path, sep='\t', usecols=usecols)
     df = df.rename(columns={
         'chrom': 'Chromosome',
@@ -35,6 +35,7 @@ def read_talon_read_annot(path, usecols=(
         'read_end': 'End',
         'strand': 'Strand',
         'annot_gene_id': 'gene_id',
+        'annot_transcript_id': 'transcript_id',
         'dataset': 'sample'
     })
 
@@ -116,12 +117,12 @@ def read_polyA_cluster(path):
     df.columns = cluster_col_order
     return df
 
+
 def read_tss_cluster(path):
     df = pd.read_csv(path, header=None, sep='\t')
     df.columns = ['Chromosome', 'Start', 'End',
                   'start_site', 'count', 'Strand']
     return df
-    
 
 
 def read_apa_sample(path):

@@ -162,13 +162,11 @@ def tss_transcript_mapping(df_read_tss, df_read_transcript,
     ])
 
 
-def correct_gtf_tes(df_read_tes, df_read_transcript, gtf, gtf_output,
-                    df_read_tss=None):
+def correct_gtf_tes(df_read_tes, df_read_transcript, gtf,
+                    gtf_output, df_read_tss):
 
     df_tes = tes_transcript_mapping(df_read_tes, df_read_transcript)
-
-    if df_read_tss is not None:
-        df_tss = tss_transcript_mapping(df_read_tss, df_read_transcript)
+    df_tss = tss_transcript_mapping(df_read_tss, df_read_transcript)
 
     df_gtf = pr.read_gtf(gtf).df
     df_transcript = df_gtf[df_gtf['Feature'].isin({'transcript', 'exon'})]
@@ -181,7 +179,7 @@ def correct_gtf_tes(df_read_tes, df_read_transcript, gtf, gtf_output,
     df_transcript_cor = df_transcript.groupby(level=0) \
                                      .progress_apply(_correct_transcript) \
                                      .reset_index()
-   
+
     del df_transcript_cor['polyA_site']
     del df_transcript_cor['start_site']
 
@@ -195,8 +193,7 @@ def correct_gtf_tes(df_read_tes, df_read_transcript, gtf, gtf_output,
 
 def correct_gtf(gtf, gtf_output, lapa_dir, lapa_tss_dir,
                 read_annot, fasta):
-    df_reads = read_talon_read_annot(read_annot).rename(
-        columns={'annot_transcript_id': 'transcript_id'})
+    df_reads = read_talon_read_annot(read_annot)
 
     print('TES read mapping (1 / 3)...')
     df_cluster = LapaResult(lapa_dir, tpm_cutoff=1).read_cluster()
