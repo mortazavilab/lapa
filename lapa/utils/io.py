@@ -26,8 +26,6 @@ def read_talon_read_annot(path, usecols=(
         'read_name', 'chrom', 'read_start', 'read_end',
         'strand', 'annot_gene_id', 'annot_transcript_id', 'dataset')):
 
-    # {'annot_transcript_id': 'transcript_id'} rename
-
     df = pd.read_csv(path, sep='\t', usecols=usecols)
     df = df.rename(columns={
         'chrom': 'Chromosome',

@@ -1,5 +1,5 @@
 import click
-from lapa.lapa import lapa, lapa_tss
+from lapa.lapa import lapa, lapa_tss, link_tss_to_tes
 from lapa.read import correct_gtf
 
 
@@ -48,18 +48,18 @@ from lapa.read import correct_gtf
               default=25,
               type=int)
 def cli_lapa(alignment, fasta, annotation, chrom_sizes, output_dir, counting_method,
-        min_tail_len=10, min_percent_a=0.9, mapq=10,
-        cluster_extent_cutoff=3, cluster_window=25):
+             min_tail_len=10, min_percent_a=0.9, mapq=10,
+             cluster_extent_cutoff=3, cluster_window=25):
     lapa(alignment, fasta, annotation, chrom_sizes, output_dir,
          counting_method, min_tail_len=min_tail_len,
-         min_percent_a=min_percent_a,         
+         min_percent_a=min_percent_a,
          cluster_extent_cutoff=cluster_extent_cutoff,
          cluster_window=cluster_window, mapq=mapq)
 
 
 @click.command()
 @click.option('--alignment',
-              help='Bam or Sam files',
+              help='Bam files',
               required=True)
 @click.option('--fasta',
               help='Genome reference (Encode or Ensembl fasta)',
@@ -93,6 +93,33 @@ def cli_lapa_tss(alignment, fasta, annotation, chrom_sizes, output_dir, mapq=10,
              cluster_extent_cutoff=cluster_extent_cutoff,
              cluster_window=cluster_window, mapq=mapq)
 
+
+@click.command()
+@click.option('--alignment',
+              help='Bam files',
+              required=True)
+@click.option('--lapa_dir',
+              help='LAPA output directory of generated before with `lapa` command',
+              required=True)
+@click.option('--lapa_tss_dir',
+              help='LAPA output directory of generated before with `lapa_tss` command',
+              required=True)
+@click.option('--output',
+              help='Output path',
+              required=True)
+@click.option('--mapq',
+              help='Minimum percentage of A bp while seeking for tails. ',
+              default=10,
+              type=int)
+@click.option('--min_read_length',
+              help='Minimum percentage of A bp while seeking for tails. ',
+              default=10,
+              type=int)
+def cli_lapa_link_tss_to_tes(alignment, lapa_dir, lapa_tss_dir, output,
+                             mapq=10, min_read_length=100):
+    df = link_tss_to_tes(alignment, lapa_dir, lapa_tss_dir,
+                         mapq=mapq, min_read_length=min_read_length)
+    df.to_csv(output, index=False)
 
 
 @click.command()

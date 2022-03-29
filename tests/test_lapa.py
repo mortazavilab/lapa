@@ -11,14 +11,9 @@ from conftest import fasta, gtf, chrom_sizes, \
     read_annot
 
 
-def test_lapa(tmp_path):
-    output_dir = tmp_path / 'lapa'
-
-    df_read_annot = read_talon_read_annot(read_annot)
-
-    lapa(read_annot, fasta, gtf, chrom_sizes, output_dir)
-
-    df_cluster = read_polyA_cluster(str(output_dir / 'polyA_clusters.bed'))
+def test_lapa(lapa_read_annot):
+    df_cluster = read_polyA_cluster(
+        str(lapa_read_annot / 'polyA_clusters.bed'))
 
     assert all(df_cluster.columns == cluster_col_order)
 
@@ -32,9 +27,10 @@ def test_lapa(tmp_path):
     counts = df_cluster.drop_duplicates([
         'Chromosome', 'Start', 'End', 'Strand'])['count'].sum()
 
+    df_read_annot = read_talon_read_annot(read_annot)
     assert df_read_annot.shape[0] * 0.8 < counts
 
-    df_apa = read_apa_sample(str(output_dir / 'gm12878_apa.bed'))
+    df_apa = read_apa_sample(str(lapa_read_annot / 'gm12878_apa.bed'))
     assert all(df_apa == sample_col_order)
 
     counts = pd.Series(Counter(df_apa['Feature']))
@@ -210,16 +206,12 @@ def test_lapa_read_csv(tmp_path):
     assert counts.idxmax() == 'three_prime_utr'
 
 
-
-def test_lapa_tss(tmp_path):
-    output_dir = tmp_path / 'lapa_tss'
+def test_lapa_tss(lapa_tss_read_annot):
     df_read_annot = read_talon_read_annot(read_annot)
-    
-    lapa_tss(read_annot, fasta, gtf, chrom_sizes, output_dir)
 
-    cols = ['Chromosome', 'Start', 'End', 'peak', 'count', 'Strand']
-    df_cluster = pd.read_csv(str(output_dir / 'tss_clusters.bed'),
+    df_cluster = pd.read_csv(str(lapa_tss_read_annot / 'tss_clusters.bed'),
                              sep='\t', header=None)
+    cols = ['Chromosome', 'Start', 'End', 'peak', 'count', 'Strand']
     df_cluster.columns = cols
     assert all(df_cluster.columns == cols)
 
@@ -229,12 +221,11 @@ def test_lapa_tss(tmp_path):
     assert (df_cluster['End'] - df_cluster['Start']).max() < 300
     assert set(df_cluster['Chromosome']) == {'chr17', 'ERCC-00060'}
 
-
     counts = df_cluster.drop_duplicates([
         'Chromosome', 'Start', 'End', 'Strand'])['count'].sum()
-    
-    df_tss = pd.read_csv(str(output_dir / 'gm12878_tss.bed'),
+
+    df_tss = pd.read_csv(str(lapa_tss_read_annot / 'gm12878_tss.bed'),
                          sep='\t', header=None)
 
-    df_tss = pd.read_csv(str(output_dir / 'hepg2_tss.bed'),
-                         sep='\t', header=None)    
+    df_tss = pd.read_csv(str(lapa_tss_read_annot / 'hepg2_tss.bed'),
+                         sep='\t', header=None)

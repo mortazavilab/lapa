@@ -1,4 +1,6 @@
 import pytest
+from lapa import lapa, lapa_tss
+from lapa.utils.io import read_talon_read_annot
 
 
 gtf_brca1 = 'tests/data/brca1.gtf'
@@ -24,3 +26,33 @@ agg_annotation_gene = [
 short_bam = 'tests/data/short_chr17.bam'
 gtf_gm12_pb = 'tests/data/chr17_gm12_pb_talon.gtf'
 read_annot_gm12_pb = 'tests/data/chr17_gm12_read_annot.tsv'
+
+pb_brca1_bam = 'tests/data/brc1_pb.bam'
+
+
+@pytest.fixture
+def lapa_read_annot(tmp_path):
+    output_dir = tmp_path / 'lapa'
+    lapa(read_annot, fasta, gtf, chrom_sizes, output_dir)
+    return output_dir
+
+
+@pytest.fixture
+def lapa_tss_read_annot(tmp_path):
+    output_dir = tmp_path / 'lapa_tss'
+    lapa_tss(read_annot, fasta, gtf, chrom_sizes, output_dir)
+    return output_dir
+
+
+@pytest.fixture
+def lapa_pb_brca1(tmp_path):
+    output_dir = tmp_path / 'lapa'
+    lapa(pb_brca1_bam, fasta, gtf, chrom_sizes, output_dir)
+    return output_dir
+
+
+@pytest.fixture
+def lapa_tss_pb_brca1(tmp_path):
+    output_dir = tmp_path / 'lapa_tss'
+    lapa_tss(pb_brca1_bam, fasta, gtf, chrom_sizes, output_dir)
+    return output_dir

@@ -12,7 +12,7 @@ requirements = [
     'pandas',
     'pybigwig',
     'scipy',
-    'bamread>=0.0.9',
+    'bamread>=0.0.10',
     'pyranges>=0.0.71',
     'kipoiseq>=0.3.0',
     'matplotlib',
