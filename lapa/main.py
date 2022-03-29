@@ -1,5 +1,6 @@
 import click
-from lapa.lapa import lapa, lapa_tss, link_tss_to_tes
+from lapa.lapa import lapa, lapa_tss
+from lapa.link import link_tss_to_tes
 from lapa.read import correct_gtf
 
 
@@ -35,7 +36,7 @@ from lapa.read import correct_gtf
               default=0.9,
               type=float)
 @click.option('--mapq',
-              help='Minimum percentage of A bp while seeking for tails. ',
+              help='Minimum read quality to required for tes calling',
               default=10,
               type=int)
 @click.option('--cluster_extent_cutoff',
@@ -75,7 +76,7 @@ def cli_lapa(alignment, fasta, annotation, chrom_sizes, output_dir, counting_met
               help='Output directory',
               required=True)
 @click.option('--mapq',
-              help='Minimum percentage of A bp while seeking for tails. ',
+              help='Minimum read quality to required for tss calling',
               default=10,
               type=int)
 @click.option('--cluster_extent_cutoff',
@@ -108,11 +109,11 @@ def cli_lapa_tss(alignment, fasta, annotation, chrom_sizes, output_dir, mapq=10,
               help='Output path',
               required=True)
 @click.option('--mapq',
-              help='Minimum percentage of A bp while seeking for tails. ',
+              help='Minimum read quality to required for linking',
               default=10,
               type=int)
 @click.option('--min_read_length',
-              help='Minimum percentage of A bp while seeking for tails. ',
+              help='Minimum read quality to required for linking',
               default=10,
               type=int)
 def cli_lapa_link_tss_to_tes(alignment, lapa_dir, lapa_tss_dir, output,
