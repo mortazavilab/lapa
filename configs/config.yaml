@@ -10,65 +10,112 @@ genome:
   gtf:
     hg38: data/resources/common/gencode.v38.annotation.utr_fix.gtf
     mm10: data/resources/common/gencode.vM25.annotation.utr_fix.gtf
-    
-  star_index:
-    mm39: data/resources/common/lrgasp_mouse_star_index/
-    hg38: data/resources/common/lrgasp_human_star_index/
+
+  # star_index:
+  #   mm10: data/resources/common/lrgasp_mouse_star_index/
+  #   hg38: data/resources/common/lrgasp_human_star_index/
+  
+long_read:
+  PacBio:
+    cDNA:
+      - ENCFF563QZR
+      - ENCFF370NFS
+      - ENCFF245IPA
+    CapTrap:
+      - ENCFF105WIJ
+      - ENCFF212HLP
+      - ENCFF003QZT
+  ONT:
+    cDNA:
+      - ENCFF263YFG
+      - ENCFF023EXJ
+      - ENCFF961HLO
+    CapTrap:
+      - ENCFF654SNK
+      - ENCFF934KDM
+      - ENCFF104BNW
+    R2C2:
+      - ENCFF153SIE
+      - ENCFF377IEH
+      - ENCFF489PQQ
+      - ENCFF089IVT
+      - ENCFF548RZB
+      - ENCFF997UNC
+    dRNA:
+      - ENCFF155CFF
+      - ENCFF771DIX
+      - ENCFF600LIU
+
+quantseq:
+  fastq:
+    - ENCFF034QBE
+    - ENCFF544FMU
+    - ENCFF201HMB
+  bam:
+    - ENCFF399HRH
+    - ENCFF364WSF
+    - ENCFF146APZ
+
+short_rnaseq:
+  se:
+    - ENCFF492PIB
+    - ENCFF365HXR
+    - ENCFF621NOL
+    - ENCFF738DHG
+    - ENCFF235BRN
+    - ENCFF742FDJ
+      
+  bam: data/results/short_read/{encode_id}/Aligned.sortedByCoord.out.bam
+  bam_read_count: data/resources/short_read/read_count/{encode_id}_bam.txt
+
+  gene_exp: data/resources/short_read/gene_exp/{sample}.tsv
+  
+cage:
+  bed: data/resources/cage/{geo_id}.count.bed.gz
+
+  geo_id:
+    GSM5625727: GSM5625727_WTC11-1_rep1
+    GSM5625728: GSM5625728_WTC11-1_rep2
+    GSM5625729: GSM5625729_WTC11-1_rep3
+    GSM5625730: GSM5625730_WTC11-3_rep1
+    GSM5625731: GSM5625731_WTC11-3_rep2
+    GSM5625732: GSM5625732_WTC11-3_rep3
 
 common:
   chrom_sizes: data/results/common/{genome}.chrom_sizes
   tes: data/results/common/{genome}_tes.csv
   gene_id_name_mapping: data/results/common/{genome}_gene_id_name_mapping.csv
+  bed: data/results/common/{genome}.bed  
 
-lrgasp:
-  config: configs/rnaseq-data-matrix.tsv
-
-encode: 
-  fastq: data/resources/encode/fastq/{encode_id}.fastq.gz
+encode:
+  fastq: data/resources/encode/fastq/{encode_id}.fastq.gz 
+  fasta: data/resources/encode/fasta/{encode_id}.fasta.gz 
   fastq_polyA: data/results/encode/fastq_polyA/{encode_id}_polyA.fastq.gz
-  bam: data/resources/encode/bam/{encode_id}.bam
 
+  bam: data/results/encode/bam/{encode_id}.bam
+  
   fastq_read_count: data/results/encode/read_count/{encode_id}_fastq.txt
   fasta_read_count: data/results/encode/read_count/{encode_id}_fasta.txt
   bam_read_count: data/results/encode/read_count/{encode_id}_bam.txt
 
-talon:
-  read_annot: data/resources/talon/{sample}_{library_prep}_{platform}_read_annot.tsv
-  gtf: data/resources/talon/{sample}_{library_prep}_{platform}.gtf
-  abundance: data/resources/talon/{sample}_{library_prep}_{platform}_abundance_filtered.tsv
-  gtf_corrected: data/results/talon/{sample}_{library_prep}_{platform}_{counting}_corrected.gtf
+minimap:
+  sam: data/results/minimap/sam/{encode_id}.sam
+  bam: data/results/minimap/bam/{encode_id}.bam
+  bam_stranded: data/results/minimap/bam_stranded/{encode_id}.bam
   
 lapa:
-  samples: data/results/lapa/{sample}/{library_prep}_{platform}.csv
-  lapa_dir: data/results/lapa/{sample}/{library_prep}_{platform}_{counting}/
-  lapa_tss_dir: data/results/lapa_tss/{sample}/{library_prep}_{platform}_{counting}/  
-  lapa_quantseq_dir: data/results/lapa/{sample}/quantseq_Illumina_end/
-  
-quantseq:
-  fastq: data/resources/quantseq/fastq/{sample}_rep{rep}.fastq.gz
-  
-  bam: data/results/quantseq/bam_tail/{sample}_rep{rep}/Aligned.sortedByCoord.out.bam
-  bam_end: data/resources/quantseq/bam_end/{sample}_rep{rep}/polyA/Aligned.sortedByCoord.out.bam
+  samples: data/results/lapa/{library_prep}_{platform}.csv
+  lapa_dir: data/results/lapa/{library_prep}_{platform}_{counting}/
+  lapa_tss_dir: data/results/lapa_tss/{library_prep}_{platform}_{counting}/
+  lapa_quantseq_dir: data/results/lapa/quantseq_Illumina_end/
 
-  fastq_read_count: data/results/quantseq/read_count/{sample}_rep{rep}_fastq.txt
-  bam_read_count: data/results/quantseq/read_count/{sample}_rep{rep}_bam.txt
+talon:
+  read_annot: data/resources/talon/{library_prep}_{platform}_read_annot.tsv
+  gtf: data/resources/talon/{library_prep}_{platform}.gtf
+  abundance: data/resources/talon/{library_prep}_{platform}_abundance_filtered.tsv
 
-  polya_atlas: data/resources/quantseq/polya_atlas/{sample}/{sample}rep{rep}.bed.gz
-
-short_rnaseq:
-  WTC11:
-    se:
-      - ENCFF492PIB
-      - ENCFF365HXR
-      - ENCFF621NOL
-      - ENCFF738DHG
-      - ENCFF235BRN
-      - ENCFF742FDJ
-      
-  bam: data/results/short_read/{sample}/{encode_id}/Aligned.sortedByCoord.out.bam
-  bam_read_count: data/resources/short_read/read_count/{sample}_{encode_id}_bam.txt
-
-  gene_exp: data/resources/short_read/gene_exp/{sample}.tsv
+  link: data/results/talon/{library_prep}_{platform}_{counting}_link.csv
+  gtf_corrected: data/results/talon/{library_prep}_{platform}_{counting}_corrected.gtf
 
 c2c12:
   read_annot_bulk_sc: data/resources/c2c12/c2c12_bulk_sc_talon_read_annot.tsv
@@ -80,15 +127,3 @@ c2c12:
   lapa_bulksc_dir: data/results/c2c12/lapa/bulksc/
 
   diff_polya: data/results/c2c12/diff_polya.csv
-  
-cage:
-  bed: data/resources/cage/{geo_id}.count.bed.gz
-  # https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE185917
-
-  WTC11:
-    - GSM5625727_WTC11-1_rep1
-    - GSM5625728_WTC11-1_rep2
-    - GSM5625729_WTC11-1_rep3
-    - GSM5625730_WTC11-3_rep1
-    - GSM5625731_WTC11-3_rep2
-    - GSM5625732_WTC11-3_rep3

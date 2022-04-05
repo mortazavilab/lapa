@@ -1,0 +1,138 @@
+# rule star_index:
+#     input:
+#         fasta = fasta,
+#         gtf = gtf
+#     output:
+#         directory(config['star']['index'])
+#     log:
+#         "logs/star_index_{specie}.log"
+#     threads: 32
+#     resources:
+#         mem_mb = 128000
+#     wrapper:
+#         "0.74.0/bio/star/index"
+
+
+# rule star_align:
+#     input:
+#         fq1 = fq1,
+#         fq2 = fq2,
+#         index = config['star']['index']
+#     output:
+#         bam = config['star']['bam'],
+#         sj = config['star']['SJ']
+#     log:
+#         "logs/star/illumina_{specie}_{sample}_{platform}.log"
+#     params:
+#         index = config['star']['index'],
+#         extra = "--outSAMtype BAM SortedByCoordinate"
+#     threads: 16
+#     resources:
+#         mem_mb = 64000
+#     wrapper:
+#         "0.74.0/bio/star/align"
+
+rule gtf2bed:
+    input:
+        gtf = (lambda wildcards:
+               config['genome']['gtf'][wildcards['genome']])
+    output:
+        bed = config['common']['bed']
+    threads: 1
+    resources:
+        mem_mb = 16000
+    shell:
+        "paftools.js gff2bed {input.gtf} > {output.bed}"
+
+
+def get_platform_library_prep(encode_id):
+    for platform in config['long_read']:
+        for library_prep in config['long_read'][platform]:
+            if encode_id in config['long_read'][platform][library_prep]:
+                return platform, library_prep
+
+    raise ValueError(f'Platfom and protocol not found for `{encode_id}`')
+
+
+def fastq(wildcards):
+    encode_id = wildcards['encode_id']
+    platform, library_prep = get_platform_library_prep(encode_id)
+
+    if library_prep == 'R2C2':
+        return config['encode']['fasta'].format(encode_id=encode_id)
+
+    return config['encode']['fastq'].format(encode_id=encode_id)
+
+
+rule minimap:
+    input:
+        ref_fasta = config['genome']['fasta']['hg38'],
+        bed = config['common']['bed'].format(genome='hg38'),
+        fastq = fastq
+    output:
+        sam = config['minimap']['sam']
+    log:
+        "logs/minimap/{encode_id}.log"
+    threads: 16
+    resources:
+        mem_mb = 64000
+    run:
+        platform, library_prep = get_platform_library_prep(
+            wildcards['encode_id'])
+
+        if platform == 'PacBio':
+            shell("minimap2 --MD -t {threads} -ax splice:hq --junc-bed {input.bed} -uf \
+            {input.ref_fasta} {input.fastq} > {output.sam} 2> {log}")
+        elif platform == 'ONT':
+            if library_prep == 'dRNA':
+                shell("minimap2 --MD -t {threads} -ax splice --junc-bed {input.bed} -k14 -uf \
+                {input.ref_fasta} {input.fastq} > {output.sam} 2> {log}")
+            elif library_prep in {'cDNA', 'CapTrap'}:
+                shell("minimap2 --MD -t {threads} -ax splice --junc-bed {input.bed} \
+                {input.ref_fasta} {input.fastq} > {output.sam} 2> {log}")
+            else:
+                shell("minimap2 --MD -t {threads} -ax splice --junc-bed {input.bed} -uf \
+                {input.ref_fasta} {input.fastq} > {output.sam} 2> {log}")
+
+
+rule sam_to_bam:
+    input:
+        sam = config['minimap']['sam']
+    output:
+        bam = config['minimap']['bam']
+    threads: 16
+    resources:
+        mem_mb = 32000
+    run:
+        shell('samtools view -u {input.sam} |'
+              ' samtools sort -@ {threads} -T {resources.tmpdir} -o {output.bam}')
+        shell('samtools index {output.bam}')
+
+
+rule bam_stranded:
+    input:
+        bam = config['minimap']['bam']
+    output:
+        bam_stranded = config['minimap']['bam_stranded']
+    threads: 1
+    resources:
+        mem_mb = 16000
+    script:
+        "./bam_strand.py"
+
+
+rule all_align:
+    input:
+        expand(rules.sam_to_bam.output,
+               encode_id=config['long_read']['PacBio']['cDNA']),
+        expand(rules.sam_to_bam.output,
+               encode_id=config['long_read']['PacBio']['CapTrap']),
+
+        expand(rules.bam_stranded.output,
+               encode_id=config['long_read']['ONT']['cDNA']),
+        expand(rules.bam_stranded.output,
+               encode_id=config['long_read']['ONT']['CapTrap']),
+        expand(rules.sam_to_bam.output,
+               encode_id=config['long_read']['ONT']['dRNA']),
+        expand(rules.sam_to_bam.output,
+               encode_id=config['long_read']['ONT']['R2C2'])

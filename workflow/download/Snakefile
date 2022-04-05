@@ -1,4 +1,7 @@
 rule download_human_fasta:
+    threads: 1
+    resources:
+        mem_gb = 4
     output:
         config['genome']['fasta']['hg38']
     shell:
@@ -6,20 +9,29 @@ rule download_human_fasta:
 
 
 rule download_human_gtf:
+    threads: 1
+    resources:
+        mem_gb = 4
     output:
         config['genome']['gtf_raw']['hg38']
     shell:
         "wget -O - http://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_38/gencode.v38.annotation.gtf.gz | gunzip -c > {output}"
 
 
-rule download_fasta_mm10:
+rule download_mm10_fasta:
+    threads: 1
+    resources:
+        mem_gb = 4
     output:
         config['genome']['fasta']['mm10']
     shell:
         "wget -O - https://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_mouse/release_M25/GRCm38.primary_assembly.genome.fa.gz | gunzip -c > {output}"
 
 
-rule download_gtf_mm10:
+rule download_mm10_gtf:
+    threads: 1
+    resources:
+        mem_gb = 4
     output:
         config['genome']['gtf_raw']['mm10']
     shell:
@@ -36,6 +48,16 @@ rule download_encode_fastq:
         "wget https://www.encodeproject.org/files/{wildcards.encode_id}/@@download/{wildcards.encode_id}.fastq.gz -O {output}"
 
 
+rule download_encode_fasta:
+    threads: 1
+    resources:
+        mem_gb = 4
+    output:
+        config['encode']['fasta']
+    shell:
+        "wget https://www.encodeproject.org/files/{wildcards.encode_id}/@@download/{wildcards.encode_id}.fasta.gz -O {output}"
+
+
 rule download_encode_bam:
     threads: 1
     resources:
@@ -47,7 +69,62 @@ rule download_encode_bam:
 
 
 rule download_gene_exp:
+    threads: 1
+    resources:
+        mem_gb = 4
     output:
         config['short_rnaseq']['gene_exp'].format(sample='WTC11')
     shell:
         "wget https://www.encodeproject.org/files/ENCFF178KKE/@@download/ENCFF178KKE.tsv -O {output}"
+
+
+def cage_url(wildcards):
+    geo_id = wildcards['geo_id']
+    prefix = geo_id[:-3]
+    filename = config['cage']['geo_id'][geo_id]
+    return f'https://ftp.ncbi.nlm.nih.gov/geo/samples/{prefix}nnn/{geo_id}/suppl/{filename}.count.bed.gz'
+
+
+rule download_cage:
+    threads: 1
+    resources:
+        mem_gb = 4
+    params:
+        url = cage_url
+    output:
+        config['cage']['bed']
+    shell:
+        "wget {params.url} -O {output}"
+
+
+rule all_download:
+    input:
+        rules.download_human_fasta.output,
+        rules.download_human_gtf.output,
+        rules.download_mm10_fasta.output,
+        rules.download_mm10_gtf.output,
+
+        expand(rules.download_encode_fastq.output,
+               encode_id=config['quantseq']['fastq']),
+        expand(rules.download_encode_fastq.output,
+               encode_id=config['short_rnaseq']['se']),
+
+        expand(rules.download_encode_fastq.output,
+               encode_id=config['long_read']['PacBio']['cDNA']),
+        expand(rules.download_encode_fastq.output,
+               encode_id=config['long_read']['PacBio']['CapTrap']),
+
+        expand(rules.download_encode_fastq.output,
+               encode_id=config['long_read']['ONT']['cDNA']),
+        expand(rules.download_encode_fastq.output,
+               encode_id=config['long_read']['ONT']['CapTrap']),
+        expand(rules.download_encode_fastq.output,
+               encode_id=config['long_read']['ONT']['dRNA']),
+        expand(rules.download_encode_fasta.output,
+               encode_id=config['long_read']['ONT']['R2C2']),
+
+        expand(rules.download_encode_bam.output,
+               encode_id=config['quantseq']['bam']),
+
+        expand(rules.download_cage.output,
+               geo_id=config['cage']['geo_id'])

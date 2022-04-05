@@ -1,6 +1,7 @@
 rule chrom_sizes:
     input:
-        fasta = fasta
+        fasta = (lambda wildcards:
+                 config['genome']['fasta'][wildcards['genome']])
     threads: 1
     resources:
         mem_gb = 4
@@ -10,20 +11,51 @@ rule chrom_sizes:
         "faidx {input.fasta} -i chromsizes > {output.chrom_sizes}"
 
 
+rule utr_fix:
+    input:
+        gtf = 'data/resources/common/{gtf}.gtf'
+    threads: 1
+    resources:
+        mem_gb = 16
+    output:
+        gtf = 'data/resources/common/{gtf}.utr_fix.gtf'
+    shell:
+        "gencode_utr_fix --input_gtf {input.gtf} --output_gtf {output.gtf}"
+
+
+rule site_motif:
+    threads: 1
+    resources:
+        mem_gb = 1
+    output:
+        motif_logo = "reports/figures/polyA_motif.pdf"
+    script:
+        "polyA_motif.py"
+
+
 rule gtf_tes:
     input:
-        gtf = gtf
+        gtf = (lambda wildcards:
+               config['genome']['gtf'][wildcards['genome']])
+    threads: 1
+    resources:
+        mem_gb = 4
     output:
         tes = config['common']['tes']
     script:
         "gtf_tes.py"
 
 
-rule site_motif:
+rule fasta_read_count:
+    input:
+        fasta = config['encode']['fasta']
     output:
-        motif_logo = "reports/figures/polyA_motif.pdf"
-    script:
-        "polyA_motif.py"
+        txt = config['encode']['fasta_read_count']
+    threads: 1
+    resources:
+        mem_gb = 4
+    shell:
+        "expr $(zcat {input.fasta} | grep '>' | wc -l) > {output.txt}"
 
 
 rule fastq_read_count:
@@ -38,16 +70,6 @@ rule fastq_read_count:
         "expr $(zcat {input.fastq} | wc -l) / 4 > {output.txt}"
 
 
-rule fasta_read_count:
-    output:
-        txt = config['encode']['fasta_read_count']
-    threads: 1
-    resources:
-        mem_gb = 4
-    shell:
-        "wget -O - https://www.encodeproject.org/files/{wildcards.encode_id}/@@download/{wildcards.encode_id}.fasta.gz | grep '>' | wc -l > {output.txt}"
-
-
 rule bam_read_count:
     input:
         bam = config['encode']['bam']
@@ -60,35 +82,20 @@ rule bam_read_count:
         "samtools view -F 4 -F 256 -c {input.bam} > {output.txt}"
 
 
-rule utr_fix:
-    input:
-        gtf = 'data/resources/common/{gtf}.gtf'
-    output:
-        gtf = 'data/resources/common/{gtf}.utr_fix.gtf'
-    shell:
-        "gencode_utr_fix --input_gtf {input.gtf} --output_gtf {output.gtf}"
-
-
-rule fastq_polyA_tail:
-    input:
-        fastq = config['encode']['fastq']
-    params:
-        pattern = "A" * 20,
-        mismatch = 0
-    resources:
-        mem_gb = 8
-    output:
-        fastq = config['encode']['fastq_polyA']
-    shell:
-        '''
-        seqkit grep --by-seq --max-mismatch {params.mismatch} \
-        --pattern {params.pattern} {input.fastq} | gzip > {output.fastq}
-        '''
-
 rule gene_name_id_mapping:
     input:
-        gtf = gtf
+        gtf = (lambda wildcards:
+               config['genome']['gtf'][wildcards['genome']])
+    threads: 1
+    resources:
+        mem_gb = 8
     output:
         mapping = config['common']['gene_id_name_mapping']
     script:
         "gene_id_name_mapping.py"
+
+
+rule all_common:
+    input:
+        expand(rules.chrom_sizes.output, genome=['mm10', 'hg38']),
+        rules.site_motif.output
