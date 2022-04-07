@@ -36,7 +36,7 @@ def _read_alignment_reads(alignment, mapq=10, min_read_length=100):
     return df[(df['read_End'] - df['read_Start']) > min_read_length]
 
 
-def _link_reads_to_tes(df_tes_cluster, df_reads, distance=1000):
+def _link_reads_to_tes(df_tes_cluster, df_reads, distance=50):
     '''
     Link reads to transcript end sites
     '''
@@ -46,13 +46,13 @@ def _link_reads_to_tes(df_tes_cluster, df_reads, distance=1000):
     df_reads['Start'] = df_reads['End'] - 1
     gr_reads = pr.PyRanges(df_reads)
 
-    df = gr_reads.nearest(pr.PyRanges(df_tes_cluster), how='downstream',
+    df = gr_reads.nearest(pr.PyRanges(df_tes_cluster), #how='downstream',
                           strandedness='same').df
     df.loc[df['Distance'] > distance, 'polyA_site'] = -1
     return df[[*_reads_cols, 'polyA_site']]
 
 
-def _link_reads_to_tss(df_tss_cluster, df_reads, distance=1000):
+def _link_reads_to_tss(df_tss_cluster, df_reads, distance=50):
     '''
     Link reads to transcript start sites
     '''
@@ -62,13 +62,13 @@ def _link_reads_to_tss(df_tss_cluster, df_reads, distance=1000):
     df_reads['Start'] = df_reads['End'] - 1
     gr_reads = pr.PyRanges(df_reads)
 
-    df = gr_reads.nearest(pr.PyRanges(df_tss_cluster), how='upstream',
+    df = gr_reads.nearest(pr.PyRanges(df_tss_cluster), #how='upstream',
                           strandedness='same').df
     df.loc[df['Distance'] > distance, 'start_site'] = -1
     return df[[*_reads_cols, 'start_site', 'polyA_site']]
 
 
-def link_tss_to_tes(alignment, lapa_dir, lapa_tss_dir, distance=1000,
+def link_tss_to_tes(alignment, lapa_dir, lapa_tss_dir, distance=50,
                     mapq=10, min_read_length=100):
     '''
     Link transcript site sites to transcript end sites using

@@ -54,6 +54,7 @@ setup(
         lapa_tss=lapa.main:cli_lapa_tss
         lapa_link_tss_to_tes=lapa.main:cli_lapa_link_tss_to_tes
         lapa_correct_talon_gtf=lapa.main:cli_lapa_correct_talon_gtf
+        lapa_correct_talon=lapa.main:cli_lapa_correct_talon
     ''',
     packages=find_packages(include=['lapa*']),
     include_package_data=True,

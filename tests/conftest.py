@@ -1,5 +1,7 @@
 import pytest
+import pandas as pd
 from lapa import lapa, lapa_tss
+from lapa.link import link_tss_to_tes
 from lapa.utils.io import read_talon_read_annot
 
 
@@ -56,3 +58,25 @@ def lapa_tss_pb_brca1(tmp_path):
     output_dir = tmp_path / 'lapa_tss'
     lapa_tss(pb_brca1_bam, fasta, gtf, chrom_sizes, output_dir)
     return output_dir
+
+
+@pytest.fixture
+def lapa_pb_chr17(tmp_path):
+    output_dir = tmp_path / 'lapa'
+    lapa(read_annot_gm12_pb, fasta, gtf, chrom_sizes, output_dir)
+    return output_dir
+
+
+@pytest.fixture
+def lapa_tss_pb_chr17(tmp_path):
+    output_dir = tmp_path / 'lapa_tss'
+    lapa_tss(read_annot_gm12_pb, fasta, gtf, chrom_sizes, output_dir)
+    return output_dir
+
+
+@pytest.fixture
+def lapa_links_chr17(tmp_path, lapa_pb_chr17, lapa_tss_pb_chr17):
+    output = tmp_path / 'lapa_links.csv'
+    link_tss_to_tes(read_annot_gm12_pb, lapa_pb_chr17,
+                    lapa_tss_pb_chr17).to_csv(output, index=False)
+    return output

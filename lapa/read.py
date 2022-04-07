@@ -191,8 +191,7 @@ def correct_gtf_tes(df_read_tes, df_read_transcript, gtf,
     pr.PyRanges(df_gtf_cor).to_gtf(gtf_output)
 
 
-def correct_gtf(gtf, gtf_output, lapa_dir, lapa_tss_dir,
-                read_annot, fasta):
+def correct_gtf(gtf, gtf_output, lapa_dir, lapa_tss_dir, read_annot):
     df_reads = read_talon_read_annot(read_annot)
 
     print('TES read mapping (1 / 3)...')

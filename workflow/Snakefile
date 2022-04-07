@@ -30,14 +30,13 @@ configfile: "configs/config.yaml"
 
 include: "download/Snakefile"
 include: "common/Snakefile"
-# include: "align/Snakefile"
+include: "align/Snakefile"
 include: "long_reads/Snakefile"
 include: "correction/Snakefile"
-# include: "short_rnaseq/Snakefile"
-
-# include: "benchmark/Snakefile"
-# include: "c2c12/Snakefile"
+include: "benchmark/Snakefile"
+include: "c2c12/Snakefile"
 # include: "plot/Snakefile"
+# include: "short_rnaseq/Snakefile"
 
 rule all:
     input:

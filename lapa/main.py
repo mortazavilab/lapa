@@ -2,6 +2,7 @@ import click
 from lapa.lapa import lapa, lapa_tss
 from lapa.link import link_tss_to_tes
 from lapa.read import correct_gtf
+from lapa.correction import correct_talon
 
 
 @click.command()
@@ -146,3 +147,19 @@ def cli_lapa_correct_talon_gtf(gtf_input, gtf_output, lapa_dir, lapa_tss_dir,
                                read_annot, fasta):
     correct_gtf(gtf_input, gtf_output, lapa_dir, lapa_tss_dir,
                 read_annot, fasta)
+
+@click.command()
+@click.option('--links',
+              help='links',
+              required=True)
+@click.option('--read_annot',
+              help='read_annot file output by TALON',
+              required=True)
+@click.option('--gtf_input',
+              help='Input gtf file need to corrected',
+              required=True)
+@click.option('--gtf_output',
+              help='Output corrected gtf file',
+              required=True)
+def cli_lapa_correct_talon(links, read_annot, gtf_input, gtf_output):
+    correct_talon(links, read_annot, gtf_input, gtf_output)
