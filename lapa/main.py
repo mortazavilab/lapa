@@ -148,6 +148,7 @@ def cli_lapa_correct_talon_gtf(gtf_input, gtf_output, lapa_dir, lapa_tss_dir,
     correct_gtf(gtf_input, gtf_output, lapa_dir, lapa_tss_dir,
                 read_annot, fasta)
 
+
 @click.command()
 @click.option('--links',
               help='links',
@@ -161,5 +162,10 @@ def cli_lapa_correct_talon_gtf(gtf_input, gtf_output, lapa_dir, lapa_tss_dir,
 @click.option('--gtf_output',
               help='Output corrected gtf file',
               required=True)
-def cli_lapa_correct_talon(links, read_annot, gtf_input, gtf_output):
-    correct_talon(links, read_annot, gtf_input, gtf_output)
+@click.option('--keep_unsupported',
+              help='Keep transcripts without tss and tes support in the original gtf',
+              is_flag=True)
+def cli_lapa_correct_talon(links, read_annot, gtf_input, gtf_output,
+                           keep_unsupported=False):
+    correct_talon(links, read_annot, gtf_input, gtf_output,
+                  keep_unsupported=keep_unsupported)

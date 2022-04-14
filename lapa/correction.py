@@ -78,8 +78,6 @@ class Transcript:
         exon_idx = self.five_prime_exon_idx
 
         if not self.valid_five_prime_exon_len(start_site):
-            __import__("pdb").set_trace()
-
             raise ValueError(
                 f'Exon length is shorter than min_exon_len={self.min_exon_len}'
                 f' for transcript={self.transcript_id} '
@@ -97,8 +95,6 @@ class Transcript:
         exon_idx = self.three_prime_exon_idx
 
         if not self.valid_three_prime_exon_len(polyA_site):
-            __import__("pdb").set_trace()
-
             raise ValueError(
                 f'Exon length is shorter than min_exon_len={self.min_exon_len}'
                 f' for transcript={self.transcript_id}'
@@ -194,13 +190,13 @@ class TranscriptModifier:
 def _links_transcript_agg(links, read_annot_path):
     df_links = pd.read_csv(links).set_index('read_name')
     df_read_annot = read_talon_read_annot(read_annot_path)[
-        ['read_name', 'transcript_id']].set_index('read_name')
+        ['sample', 'read_name', 'transcript_id']].set_index('read_name')
 
     df = df_links.join(df_read_annot, how='inner')
 
     df['count'] = 1
     return df.groupby([
-        'transcript_id', 'Strand', 'start_site', 'polyA_site'
+        'transcript_id', 'Strand', 'start_site', 'polyA_site', 'sample'
     ]).agg({
         'read_Start': 'min', 'read_End': 'max', 'count': 'sum'
     }).reset_index()
@@ -210,20 +206,36 @@ def _transcript_tss_tes(df, threshold=1):
     '''
     '''
     df = df[(df['polyA_site'] != -1) & (df['start_site'] != -1)]
-    df = df[df['count'] > threshold]
+    df = df.set_index(['transcript_id', 'start_site', 'polyA_site'])
 
-    transcript_suffix = df.groupby('transcript_id') \
-                          .cumcount().astype(str).radd('#')
-    df['transcript_id'] += transcript_suffix
+    _df = df.groupby(['transcript_id', 'start_site',
+                     'polyA_site']).agg({'count': 'sum'})
+    df = df[_df['count'] > threshold]
 
-    return df[['transcript_id', 'start_site', 'polyA_site', 'count']] \
-        .reset_index(drop=True)
+    # update transcript_ids
+    _df = df.reset_index().drop_duplicates(
+        subset=['transcript_id', 'start_site', 'polyA_site'])
+    _df['suffix'] = _df.groupby(
+        'transcript_id').cumcount().astype(str).radd('#')
+    df = df.join(_df.set_index(
+        ['transcript_id', 'start_site', 'polyA_site'])['suffix']).reset_index()
+    df['transcript_id'] += df['suffix']
+    del df['suffix']
+
+    return df[['transcript_id', 'start_site', 'polyA_site', 'sample', 'count']]
 
 
-def _save_corrected_gtf(df, gtf, gtf_output):
+def _save_corrected_gtf(df, gtf, gtf_output, keep_unsupported=False):
     '''
     '''
     modifier = TranscriptModifier(gtf)
+
+    if keep_unsupported:
+        for transcript_id in tqdm(modifier._transcript_templetes):
+            transcript = modifier \
+                .fetch_transcript(transcript_id)
+
+            modifier.add_transcript(transcript)
 
     for row in tqdm(df.itertuples(), total=df.shape[0]):
         templete_transcript = row.transcript_id.split('#')[0]
@@ -252,9 +264,51 @@ def _save_corrected_gtf(df, gtf, gtf_output):
     modifier.to_gtf(gtf_output)
 
 
-def correct_talon(links_path, read_annot_path, gtf_input, gtf_output, link_threshold=1):
+def _update_abundace(df_abundance, df_link_counts):
+
+    cols_abundance = df_abundance.columns[:12]
+    samples_abundance = df_abundance.colums[12:]
+
+    transcripts = set()
+
+    # if samples_abundance check sample overlap
+
+    df = df_link_counts.pivot(index='transcript_id',
+                              columns='sample', values='count') \
+        .fillna(0).astype(int).reset_index()
+    df['annot_transcript_id'] = df['transcript_id'].str.split('#').str.get(0)
+
+    __import__("pdb").set_trace()
+
+    df_abundance_lapa = df.set_index('annot_transcript_id').join(
+        df_abundance[cols_abundance].set_index('annot_transcript_id'),
+        how='inner')
+
+    df_abundance = df_abundance.set_index('annot_transcript_id')
+
+    for i in samples_abundance:
+        # __import__("pdb").set_trace()
+        df_abundance[i] -= df.loc[df_abundance.index, i]
+
+    return pd.concat([
+        df_abundance,
+        df_abundance_lapa
+    ]).sort_values('annot_transcript_id')
+
+
+def correct_talon(links_path, read_annot_path, gtf_input,
+                  gtf_output, abundance_path=None,
+                  link_threshold=1, keep_unsupported=False):
     '''
     '''
     df = _links_transcript_agg(links_path, read_annot_path)
+
     df = _transcript_tss_tes(df, threshold=link_threshold)
-    _save_corrected_gtf(df, gtf_input, gtf_output)
+
+    df_abundance = pd.read_csv(abundance_path, sep='\t')
+
+    _update_abundace(df_abundance, df)
+
+    # subset
+
+    _save_corrected_gtf(df, gtf_input, gtf_output, keep_unsupported)

@@ -27,7 +27,9 @@ agg_annotation_gene = [
 
 short_bam = 'tests/data/short_chr17.bam'
 gtf_gm12_pb = 'tests/data/chr17_gm12_pb_talon.gtf'
+
 read_annot_gm12_pb = 'tests/data/chr17_gm12_read_annot.tsv'
+chr17_abundance = 'tests/data/chr17_read_abundance.tsv'
 
 pb_brca1_bam = 'tests/data/brc1_pb.bam'
 

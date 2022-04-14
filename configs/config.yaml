@@ -85,7 +85,7 @@ common:
   chrom_sizes: data/results/common/{genome}.chrom_sizes
   tes: data/results/common/{genome}_tes.csv
   gene_id_name_mapping: data/results/common/{genome}_gene_id_name_mapping.csv
-  bed: data/results/common/{genome}.bed  
+  bed: data/results/common/{genome}.bed
 
 encode:
   fastq: data/resources/encode/fastq/{encode_id}.fastq.gz 

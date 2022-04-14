@@ -1,33 +1,6 @@
 configfile: "configs/config.yaml"
 
 
-# def genome(wildcards):
-#     if 'genome' in wildcards.keys():
-#         return wildcards.genome
-#     if wildcards.sample == 'WTC11':
-#         return 'hg38'
-#     elif wildcards.sample == 'c2c12':
-#         return 'mm10'
-#     else:
-#         raise ValueError(f'{wildcards.sample} is not known sample')
-
-
-# def fasta(wildcards):
-#     return config['genome']['fasta'][genome(wildcards)]
-
-
-# def gtf(wildcards):
-#     return config['genome']['gtf'][genome(wildcards)]
-
-
-# def chrom_sizes(wildcards):
-#     return config['common']['chrom_sizes'].format(genome=genome(wildcards))
-
-
-# def star_index(wildcards):
-#     return config['genome']['star_index'][genome(wildcards)]
-
-
 include: "download/Snakefile"
 include: "common/Snakefile"
 include: "align/Snakefile"

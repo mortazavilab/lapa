@@ -40,7 +40,7 @@ rule gtf2bed:
         bed = config['common']['bed']
     threads: 1
     resources:
-        mem_mb = 16000
+        mem_gb = 16
     shell:
         "paftools.js gff2bed {input.gtf} > {output.bed}"
 
@@ -75,7 +75,7 @@ rule minimap:
         "logs/minimap/{encode_id}.log"
     threads: 16
     resources:
-        mem_mb = 64000
+        mem_gb = 64
     run:
         platform, library_prep = get_platform_library_prep(
             wildcards['encode_id'])
@@ -102,7 +102,7 @@ rule sam_to_bam:
         bam = config['minimap']['bam']
     threads: 16
     resources:
-        mem_mb = 32000
+        mem_gb = 64
     run:
         shell('samtools view -u {input.sam} |'
               ' samtools sort -@ {threads} -T {resources.tmpdir} -o {output.bam}')
@@ -116,7 +116,7 @@ rule bam_stranded:
         bam_stranded = config['minimap']['bam_stranded']
     threads: 1
     resources:
-        mem_mb = 16000
+        mem_gb = 16
     script:
         "./bam_strand.py"
 

@@ -24,6 +24,7 @@ rule correct_talon:
     threads: 1
     resources:
         mem_gb = 32
+    log: 'logs/lapa/correct_talon_{library_prep}_{platform}_{counting}.log'
     output:
         gtf = config['talon']['gtf_corrected']
     shell:
@@ -31,7 +32,8 @@ rule correct_talon:
         --links {input.links} \
         --read_annot {input.alignment} \
         --gtf_input {input.gtf} \
-        --gtf_output {output.gtf}"
+        --gtf_output {output.gtf} \
+        --keep_unsupported 2> {log}"
 
 
 rule link_to_transcript:
@@ -41,32 +43,13 @@ rule link_to_transcript:
         links = config['talon']['link'],
         quantseq_lapa_dir = config['lapa']['lapa_quantseq_dir'],
         cage = expand(config['cage']['bed'], geo_id=config['cage']['geo_id'])
+    threads: 1
+    resources:
+        mem_gb = 32
     output:
         fig = 'reports/figures/correction/{library_prep}_{platform}_{counting}_tss_tes_support.csv'
     notebook:
         "./tss_tes_support.ipynb"
-
-
-# rule correct_gtf_talon:
-#     input:
-#         fasta = config['genome']['fasta']['hg38'],
-#         gtf = config['talon']['gtf'],
-#         read_annot = config['talon']['read_annot'],
-#         lapa_dir = config['lapa']['lapa_dir'],
-#         lapa_tss_dir = config['lapa']['lapa_tss_dir']
-#     threads: 1
-#     resources:
-#         mem_gb = 32
-#     output:
-#         gtf = config['talon']['gtf_corrected']
-#     shell:
-#         "lapa_correct_talon_gtf \
-#         --gtf_input {input.gtf} \
-#         --gtf_output {output.gtf} \
-#         --lapa_dir {input.lapa_dir} \
-#         --lapa_tss_dir {input.lapa_tss_dir} \
-#         --read_annot {input.read_annot} \
-#         --fasta {input.fasta}"
 
 
 rule overlap_tes_talon:
@@ -74,6 +57,9 @@ rule overlap_tes_talon:
         lapa_dir = config['lapa']['lapa_quantseq_dir'],
         gtf = config['talon']['gtf'],
         abundance = config['talon']['abundance']
+    threads: 1
+    resources:
+        mem_gb = 16
     params:
         max_distance = 50
     output:
@@ -87,6 +73,9 @@ rule overlap_tes_corrected_talon:
         lapa_dir = config['lapa']['lapa_quantseq_dir'],
         gtf = config['talon']['gtf_corrected'],
         abundance = config['talon']['abundance']
+    threads: 1
+    resources:
+        mem_gb = 16
     params:
         max_distance = 50
     output:
@@ -102,6 +91,9 @@ rule overlap_tss_talon:
                        geo_id=config['cage']['geo_id'])),
         gtf = config['talon']['gtf'],
         abundance = config['talon']['abundance']
+    threads: 1
+    resources:
+        mem_gb = 16
     params:
         max_distance = 50,
         samples = []
@@ -118,6 +110,9 @@ rule overlap_tss_corrected_talon:
                        geo_id=config['cage']['geo_id'])),
         gtf = config['talon']['gtf_corrected'],
         abundance = config['talon']['abundance']
+    threads: 1
+    resources:
+        mem_gb = 16
     params:
         max_distance = 50,
         samples = []
@@ -131,76 +126,85 @@ rule plot_overlap_annotation:
     input:
         uncorrected = 'data/results/benchmark/overlap/{library_prep}_{platform}_overlap_annotation.csv',
         corrected = 'data/results/benchmark/overlap/{library_prep}_{platform}_{counting}_overlap_corrected_annotation.csv'
+    threads: 1
+    resources:
+        mem_gb = 16
     output:
         fig = 'reports/figures/correction/{library_prep}_{platform}_{counting}_overlap_annotation_both.png'
     notebook:
         './plot_overlap_annotation.ipynb'
 
-
 rule plot_overlap_tss_annotation:
     input:
         uncorrected = 'data/results/benchmark/overlap/{library_prep}_{platform}_overlapcage_annotation.csv',
         corrected = 'data/results/benchmark/overlap/{library_prep}_{platform}_{counting}_overlapcage_corrected_annotation.csv'
+    threads: 1
+    resources:
+        mem_gb = 16
     output:
         fig = 'reports/figures/correction/{library_prep}_{platform}_{counting}_overlap_tss_annotation_both.png'
     notebook:
         './plot_overlap_annotation.ipynb'
 
 
-# rule plot_correction_percentage:
-#     input:
-#         uncorrected = [
-#             *expand(
-#                 'data/results/benchmark/overlap/{library_prep}_{platform}_overlap_annotation.csv',
-#                 platform='ONT', counting=['end'], library_prep=ont_library_prep, sample='{sample}'
-#             ),
-#             *expand(
-#                 'data/results/benchmark/overlap/{library_prep}_{platform}_overlap_annotation.csv',
-#                 platform='PacBio', counting=['end'], library_prep=pb_library_prep, sample='{sample}'
-#             )
-#         ],
-#         corrected = [
-#             *expand(
-#                 'data/results/benchmark/overlap/{library_prep}_{platform}_{counting}_overlap_corrected_annotation.csv',
-#                 platform='ONT', counting=['end'], library_prep=ont_library_prep, sample='{sample}'
-#             ),
-#             *expand(
-#                 'data/results/benchmark/overlap/{library_prep}_{platform}_{counting}_overlap_corrected_annotation.csv',
-#                 platform='PacBio', counting=['end'], library_prep=pb_library_prep, sample='{sample}'
-#             )
-#         ]
-#     output:
-#         fig = 'reports/figures/correction/correction_percentage.png'
-#     notebook:
-#         './plot_correction_percentage.ipynb'
+rule plot_correction_percentage:
+    input:
+        uncorrected = [
+            *expand(
+                'data/results/benchmark/overlap/{library_prep}_{platform}_overlap_annotation.csv',
+                platform='ONT', counting=['end'], library_prep=config['long_read']['ONT']
+            ),
+            *expand(
+                'data/results/benchmark/overlap/{library_prep}_{platform}_overlap_annotation.csv',
+                platform='PacBio', counting=['end'], library_prep=config['long_read']['PacBio']
+            )
+        ],
+        corrected = [
+            *expand(
+                'data/results/benchmark/overlap/{library_prep}_{platform}_{counting}_overlap_corrected_annotation.csv',
+                platform='ONT', counting=['end'], library_prep=config['long_read']['ONT']
+            ),
+            *expand(
+                'data/results/benchmark/overlap/{library_prep}_{platform}_{counting}_overlap_corrected_annotation.csv',
+                platform='PacBio', counting=['end'], library_prep=config['long_read']['PacBio']
+            )
+        ]
+    params:
+        site = "3'"
+    output:
+        fig = 'reports/figures/correction/correction_percentage.png'
+    notebook:
+        './plot_correction_percentage.ipynb'
 
 
-# rule plot_correction_tss_percentage:
-#     input:
-#         uncorrected = [
-#             *expand(
-#                 'data/results/benchmark/overlap/{library_prep}_{platform}_overlapcage_annotation.csv',
-#                 platform='ONT', counting=['end'], library_prep=ont_library_prep, sample='{sample}'
-#             ),
-#             *expand(
-#                 'data/results/benchmark/overlap/{library_prep}_{platform}_overlapcage_annotation.csv',
-#                 platform='PacBio', counting=['end'], library_prep=pb_library_prep, sample='{sample}'
-#             )
-#         ],
-#         corrected = [
-#             *expand(
-#                 'data/results/benchmark/overlap/{library_prep}_{platform}_{counting}_overlapcage_corrected_annotation.csv',
-#                 platform='ONT', counting=['end'], library_prep=ont_library_prep, sample='{sample}'
-#             ),
-#             *expand(
-#                 'data/results/benchmark/overlap/{library_prep}_{platform}_{counting}_overlapcage_corrected_annotation.csv',
-#                 platform='PacBio', counting=['end'], library_prep=pb_library_prep, sample='{sample}'
-#             )
-#         ]
-#     output:
-#         fig = 'reports/figures/correction/correction_tss_percentage.png'
-#     notebook:
-#         './plot_correction_percentage.ipynb'
+rule plot_correction_tss_percentage:
+    input:
+        uncorrected = [
+            *expand(
+                'data/results/benchmark/overlap/{library_prep}_{platform}_overlapcage_annotation.csv',
+                platform='ONT', counting=['end'], library_prep=config['long_read']['ONT']
+            ),
+            *expand(
+                'data/results/benchmark/overlap/{library_prep}_{platform}_overlapcage_annotation.csv',
+                platform='PacBio', counting=['end'], library_prep=config['long_read']['PacBio']
+            )
+        ],
+        corrected = [
+            *expand(
+                'data/results/benchmark/overlap/{library_prep}_{platform}_{counting}_overlapcage_corrected_annotation.csv',
+                platform='ONT', counting=['end'], library_prep=config['long_read']['ONT']
+            ),
+            *expand(
+                'data/results/benchmark/overlap/{library_prep}_{platform}_{counting}_overlapcage_corrected_annotation.csv',
+                platform='PacBio', counting=['end'], library_prep=config['long_read']['PacBio']
+            )
+        ]
+    params:
+        site = "5'"
+    output:
+        fig = 'reports/figures/correction/correction_tss_percentage.png'
+    notebook:
+        './plot_correction_percentage.ipynb'
 
 
 rule all_correction:
@@ -210,15 +214,14 @@ rule all_correction:
                library_prep=config['long_read']['PacBio']),
         expand(rules.plot_overlap_tss_annotation.output,
                platform='PacBio', counting=['end'],
-               library_prep=config['long_read']['PacBio'])
+               library_prep=config['long_read']['PacBio']),
 
-        # expand(rules.link_tss_to_tes.output,
+        # expand(rules.plot_overlap_annotation.output,
+        #        platform='ONT', counting=['end'],
+        #        library_prep=config['long_read']['ONT']),
+        # expand(rules.plot_overlap_tss_annotation.output,
         #        platform='ONT', counting=['end'],
         #        library_prep=config['long_read']['ONT'])
 
-        # expand(rules.plot_overlap_annotation.output, sample='WTC11',
-        #        platform='PacBio', counting=['end'],
-        #        library_prep=pb_library_prep),
-        # expand(rules.plot_overlap_annotation.output, sample='WTC11',
-        #        platform='ONT', counting=['end'],
-        #        library_prep=ont_library_prep)
+        # 'reports/figures/correction/correction_percentage.png',
+        # 'reports/figures/correction/correction_tss_percentage.png',

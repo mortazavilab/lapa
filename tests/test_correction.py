@@ -5,7 +5,7 @@ from lapa.correction import correct_talon, \
     _links_transcript_agg, _transcript_tss_tes, \
     correct_talon, TranscriptModifier
 from conftest import gtf_gm12_pb, read_annot_gm12_pb, \
-    lapa_links_chr17, gtf_gm12_pb
+    lapa_links_chr17, gtf_gm12_pb, chr17_abundance
 
 
 @pytest.fixture
@@ -147,7 +147,7 @@ def test_correct_talon(tmp_path, lapa_links_chr17):
     output_gtf = tmp_path / 'chr17_corrected.gtf'
 
     correct_talon(lapa_links_chr17, read_annot_gm12_pb,
-                  gtf_gm12_pb, output_gtf)
+                  gtf_gm12_pb, output_gtf, chr17_abundance)
 
     df_gtf_input = pr.read_gtf(gtf_gm12_pb).df
     df_gtf = pr.read_gtf(output_gtf).df

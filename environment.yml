@@ -5,13 +5,14 @@ channels:
   - bioconda
 dependencies:
   - python
+  - pip
   - samtools
   - ucsc-bedtobigbed
   - seqkit
-  - sra-tools
   - star
+  - minimap2
+  - snakemake
   - pip:
-    - snakemake
     - biopython
     - jupyter
     - notebook
@@ -20,5 +21,5 @@ dependencies:
     - pyfaidx
     - seaborn
     - snakemk_util
-    - git+https://github.com/mortazavilab/lapa.git#egg=lapa
     - adjustText
+    - -e .
