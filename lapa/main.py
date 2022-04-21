@@ -124,29 +124,29 @@ def cli_lapa_link_tss_to_tes(alignment, lapa_dir, lapa_tss_dir, output,
     df.to_csv(output, index=False)
 
 
-@click.command()
-@click.option('--gtf_input',
-              help='Input gtf file need to corrected',
-              required=True)
-@click.option('--gtf_output',
-              help='Output corrected gtf file',
-              required=True)
-@click.option('--lapa_dir',
-              help='LAPA output directory of generated before with `lapa` command',
-              required=True)
-@click.option('--lapa_tss_dir',
-              help='LAPA output directory of generated before with `lapa_tss` command',
-              required=True)
-@click.option('--read_annot',
-              help='read_annot file output by TALON',
-              required=True)
-@click.option('--fasta',
-              help='Genome reference (Encode or Ensembl fasta)',
-              required=True)
-def cli_lapa_correct_talon_gtf(gtf_input, gtf_output, lapa_dir, lapa_tss_dir,
-                               read_annot, fasta):
-    correct_gtf(gtf_input, gtf_output, lapa_dir, lapa_tss_dir,
-                read_annot, fasta)
+# @click.command()
+# @click.option('--gtf_input',
+#               help='Input gtf file need to corrected',
+#               required=True)
+# @click.option('--gtf_output',
+#               help='Output corrected gtf file',
+#               required=True)
+# @click.option('--lapa_dir',
+#               help='LAPA output directory of generated before with `lapa` command',
+#               required=True)
+# @click.option('--lapa_tss_dir',
+#               help='LAPA output directory of generated before with `lapa_tss` command',
+#               required=True)
+# @click.option('--read_annot',
+#               help='read_annot file output by TALON',
+#               required=True)
+# @click.option('--fasta',
+#               help='Genome reference (Encode or Ensembl fasta)',
+#               required=True)
+# def cli_lapa_correct_talon_gtf(gtf_input, gtf_output, lapa_dir, lapa_tss_dir,
+#                                read_annot, fasta):
+#     correct_gtf(gtf_input, gtf_output, lapa_dir, lapa_tss_dir,
+#                 read_annot, fasta)
 
 
 @click.command()
@@ -162,10 +162,18 @@ def cli_lapa_correct_talon_gtf(gtf_input, gtf_output, lapa_dir, lapa_tss_dir,
 @click.option('--gtf_output',
               help='Output corrected gtf file',
               required=True)
+@click.option('--abundance_path',
+              help='Input abundance file for correction',
+              required=True)
+@click.option('--abundance_output',
+              help='After abundance file after correction',
+              required=True)
 @click.option('--keep_unsupported',
               help='Keep transcripts without tss and tes support in the original gtf',
               is_flag=True)
 def cli_lapa_correct_talon(links, read_annot, gtf_input, gtf_output,
+                           abundance_path, abundance_output,
                            keep_unsupported=False):
     correct_talon(links, read_annot, gtf_input, gtf_output,
+                  abundance_path, abundance_output,
                   keep_unsupported=keep_unsupported)

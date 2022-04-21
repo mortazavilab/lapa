@@ -12,8 +12,8 @@ def read_annot_link_path(tmp_path):
     pd.DataFrame({
         'read_name': ['r1', 'r2', 'r3'],
         'chrom': ['chr1', 'chr1', 'chr1'],
-        'read_start': [5000, 6000, 90000],
-        'read_end': [10001, 9750, 100000],
+        'read_start': [5000, 5050, 90000],
+        'read_end': [10001, 9970, 100000],
         'strand': ['+', '+', '+'],
         'annot_transcript_id': ['t1', 't1', 't2'],
         'annot_gene_id': ['g1', 'g1', 'g2'],
@@ -76,8 +76,8 @@ def test_link_reads_to_tes(read_annot_link_path,
     pd.testing.assert_frame_equal(df, pd.DataFrame({
         'read_name': ['r1', 'r2', 'r3'],
         'Chromosome': pd.Categorical(['chr1', 'chr1', 'chr1']),
-        'read_Start': [5000, 6000, 90000],
-        'read_End': [10001, 9750, 100000],
+        'read_Start': [5000, 5050, 90000],
+        'read_End': [10001, 9970, 100000],
         'Strand': pd.Categorical(['+', '+', '+']),
         'start_site': [5000, 5000, -1],
         'polyA_site': [10005, 10005, -1]
@@ -90,6 +90,7 @@ def test_link_reads_to_tes_read_annot(lapa_read_annot,
                          lapa_read_annot,
                          lapa_tss_read_annot,
                          distance=1000)
+
     _df = df.loc[(df['start_site'] != -1) & (df['polyA_site'] != -1)]
 
     assert all(np.where(_df['Strand'] == '+',

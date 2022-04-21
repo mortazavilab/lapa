@@ -46,7 +46,7 @@ def _link_reads_to_tes(df_tes_cluster, df_reads, distance=50):
     df_reads['Start'] = df_reads['End'] - 1
     gr_reads = pr.PyRanges(df_reads)
 
-    df = gr_reads.nearest(pr.PyRanges(df_tes_cluster), #how='downstream',
+    df = gr_reads.nearest(pr.PyRanges(df_tes_cluster),  # how='downstream',
                           strandedness='same').df
     df.loc[df['Distance'] > distance, 'polyA_site'] = -1
     return df[[*_reads_cols, 'polyA_site']]
@@ -62,7 +62,7 @@ def _link_reads_to_tss(df_tss_cluster, df_reads, distance=50):
     df_reads['Start'] = df_reads['End'] - 1
     gr_reads = pr.PyRanges(df_reads)
 
-    df = gr_reads.nearest(pr.PyRanges(df_tss_cluster), #how='upstream',
+    df = gr_reads.nearest(pr.PyRanges(df_tss_cluster),  # how='upstream',
                           strandedness='same').df
     df.loc[df['Distance'] > distance, 'start_site'] = -1
     return df[[*_reads_cols, 'start_site', 'polyA_site']]
@@ -94,4 +94,10 @@ def link_tss_to_tes(alignment, lapa_dir, lapa_tss_dir, distance=50,
         Path(lapa_tss_dir) / 'tss_clusters.bed')
     df_reads = _link_reads_to_tss(df_tss_cluster, df_reads, distance=distance)
 
-    return df_reads
+    valid = np.where(df_reads['Strand'] == '+',
+                     df_reads['start_site'] < df_reads['polyA_site'],
+                     df_reads['polyA_site'] < df_reads['start_site'])
+    valid = valid | (df_reads['start_site'] == -1) \
+        | (df_reads['polyA_site'] == -1)
+
+    return df_reads[valid]

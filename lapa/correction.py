@@ -264,51 +264,65 @@ def _save_corrected_gtf(df, gtf, gtf_output, keep_unsupported=False):
     modifier.to_gtf(gtf_output)
 
 
-def _update_abundace(df_abundance, df_link_counts):
+def _update_abundace(df_abundance, df_link_counts, keep_unsupported=False):
 
-    cols_abundance = df_abundance.columns[:12]
-    samples_abundance = df_abundance.colums[12:]
+    cols_abundance = df_abundance.columns[:11]
+    samples_abundance = df_abundance.columns[11:]
 
-    transcripts = set()
-
-    # if samples_abundance check sample overlap
+    if set(df_link_counts['sample'].unique()) != set(samples_abundance):
+        raise ValueError(
+            'Samples in abundance file do not match with read_annot file. '
+            f'read_annot samples: {set(df_link_counts["sample"].unique())} '
+            f'abundance samples: {set(samples_abundance)} ')
 
     df = df_link_counts.pivot(index='transcript_id',
                               columns='sample', values='count') \
         .fillna(0).astype(int).reset_index()
+
     df['annot_transcript_id'] = df['transcript_id'].str.split('#').str.get(0)
 
-    __import__("pdb").set_trace()
+    df_abundance_lapa = df \
+        .set_index('annot_transcript_id') \
+        .join(df_abundance[cols_abundance].set_index('annot_transcript_id'),
+              how='inner') \
+        .reset_index(drop=True) \
+        .rename(columns={'transcript_id': 'annot_transcript_id'}) \
+        .set_index('annot_transcript_id')
 
-    df_abundance_lapa = df.set_index('annot_transcript_id').join(
-        df_abundance[cols_abundance].set_index('annot_transcript_id'),
-        how='inner')
+    df_abundance_lapa['annot_transcript_name'] += '#' \
+        + df_abundance_lapa.index.str.split('#').str.get(1)
 
-    df_abundance = df_abundance.set_index('annot_transcript_id')
+    if keep_unsupported:
+        df = df_abundance_lapa.reset_index()
+        df['annot_transcript_id'] = df['annot_transcript_id'] \
+            .str.split('#').str.get(0)
+        df = df.groupby('annot_transcript_id').sum()
 
-    for i in samples_abundance:
-        # __import__("pdb").set_trace()
-        df_abundance[i] -= df.loc[df_abundance.index, i]
+        df_abundance = df_abundance.set_index('annot_transcript_id')
+        transcripts = list(set(df_abundance.index).intersection(df.index))
 
-    return pd.concat([
-        df_abundance,
-        df_abundance_lapa
-    ]).sort_values('annot_transcript_id')
+        for i in samples_abundance:
+            df_abundance.loc[transcripts, i] -= df.loc[transcripts, i]
+
+        df_abundance_lapa = pd.concat([
+            df_abundance,
+            df_abundance_lapa
+        ])
+
+    return df_abundance_lapa.reset_index() \
+        .sort_values('annot_transcript_id')
 
 
 def correct_talon(links_path, read_annot_path, gtf_input,
-                  gtf_output, abundance_path=None,
+                  gtf_output, abundance_path, abundance_output,
                   link_threshold=1, keep_unsupported=False):
     '''
     '''
     df = _links_transcript_agg(links_path, read_annot_path)
-
     df = _transcript_tss_tes(df, threshold=link_threshold)
+    _save_corrected_gtf(df, gtf_input, gtf_output, keep_unsupported)
 
     df_abundance = pd.read_csv(abundance_path, sep='\t')
-
-    _update_abundace(df_abundance, df)
-
-    # subset
-
-    _save_corrected_gtf(df, gtf_input, gtf_output, keep_unsupported)
+    df_abundance_cor = _update_abundace(df_abundance, df, keep_unsupported)
+    df_abundance_cor[df_abundance.columns].to_csv(
+        abundance_output, index=False, sep='\t')

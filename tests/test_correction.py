@@ -50,6 +50,7 @@ def test__transcript_tss_tes(link_path, read_annot_link_path):
         'Strand': ['+', '+', '+', '+'],
         'start_site': [4000, 5000, 5000, -1],
         'polyA_site': [10000, -1, 10005, -1],
+        'sample': ['test', 'test', 'test', 'test'],
         'read_Start': [4000, 5000, 5000, 90000],
         'read_End': [10000, 9000, 10001, 100000],
         'count': [1, 1, 2, 1]
@@ -57,10 +58,11 @@ def test__transcript_tss_tes(link_path, read_annot_link_path):
 
     df = _transcript_tss_tes(df)
     pd.testing.assert_frame_equal(df, pd.DataFrame({
-        'transcript_id': ['t1_0', 't1_1'],
-        'start_site': [4000, 5000],
-        'polyA_site': [10000, 10005],
-        'count': [1, 2]
+        'transcript_id': ['t1#0'],
+        'start_site': [5000],
+        'polyA_site': [10005],
+        'sample': ['test'],
+        'count': [2]
     }))
 
 
@@ -81,23 +83,23 @@ def test_TranscriptModifier_fetch_transcript(modifier):
 
 def test_Transcript_copy(modifier):
     transcript = modifier.fetch_transcript('ENST00000308278.12') \
-                         .copy('ENST00000308278.12_0')
+                         .copy('ENST00000308278.12#0')
 
-    assert transcript.transcript_id == 'ENST00000308278.12_0'
+    assert transcript.transcript_id == 'ENST00000308278.12#0'
     df_exons = transcript.df[1:]
-    assert all(df_exons['exon_id'].str.endswith('_0'))
+    assert all(df_exons['exon_id'].str.endswith('#0'))
 
 
 def test_Transcript_update_start_site(modifier):
     transcript = modifier.fetch_transcript('ENST00000308278.12') \
-                         .copy('ENST00000308278.12_0')
+                         .copy('ENST00000308278.12#0')
 
     transcript.update_start_site(732411 - 100)
     transcript.df['Start'].iloc[0] == 732411 - 100
     transcript.df['Start'].iloc[1] == 732411 - 100
 
     transcript = modifier.fetch_transcript('ENST00000579788.5') \
-                         .copy('ENST00000579788.5_0')
+                         .copy('ENST00000579788.5#0')
 
     transcript.update_start_site(64020602 + 100)
     transcript.df['End'].iloc[0] == 64020602 + 100
@@ -106,14 +108,14 @@ def test_Transcript_update_start_site(modifier):
 
 def test_Transcript_update_polya_site(modifier):
     transcript = modifier.fetch_transcript('ENST00000308278.12') \
-                         .copy('ENST00000308278.12_0')
+                         .copy('ENST00000308278.12#0')
 
     transcript.update_polyA_site(742972 + 100)
     transcript.df['Start'].iloc[0] == 742972 + 100
     transcript.df['Start'].iloc[1] == 742972 + 100
 
     transcript = modifier.fetch_transcript('ENST00000579788.5') \
-                         .copy('ENST00000579788.5_0')
+                         .copy('ENST00000579788.5#0')
 
     transcript.update_polyA_site(64002595 - 100)
     transcript.df['Start'].iloc[0] == 64002595 - 100
@@ -124,9 +126,9 @@ def test_GtfModifier_to_gtf(tmp_path, modifier):
     gtf_cor_path = tmp_path / 'corr.gtf'
 
     t1 = modifier.fetch_transcript('ENST00000308278.12').copy(
-        'ENST00000308278.12_0')
+        'ENST00000308278.12#0')
     t2 = modifier.fetch_transcript('ENST00000308278.12').copy(
-        'ENST00000308278.12_1')
+        'ENST00000308278.12#1')
 
     t1.update_start_site(732411 - 100)
     t1.update_polyA_site(742972 + 100)
@@ -145,12 +147,53 @@ def test_GtfModifier_to_gtf(tmp_path, modifier):
 def test_correct_talon(tmp_path, lapa_links_chr17):
 
     output_gtf = tmp_path / 'chr17_corrected.gtf'
+    output_abundance = tmp_path / 'chr17_abundance.csv'
 
     correct_talon(lapa_links_chr17, read_annot_gm12_pb,
-                  gtf_gm12_pb, output_gtf, chr17_abundance)
+                  gtf_gm12_pb, output_gtf, chr17_abundance,
+                  output_abundance)
 
     df_gtf_input = pr.read_gtf(gtf_gm12_pb).df
     df_gtf = pr.read_gtf(output_gtf).df
 
     assert len(df_gtf_input['gene_id'].unique()) >= len(
         df_gtf['gene_id'].unique())
+
+    df_abundance = pd.read_csv(chr17_abundance, sep='\t')
+    df_abundance_cor = pd.read_csv(output_abundance, sep='\t')
+
+    transcripts = df_gtf[~df_gtf['transcript_id'].isna()]['transcript_id']
+
+    # keep_unsupported
+    correct_talon(lapa_links_chr17, read_annot_gm12_pb,
+                  gtf_gm12_pb, output_gtf, chr17_abundance,
+                  output_abundance, keep_unsupported=True)
+
+    df_gtf_input = pr.read_gtf(gtf_gm12_pb).df
+    df_gtf = pr.read_gtf(output_gtf).df
+
+    assert len(df_gtf_input['gene_id'].unique()) >= len(
+        df_gtf['gene_id'].unique())
+
+    df_abundance = pd.read_csv(chr17_abundance, sep='\t')
+    df_abundance_cor = pd.read_csv(output_abundance, sep='\t')
+
+    transcripts = df_gtf[~df_gtf['transcript_id'].isna()]['transcript_id']
+
+    assert all(df_abundance['annot_transcript_id'].isin(
+        set(df_abundance_cor['annot_transcript_id'])))
+
+    assert any(df_abundance_cor['annot_transcript_id'].str.contains('#'))
+
+    df_read_annot = pd.read_csv(read_annot_gm12_pb, sep='\t')
+
+    df_links = pd.read_csv(lapa_links_chr17)
+    df_links = df_links[(df_links['polyA_site'] != -1) &
+                        (df_links['start_site'] != -1)]
+    linked_transcripts = df_read_annot[
+        df_read_annot['read_name'].isin(df_links['read_name'])]['annot_transcript_id']
+
+    assert all(df_abundance_cor[
+        df_abundance_cor['annot_transcript_id'].str.contains('#')
+    ]['annot_transcript_id'].str.split('#')
+        .str.get(0).isin(linked_transcripts))
