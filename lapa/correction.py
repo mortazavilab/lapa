@@ -320,9 +320,12 @@ def correct_talon(links_path, read_annot_path, gtf_input,
     '''
     df = _links_transcript_agg(links_path, read_annot_path)
     df = _transcript_tss_tes(df, threshold=link_threshold)
-    _save_corrected_gtf(df, gtf_input, gtf_output, keep_unsupported)
 
     df_abundance = pd.read_csv(abundance_path, sep='\t')
     df_abundance_cor = _update_abundace(df_abundance, df, keep_unsupported)
     df_abundance_cor[df_abundance.columns].to_csv(
         abundance_output, index=False, sep='\t')
+
+    df = df.drop_duplicates(
+        subset=['transcript_id', 'start_site', 'polyA_site'])
+    _save_corrected_gtf(df, gtf_input, gtf_output, keep_unsupported)

@@ -116,6 +116,7 @@ talon:
 
   link: data/results/talon/{library_prep}_{platform}_{counting}_link.csv
   gtf_corrected: data/results/talon/{library_prep}_{platform}_{counting}_corrected.gtf
+  abundance_corrected: data/results/talon/{library_prep}_{platform}_{counting}_abundance_filtered.tsv
 
 c2c12:
   read_annot_bulk_sc: data/resources/c2c12/c2c12_bulk_sc_talon_read_annot.tsv

@@ -1,7 +1,6 @@
 import click
 from lapa.lapa import lapa, lapa_tss
 from lapa.link import link_tss_to_tes
-from lapa.read import correct_gtf
 from lapa.correction import correct_talon
 
 
@@ -162,7 +161,7 @@ def cli_lapa_link_tss_to_tes(alignment, lapa_dir, lapa_tss_dir, output,
 @click.option('--gtf_output',
               help='Output corrected gtf file',
               required=True)
-@click.option('--abundance_path',
+@click.option('--abundance_input',
               help='Input abundance file for correction',
               required=True)
 @click.option('--abundance_output',
@@ -172,8 +171,8 @@ def cli_lapa_link_tss_to_tes(alignment, lapa_dir, lapa_tss_dir, output,
               help='Keep transcripts without tss and tes support in the original gtf',
               is_flag=True)
 def cli_lapa_correct_talon(links, read_annot, gtf_input, gtf_output,
-                           abundance_path, abundance_output,
+                           abundance_input, abundance_output,
                            keep_unsupported=False):
     correct_talon(links, read_annot, gtf_input, gtf_output,
-                  abundance_path, abundance_output,
+                  abundance_input, abundance_output,
                   keep_unsupported=keep_unsupported)

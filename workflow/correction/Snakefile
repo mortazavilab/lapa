@@ -21,18 +21,22 @@ rule correct_talon:
         alignment = config['talon']['read_annot'],
         links = config['talon']['link'],
         gtf = config['talon']['gtf'],
+        abundance = config['talon']['abundance']
     threads: 1
     resources:
         mem_gb = 32
     log: 'logs/lapa/correct_talon_{library_prep}_{platform}_{counting}.log'
     output:
-        gtf = config['talon']['gtf_corrected']
+        gtf = config['talon']['gtf_corrected'],
+        abundance = config['talon']['abundance_corrected']
     shell:
         "lapa_correct_talon \
         --links {input.links} \
         --read_annot {input.alignment} \
         --gtf_input {input.gtf} \
         --gtf_output {output.gtf} \
+        --abundance_input {input.abundance} \
+        --abundance_output {output.abundance} \
         --keep_unsupported 2> {log}"
 
 
@@ -171,6 +175,9 @@ rule plot_correction_percentage:
         ]
     params:
         site = "3'"
+    threads: 1
+    resources:
+        mem_gb = 4
     output:
         fig = 'reports/figures/correction/correction_percentage.png'
     notebook:
@@ -201,6 +208,9 @@ rule plot_correction_tss_percentage:
         ]
     params:
         site = "5'"
+    threads: 1
+    resources:
+        mem_gb = 4
     output:
         fig = 'reports/figures/correction/correction_tss_percentage.png'
     notebook:
@@ -209,12 +219,15 @@ rule plot_correction_tss_percentage:
 
 rule all_correction:
     input:
-        expand(rules.plot_overlap_annotation.output,
-               platform='PacBio', counting=['end'],
-               library_prep=config['long_read']['PacBio']),
-        expand(rules.plot_overlap_tss_annotation.output,
-               platform='PacBio', counting=['end'],
-               library_prep=config['long_read']['PacBio']),
+        'reports/figures/correction/correction_percentage.png',
+        'reports/figures/correction/correction_tss_percentage.png',
+
+        # expand(rules.plot_overlap_annotation.output,
+        #        platform='PacBio', counting=['end'],
+        #        library_prep=config['long_read']['PacBio']),
+        # expand(rules.plot_overlap_tss_annotation.output,
+        #        platform='PacBio', counting=['end'],
+        #        library_prep=config['long_read']['PacBio']),
 
         # expand(rules.plot_overlap_annotation.output,
         #        platform='ONT', counting=['end'],
@@ -222,6 +235,3 @@ rule all_correction:
         # expand(rules.plot_overlap_tss_annotation.output,
         #        platform='ONT', counting=['end'],
         #        library_prep=config['long_read']['ONT'])
-
-        # 'reports/figures/correction/correction_percentage.png',
-        # 'reports/figures/correction/correction_tss_percentage.png',
