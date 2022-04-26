@@ -80,7 +80,7 @@ def tss_sample(df_cluster, df_tss_sample):
 
 def lapa(alignment, fasta, annotation, chrom_sizes, output_dir, method='end',
          min_tail_len=10, min_percent_a=0.9, mapq=10,
-         cluster_extent_cutoff=3, cluster_window=25):
+         cluster_extent_cutoff=3, cluster_window=25, cluster_ratio_cutoff=0.05):
 
     output_dir = Path(output_dir)
     output_dir.mkdir(exist_ok=True)
@@ -95,6 +95,7 @@ def lapa(alignment, fasta, annotation, chrom_sizes, output_dir, method='end',
     print('Clustering TES and calculating polyA_sites (2 / 4)...')
     df_cluster = PolyAClustering(fasta,
                                  extent_cutoff=cluster_extent_cutoff,
+                                 ratio_cutoff=cluster_ratio_cutoff,
                                  window=cluster_window).to_df(df_tes)
     del df_tes
 

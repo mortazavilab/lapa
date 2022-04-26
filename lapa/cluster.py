@@ -47,7 +47,7 @@ class Cluster:
         return self.Start + moving_sum.idxmax() + 1
 
     def to_dict(self, fasta):
-        total = self.total_count        
+        total = self.total_count
         return {
             'Chromosome': self.Chromosome,
             'Start': self.Start,
@@ -68,7 +68,7 @@ class PolyACluster(Cluster):
 
     def polyA_site(self, window=5, std=1):
         return self.peak(window=window, std=std)
-    
+
     def polyA_signal_sequence(self, fasta, polyA_site):
         # the list of poly(A) signals
         # that are annotated for single 3' end processing sites
@@ -121,26 +121,28 @@ class PolyACluster(Cluster):
         cluster = super().to_dict(fasta)
         cluster['polyA_site'] = cluster['peak']
         del cluster['peak']
-        
+
         cluster['fracA'] = self.fraction_A(fasta, cluster['polyA_site'])
-        signal_seq_loc, signal_seq = self.polyA_signal_sequence(fasta, cluster['polyA_site'])
+        signal_seq_loc, signal_seq = self.polyA_signal_sequence(
+            fasta, cluster['polyA_site'])
         cluster['signal'] = f'{signal_seq_loc}@{signal_seq}'
-        
+
         return cluster
 
 
 class TssCluster(Cluster):
     pass
-    
+
 
 class Clustering:
 
     Cluster = Cluster
-    
-    def __init__(self, fasta, extent_cutoff=3, window=25,
+
+    def __init__(self, fasta, extent_cutoff=3, ratio_cutoff=0.05, window=25,
                  groupby=None, fields=None, progress=True):
         self.fasta = FastaStringExtractor(fasta, use_strand=True)
         self.extent_cutoff = extent_cutoff
+        self.ratio_cutoff = ratio_cutoff
         self.window = window
         self.groupby = groupby or ['Chromosome', 'Strand']
         self.fields = fields or list()
@@ -162,9 +164,11 @@ class Clustering:
                         cluster = None
 
                 # if enough reads supporting TES, create or extent cluster
-                if row['count'] >= self.extent_cutoff:
+                threshold = max(self.extent_cutoff,
+                                row['coverage'] * self.ratio_cutoff)
+                if (row['count'] >= threshold):
                     if cluster is None:
-                        start = max(row['End'] - 1, 0) # avoid -1
+                        start = max(row['End'] - 1, 0)  # avoid -1
                         cluster = self.Cluster(row['Chromosome'], start,
                                                row['End'], row['Strand'])
                         cluster.fields = {i: list() for i in self.fields}

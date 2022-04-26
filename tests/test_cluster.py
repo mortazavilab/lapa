@@ -11,7 +11,8 @@ def df_tes():
         'Start': [100099, 100100, 1100, 100150, 100199],
         'End': [100100, 100101, 1101, 100151, 100200],
         'Strand': ['+', '+', '+', '-', '-'],
-        'count': [10, 5, 11, 3, 7]
+        'count': [10, 5, 11, 3, 7],
+        'coverage': [100, 200, 50, 3, 50]
     })
 
 
@@ -23,9 +24,9 @@ def test_PolyAClustering_cluster(df_tes):
     cluster = clusters[0]
     assert cluster.Chromosome == 'chr17'
     assert cluster.Start == 100099
-    assert cluster.End == 100101
+    assert cluster.End == 100100
     assert cluster.Strand == '+'
-    assert cluster.counts == [(100100, 10), (100101, 5)]
+    assert cluster.counts == [(100100, 10)]
 
     cluster = clusters[1]
     assert str(cluster) == 'chr17:100199-100200:-'
@@ -45,9 +46,9 @@ def test_TesCluster_to_df(df_tes):
     df_expected = pd.DataFrame({
         'Chromosome': ['chr17', 'chr17', 'chrM'],
         'Start': [100099, 100199, 1100],
-        'End': [100101, 100200, 1101],
+        'End': [100100, 100200, 1101],
         'polyA_site': [100100, 100200, 1101],
-        'count': [15, 7, 11],
+        'count': [10, 7, 11],
         'Strand': ['+', '-', '+'],
         'fracA': [6, 2, -1],
         'signal': ['100157@GATAAA', 'None@None', 'None@None']
@@ -68,6 +69,7 @@ def test_tes_cluster():
         'End': [11, 12, 51, 56],
         'Strand': ['+', '+', '-', '-'],
         'count': [2, 3, 3, 5],
+        'coverage': [2, 3, 3, 5],
         'gene_id': ['gene_a', 'gene_a', 'gene_b', 'gene_b'],
         'reads': [
             ('r1', 'r2'),

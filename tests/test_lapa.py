@@ -28,7 +28,8 @@ def test_lapa(lapa_read_annot):
         'Chromosome', 'Start', 'End', 'Strand'])['count'].sum()
 
     df_read_annot = read_talon_read_annot(read_annot)
-    assert df_read_annot.shape[0] * 0.8 < counts
+    # at least 75% of the reads used in clustering
+    assert df_read_annot.shape[0] * 0.75 < counts
 
     df_apa = read_apa_sample(str(lapa_read_annot / 'gm12878_apa.bed'))
     assert all(df_apa == sample_col_order)
@@ -137,7 +138,7 @@ def test_tes_sample():
     assert row['Strand'] == '+'
 
 
-def test_lapa_bam(tmp_path):
+def test_lapa_bam_pb(tmp_path):
     output_dir = tmp_path / 'lapa'
 
     lapa(quantseq_gm12_bam, fasta, gtf, chrom_sizes, output_dir, method='tail')
@@ -159,11 +160,16 @@ def test_lapa_bam(tmp_path):
     counts = pd.Series(Counter(df_apa['Feature']))
     assert counts.idxmax() == 'three_prime_utr'
 
+
+def test_lapa_bam_quantseq(tmp_path):
+
     output_dir = tmp_path / 'lapa'
 
     # two bam replicas
     lapa(quantseq_both_gm12_bam, fasta, gtf,
-         chrom_sizes, output_dir, method='tail')
+         chrom_sizes, output_dir, method='tail',
+         cluster_ratio_cutoff=0.01,
+         cluster_extent_cutoff=10)
 
     df_cluster = read_polyA_cluster(str(output_dir / 'polyA_clusters.bed'))
 
@@ -186,7 +192,10 @@ def test_lapa_bam(tmp_path):
 def test_lapa_read_csv(tmp_path):
     output_dir = tmp_path / 'lapa'
 
-    lapa(sample_csv, fasta, gtf, chrom_sizes, output_dir, method='tail')
+    lapa(sample_csv, fasta, gtf, chrom_sizes, output_dir,
+         method='tail',
+         cluster_ratio_cutoff=0.01,
+         cluster_extent_cutoff=10)
 
     df_cluster = read_polyA_cluster(str(output_dir / 'polyA_clusters.bed'))
 

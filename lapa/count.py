@@ -1,12 +1,15 @@
+import math
 from collections import defaultdict, Counter
 import pysam
 import pandas as pd
 import pyranges as pr
+import heapq
 from tqdm import tqdm
 import matplotlib.pyplot as plt
-from lapa.utils.io import bw_from_pyranges, read_sample_csv, \
-    read_talon_read_annot_five_prime_count, \
-    read_talon_read_annot_three_prime_count
+from lapa.utils.io import bw_from_pyranges, \
+    read_sample_csv, read_talon_read_annot, \
+    _read_talon_read_annot_five_prime_count, \
+    _read_talon_read_annot_three_prime_count
 
 
 class BaseCounter:
@@ -59,21 +62,29 @@ class BaseCounter:
         '''Alignment file used in counting.'''
         return pysam.AlignmentFile(self.bam_file, 'rb')
 
-    def iter_reads(self):
-        bam = self.bam
+    def iter_reads(self, chrom=None, strand=None):
+        if chrom:
+            bam = self.bam.fetch(chrom)
+        else:
+            bam = self.bam
 
         if self.progress:
             bam = tqdm(bam)
 
         for read in bam:
             if self.filter_read(read):
-                yield read
+                if strand:
+                    read_strand = '-' if read.is_reverse else '+'
+                    if read_strand == strand:
+                        yield read
+                else:
+                    yield read
 
     def filter_read(self, read):
         '''
         Filter reads from counting if not true
         '''
-        return (not read.is_secondary) and (read.mapping_quality >= self.mapq)
+        return (read.flag in {0, 16}) and (read.mapping_quality >= self.mapq)
 
     def count(self):
         '''
@@ -92,29 +103,97 @@ class BaseCounter:
 
         return dict(counts)
 
+    # def _coverage(self, pq_pos, reads):
+    #     heapq.heapify(pq_pos)
+
+    #     pq_ends = [math.inf]
+
+    #     # reads = list(reads)
+    #     read = next(reads)
+    #     cov = 0
+
+    #     while pq_pos:
+    #         cur_pos = pq_pos[0] if pq_pos[0] < pq_ends[0] else pq_ends[0]
+
+    #         if read.reference_start < cur_pos:
+    #             cov += 1
+    #             read = next(reads)
+    #             heapq.heappush(pq_ends, read.reference_end)
+    #         else:
+    #             if pq_pos[0] < pq_ends[0]:
+    #                 yield heapq.heappop(pq_pos), cov
+    #             else:
+    #                 heapq.heappop(pq_ends)
+    #                 cov -= 1
+
+    # def coverage(self, positions):
+    #     '''Calculate coverage for given positions'''
+
+    #     chrom_strand_pos = defaultdict(list)
+
+    #     for chrom, pos, strand in positions:
+    #         chrom_strand_pos[(chrom, strand)].append(pos)
+
+    #     coverages = dict()
+
+    #     for (chrom, strand), pos in chrom_strand_pos.items():
+    #         pos_coverage = self._coverage(pos, self.iter_reads(chrom, strand))
+
+    #         for pos, cov in pos_coverage:
+    #             coverages[(chrom, pos, strand)] = cov
+
+    #     return coverages
+
     def count_read(self, read: pysam.AlignedSegment):
         raise NotImplementedError()
 
-    def to_df(self):
+    def to_gr(self):
         '''
         Counts as dataframe with columns of
-            `['Chromosome', 'End', 'Strand', 'count']`
+            `['Chromosome', 'Start', 'End', 'Strand', 'count']`
         '''
         df = pd.DataFrame([
             (chrom, site, strand, count)
             for (chrom, site, strand), count in self.count().items()
         ], columns=['Chromosome', 'End', 'Strand', 'count'])
-
         df['Start'] = df['End'] - 1
-        return df
+        df_bam = pr.read_bam(self.bam_file, mapq=self.mapq, as_df=True)
+        df_bam['Start'] -= 1
+
+        gr_bam = pr.PyRanges(df_bam)
+        gr_bam = gr_bam[gr_bam.Flag.isin({0, 16})]
+
+        return pr.PyRanges(df).count_overlaps(
+            gr_bam,
+            overlap_col='coverage',
+            strandedness='same')
+
+    def to_df(self):
+        return self.to_gr().df.astype({'Chromosome': 'str', 'Strand': 'str'})
 
     @staticmethod
-    def _to_bigwig(df, chrom_sizes, output_dir, prefix):
+    def _to_bigwig(gr, chrom_sizes, output_dir, prefix):
+        if isinstance(gr, pd.DataFrame):
+            gr = pr.PyRanges(gr)
+
         bw_from_pyranges(
-            pr.PyRanges(df), 'count',
+            gr, 'count',
             chrom_sizes,
-            str(output_dir / f'{prefix}_pos.bw'),
-            str(output_dir / f'{prefix}_neg.bw')
+            str(output_dir / f'{prefix}_counts_pos.bw'),
+            str(output_dir / f'{prefix}_counts_neg.bw')
+        )
+        bw_from_pyranges(
+            gr, 'coverage',
+            chrom_sizes,
+            str(output_dir / f'{prefix}_coverage_pos.bw'),
+            str(output_dir / f'{prefix}_coverage_neg.bw')
+        )
+        gr = gr.assign('ratio', lambda df: df['count'] / df['coverage'])
+        bw_from_pyranges(
+            gr, 'ratio',
+            chrom_sizes,
+            str(output_dir / f'{prefix}_ratio_pos.bw'),
+            str(output_dir / f'{prefix}_ratio_neg.bw')
         )
 
     def to_bigwig(self, chrom_sizes, output_dir, prefix='lapa_counts'):
@@ -122,12 +201,12 @@ class BaseCounter:
         Saves counts as bigwig file for each strand
 
         Args:
-            chrom_sizes (str): Chrom sizes files (can be generated with) from fasta
-                with `faidx fasta -i chromsizes > chrom_sizes`
+            chrom_sizes (str): Chrom sizes files (can be generated with) from
+                fasta with `faidx fasta -i chromsizes > chrom_sizes`
             output_dir: Output directory to save bigwig files
             prefix (str): File prefix to used in bigwig the files
         '''
-        self._to_bigwig(self.to_df(), chrom_sizes, output_dir, prefix)
+        self._to_bigwig(self.to_gr(), chrom_sizes, output_dir, prefix)
 
 
 def save_count_bw(df, output_dir, chrom_sizes, prefix):
@@ -419,7 +498,7 @@ class BaseMultiCounter:
         self.method = method
         self.mapq = mapq
 
-        self.is_read_annot = False        
+        self.is_read_annot = False
         self.df_alignment = self._prepare_alignment(str(alignment))
 
     def build_counter(self, bam):
@@ -477,7 +556,6 @@ class BaseMultiCounter:
                 .assign(sample=row['sample'])
                 for _, row in self.df_alignment.iterrows()
             ])
-
         # Aggreate counts per samples and all samples
         cols = ['Chromosome', 'Start', 'End', 'Strand']
 
@@ -510,10 +588,30 @@ class TesMultiCounter(BaseMultiCounter):
         elif self.method == 'end':
             return ThreePrimeCounter(bam, self.mapq)
         else:
-            raise ValueError(f'`method` need to be either `tail` or `end` but {method} given')
+            raise ValueError(
+                f'`method` need to be either `tail` or `end` but {method} given')
 
     def _count_read_annot(self):
-        return read_talon_read_annot_three_prime_count(self.alignment)
+        df = read_talon_read_annot(self.alignment)
+
+        cols = ['Chromosome', 'Start', 'End', 'Strand', 'sample']
+        df_count = list()
+
+        for sample, _df in df.groupby('sample'):
+
+            _df_count = _read_talon_read_annot_three_prime_count(_df.copy()) \
+                .groupby(cols).agg('sum').reset_index()
+            _df['Start'] -= 1
+
+            _df_count = pr.PyRanges(_df_count).count_overlaps(
+                pr.PyRanges(_df),
+                overlap_col='coverage',
+                strandedness='same').df.astype({
+                    'Chromosome': 'str', 'Strand': 'str'})
+
+            df_count.append(_df_count)
+
+        return pd.concat(df_count)
 
 
 class TssMultiCounter(BaseMultiCounter):
@@ -528,4 +626,23 @@ class TssMultiCounter(BaseMultiCounter):
             raise ValueError('`method` need to be either `start`')
 
     def _count_read_annot(self):
-        return read_talon_read_annot_five_prime_count(self.alignment)
+        df = read_talon_read_annot(self.alignment)
+
+        cols = ['Chromosome', 'Start', 'End', 'Strand', 'sample']
+        df_count = list()
+
+        for sample, _df in df.groupby('sample'):
+
+            _df_count = _read_talon_read_annot_five_prime_count(_df.copy()) \
+                .groupby(cols).agg('sum').reset_index()
+            _df['Start'] -= 1
+
+            _df_count = pr.PyRanges(_df_count).count_overlaps(
+                pr.PyRanges(_df),
+                overlap_col='coverage',
+                strandedness='same').df.astype({
+                    'Chromosome': 'str', 'Strand': 'str'})
+
+            df_count.append(_df_count)
+
+        return pd.concat(df_count)

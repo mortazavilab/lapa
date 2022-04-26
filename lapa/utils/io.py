@@ -47,12 +47,20 @@ def read_talon_read_annot(path, usecols=(
 
 def read_talon_read_annot_three_prime_count(path):
     df = read_talon_read_annot(path)
+    return _read_talon_read_annot_three_prime_count(df)
+
+
+def _read_talon_read_annot_three_prime_count(df):
     df['End'] = np.where(df['Strand'] == '-', df['Start'], df['End'])
     return _read_talon_read_counts(df)
 
 
 def read_talon_read_annot_five_prime_count(path):
     df = read_talon_read_annot(path)
+    return _read_talon_read_annot_five_prime_count(df)
+
+
+def _read_talon_read_annot_five_prime_count(df):
     df['End'] = np.where(df['Strand'] == '-', df['End'], df['Start'])
     return _read_talon_read_counts(df)
 
