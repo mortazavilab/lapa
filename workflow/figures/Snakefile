@@ -1,0 +1,14 @@
+
+rule figure_1:
+    input:
+        data_source = 'reports/drawing/polyA_data_sources.png',
+        method = 'reports/drawing/lapa_method.png'
+    output:
+        fig = 'reports/figures/figure-1.png'
+    notebook:
+        "figure-1.ipynb"
+
+
+rule all_figure:
+    input:
+        rules.figure_1.output

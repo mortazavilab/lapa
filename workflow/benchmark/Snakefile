@@ -21,5 +21,4 @@ rule benchmark_lapa:
 
 rule all_benchmark:
     input:
-        expand('reports/figures/{sample}_pr_curve.png', sample='WTC11'),
-        expand('reports/figures/{sample}_heatmap.png', sample='WTC11')
+        rules.benchmark_lapa.output

@@ -6,10 +6,10 @@ import pyranges as pr
 gr_tes = pr.PyRanges(pd.read_csv(snakemake.input['tes']))
 lapa_dir = Path(snakemake.input['lapa_dir'])
 
-gr_neg = pr.read_bigwig(str(lapa_dir / 'all_tes_counts_neg.bw')).df
+gr_neg = pr.read_bigwig(str(lapa_dir / 'all_tes_counts_counts_neg.bw')).df
 gr_neg['Strand'] = '-'
 
-gr_pos = pr.read_bigwig(str(lapa_dir / 'all_tes_counts_pos.bw')).df
+gr_pos = pr.read_bigwig(str(lapa_dir / 'all_tes_counts_counts_pos.bw')).df
 gr_pos['Strand'] = '+'
 
 gr = pr.PyRanges(pd.concat([gr_pos, gr_neg]))

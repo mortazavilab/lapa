@@ -27,9 +27,12 @@ include: "correction/Snakefile"
 include: "benchmark/Snakefile"
 include: "c2c12/Snakefile"
 include: "plot/Snakefile"
+include: "figures/Snakefile"
 
 
 rule all:
     input:
-        rules.all_lapa.input
-        # rules.read_nums_datasets.output
+        rules.all_plot.input,
+        rules.all_benchmark.input,
+        rules.all_correction.input,
+        rules.all_figure.input

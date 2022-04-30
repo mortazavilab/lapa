@@ -22,4 +22,6 @@ dependencies:
     - seaborn
     - snakemk_util
     - adjustText
+    - patchworklib
+    - sklearn
     - -e .

@@ -55,7 +55,8 @@ rule read_nums_datasets:
     resources:
         mem_gb = 32
     output:
-        read_nums = "reports/figures/read_nums_datasets.png"
+        read_nums = "reports/figures/read_nums_datasets.png",
+        counts = "reports/tables/read_nums_datasets.csv"
     notebook:
         "read_nums_datasets.ipynb"
 
@@ -133,6 +134,6 @@ rule plot_major_isoform_gene_exp:
 
 rule all_plot:
     input:
-        'reports/figures/read_nums_datasets.png',
+        rules.read_nums_datasets.output,
         'reports/figures/plot_major_isoform_gene_exp.png',
         'reports/figures/hist_read_counts.png'
