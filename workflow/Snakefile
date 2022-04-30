@@ -1,6 +1,24 @@
 configfile: "configs/config.yaml"
 
 
+def bam(wildcards):
+    encode_id = wildcards['encode_id']
+
+    for platform, protocols in config['long_read'].items():
+        for protocol, encode_ids in protocols.items():
+            if encode_id in encode_ids:
+                if platform == 'ONT' and protocol in {'cDNA', 'CapTrap'}:
+                    return config['minimap']['bam_stranded']
+                else:
+                    return config['minimap']['bam']
+
+    if encode_id in config['quantseq']['bam']:
+        return config['encode']['bam']
+
+    if encode_id in config['short_rnaseq']['se']:
+        return config['short_rnaseq']['bam']
+
+
 include: "download/Snakefile"
 include: "common/Snakefile"
 include: "align/Snakefile"
@@ -8,9 +26,10 @@ include: "long_reads/Snakefile"
 include: "correction/Snakefile"
 include: "benchmark/Snakefile"
 include: "c2c12/Snakefile"
-# include: "plot/Snakefile"
-# include: "short_rnaseq/Snakefile"
+include: "plot/Snakefile"
+
 
 rule all:
     input:
-        rules.all_correction.input
+        rules.all_lapa.input
+        # rules.read_nums_datasets.output

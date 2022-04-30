@@ -1,66 +1,3 @@
-# import pandas as pd
-
-
-# def counts_fastq(wildcards):
-#     platform = wildcards['platform']
-#     library_prep = wildcards['library_prep']
-
-#     if platform in {'PacBio', 'ONT'}:
-#         return expand(config['encode']['fastq_read_count'],
-#                       encode_id=file_acc_long_reads(wildcards))
-
-#     elif platform == 'Illumina' and library_prep == 'se':
-#         sample = wildcards['sample']
-#         encode_id = file_acc_short_reads(wildcards)
-#         return expand(config['encode']['fastq_read_count'],
-#                       encode_id=encode_id, sample=sample)
-
-#     elif platform == 'Illumina' and library_prep == 'quantseq':
-#         return expand(config['quantseq']['fastq_read_count'],
-#                       rep=['1', '2', '3'], sample=sample)
-
-#     else:
-#         raise ValueError('No samples match given wildcards %s'
-#                          % str(wildcards))
-
-
-# def _read_counts(wildcards):
-#     df = pd.read_csv(config['lrgasp']['config'], sep='\t')
-#     _df = df[
-#         (df['file_contents'] == 'reads') &
-#         (df['sample'] == 'WTC11') &
-#         (df['platform'].isin({'PacBio', 'ONT'})) &
-#         (df['library_prep'] != 'R2C2')
-#     ]
-#     _df_r2c2 = df[
-#         (df['file_contents'] == 'reads') &
-#         (df['sample'] == 'WTC11') &
-#         (df['platform'].isin({'PacBio', 'ONT'})) &
-#         (df['library_prep'] == 'R2C2')
-#     ]
-#     return _df, _df_r2c2
-
-
-# def read_counts_fastq(wildcards):
-#     _df, _df_r2c2 = _read_counts(wildcards)
-#     return [
-#         *expand(config['encode']['fastq_read_count'],
-#                 encode_id=_df['file_acc'].tolist()),
-#         *expand(config['encode']['fasta_read_count'],
-#                 encode_id=_df_r2c2['file_acc'].tolist())
-#     ]
-
-
-# def read_counts_bam(wildcards):
-#     _df, _df_r2c2 = _read_counts(wildcards)
-#     return [
-#         *expand(config['encode']['bam_read_count'],
-#                 encode_id=_df['file_acc'].tolist()),
-#         *expand(config['encode']['bam_read_count'],
-#                 encode_id=_df_r2c2['file_acc'].tolist())
-#     ]
-
-
 rule read_nums_datasets:
     input:
         PacBio_cDNA_fastq = expand(
@@ -92,7 +29,7 @@ rule read_nums_datasets:
             encode_id=config['long_read']['ONT']['CapTrap']),
 
         ONT_R2C2_fastq = expand(
-            config['encode']['fastq_read_count'],
+            config['encode']['fasta_read_count'],
             encode_id=config['long_read']['ONT']['R2C2']),
         ONT_R2C2_bam = expand(
             config['encode']['bam_read_count'],
@@ -107,18 +44,18 @@ rule read_nums_datasets:
 
         short_fastq = expand(config['encode']['fastq_read_count'],
                              encode_id=config['short_rnaseq']['se']),
-        short_bam = expand(config['short_rnaseq']['bam_read_count'],
+        short_bam = expand(config['encode']['bam_read_count'],
                            encode_id=config['short_rnaseq']['se']),
 
         quantseq_fastq = expand(config['encode']['fastq_read_count'],
                                 encode_id=config['quantseq']['fastq']),
         quantseq_bam = expand(config['encode']['bam_read_count'],
                               encode_id=config['quantseq']['bam'])
-    output:
-        read_nums = "reports/figures/read_nums_datasets.png"
     threads: 1
     resources:
         mem_gb = 32
+    output:
+        read_nums = "reports/figures/read_nums_datasets.png"
     notebook:
         "read_nums_datasets.ipynb"
 
@@ -127,12 +64,12 @@ rule hist_read_counts:
     input:
         tes = config['common']['tes'].format(genome='hg38'),
         lapa_dir = config['lapa']['lapa_dir']
-    output:
-        hist = 'data/results/benchmark/hist/{library_prep}_{platform}_{counting}_hist.csv',
-        percentage = 'data/results/benchmark/hist/{library_prep}_{platform}_{counting}_percentage.txt'
     threads: 1
     resources:
         mem_gb = 4
+    output:
+        hist = 'data/results/benchmark/hist/{library_prep}_{platform}_{counting}_hist.csv',
+        percentage = 'data/results/benchmark/hist/{library_prep}_{platform}_{counting}_percentage.txt'
     script:
         'hist_read_counts.py'
 
@@ -160,12 +97,12 @@ rule plot_hist_read_count:
                     platform='Illumina', counting=['end'],
                     library_prep='quantseq')
         ]
-    output:
-        hist = 'reports/figures/hist_read_counts.png',
-        percent = 'reports/figures/percentage_of_reads_tes.png'
     threads: 1
     resources:
         mem_gb = 4
+    output:
+        hist = 'reports/figures/hist_read_counts.png',
+        percent = 'reports/figures/percentage_of_reads_tes.png'
     notebook:
         'hist_read_count.ipynb'
 
@@ -183,7 +120,10 @@ rule plot_major_isoform_gene_exp:
                     platform='Illumina', counting='end',
                     library_prep='quantseq')
         ],
-        gene_exp = config['short_rnaseq']['gene_exp']
+        gene_exp = config['short_rnaseq']['gene_exp'].format(sample='WTC11')
+    threads: 1
+    resources:
+        mem_gb = 4
     output:
         hist = 'reports/figures/plot_major_isoform_gene_exp.png',
         fracA = 'reports/figures/plot_fracA.png'

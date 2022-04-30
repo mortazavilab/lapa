@@ -57,9 +57,11 @@ rule lapa:
         fasta = config['genome']['fasta']['hg38'],
         gtf = config['genome']['gtf']['hg38'],
         chrom_sizes = config['common']['chrom_sizes'].format(genome='hg38')
+    params:
+        cluster_ratio_cutoff = 0.05
     threads: 1
     resources:
-        mem_gb = 16
+        mem_gb = 32
     output:
         directory(config['lapa']['lapa_dir'])
     shell:
@@ -69,6 +71,7 @@ rule lapa:
         --annotation {input.gtf} \
         --chrom_sizes {input.chrom_sizes} \
         --counting_method {wildcards.counting} \
+        --cluster_ratio_cutoff {params.cluster_ratio_cutoff} \
         --output_dir {output}"
 
 
@@ -78,9 +81,11 @@ rule lapa_tss:
         fasta = config['genome']['fasta']['hg38'],
         gtf = config['genome']['gtf']['hg38'],
         chrom_sizes = config['common']['chrom_sizes'].format(genome='hg38')
+    params:
+        cluster_ratio_cutoff = 0.05        
     threads: 1
     resources:
-        mem_gb = 16
+        mem_gb = 32
     output:
         directory(config['lapa']['lapa_tss_dir'])
     shell:
@@ -89,6 +94,7 @@ rule lapa_tss:
         --fasta {input.fasta} \
         --annotation {input.gtf} \
         --chrom_sizes {input.chrom_sizes} \
+        --cluster_ratio_cutoff {params.cluster_ratio_cutoff} \
         --output_dir {output}"
 
 

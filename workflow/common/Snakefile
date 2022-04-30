@@ -72,14 +72,14 @@ rule fastq_read_count:
 
 rule bam_read_count:
     input:
-        bam = config['encode']['bam']
+        bam = bam
     output:
         txt = config['encode']['bam_read_count']
     threads: 1
     resources:
         mem_gb = 4
     shell:
-        "samtools view -F 4 -F 256 -c {input.bam} > {output.txt}"
+        "samtools view -F 4 -F 256 -F 2048 -q 10 -c {input.bam} > {output.txt}"
 
 
 rule gene_name_id_mapping:

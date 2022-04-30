@@ -43,6 +43,10 @@ from lapa.correction import correct_talon
               help='Number of reads to initialized and terminated cluster',
               default=3,
               type=int)
+@click.option('--cluster_ratio_cutoff',
+              help='Percentage of coverage change for initialize cluster',
+              default=0.05,
+              type=click.FloatRange(0, 1))
 @click.option('--cluster_window',
               help='Patience threshold to wait for termination cluster'
               'if number of reads subceed `the cluster_extent_cutoff`',
@@ -50,7 +54,7 @@ from lapa.correction import correct_talon
               type=int)
 def cli_lapa(alignment, fasta, annotation, chrom_sizes, output_dir, counting_method,
              min_tail_len=10, min_percent_a=0.9, mapq=10,
-             cluster_extent_cutoff=3, cluster_window=25):
+             cluster_extent_cutoff=3, cluster_ratio_cutoff=0.05, cluster_window=25):
     lapa(alignment, fasta, annotation, chrom_sizes, output_dir,
          counting_method, min_tail_len=min_tail_len,
          min_percent_a=min_percent_a,
@@ -83,13 +87,17 @@ def cli_lapa(alignment, fasta, annotation, chrom_sizes, output_dir, counting_met
               help='Number of reads to initialized and terminated cluster',
               default=3,
               type=int)
+@click.option('--cluster_ratio_cutoff',
+              help='Percentage of coverage change for initialize cluster',
+              default=0.05,
+              type=click.FloatRange(0, 1))
 @click.option('--cluster_window',
               help='Patience threshold to wait for termination cluster'
               'if number of reads subceed `the cluster_extent_cutoff`',
               default=25,
               type=int)
 def cli_lapa_tss(alignment, fasta, annotation, chrom_sizes, output_dir, mapq=10,
-                 cluster_extent_cutoff=3, cluster_window=25):
+                 cluster_extent_cutoff=3, cluster_ratio_cutoff=0.05, cluster_window=25):
     lapa_tss(alignment, fasta, annotation, chrom_sizes, output_dir,
              cluster_extent_cutoff=cluster_extent_cutoff,
              cluster_window=cluster_window, mapq=mapq)

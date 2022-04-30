@@ -1,55 +1,8 @@
-rule fastq_polyA_tail:
-    input:
-        fastq = config['encode']['fastq']
-    params:
-        pattern = "A" * 18,
-        mismatch = 0
-    threads: 1
-    resources:
-        mem_gb = 8
-    output:
-        fastq = config['encode']['fastq_polyA']
-    shell:
-        '''
-        seqkit grep --by-seq --max-mismatch {params.mismatch} \
-        --pattern {params.pattern} {input.fastq} | gzip > {output.fastq}
-        '''
 
 
-rule star_align:
-    input:
-        fq1 = config['encode']['fastq_polyA'],
-        index = star_index
-    output:
-        bam = config['short_rnaseq']['bam']
-    log:
-        "logs/star/illumina_{sample}_{encode_id}.log"
-    params:
-        index = star_index,
-        extra = "--outSAMtype BAM SortedByCoordinate --alignSJoverhangMin 10 --outSAMattributes All"
-    threads: 8
-    resources:
-        threads = 4,
-        mem_gb = 16
-    wrapper:
-        "0.74.0/bio/star/align"
-
-
-rule short_rnaseq_bam_read_count:
-    input:
-        bam = config['short_rnaseq']['bam']
-    output:
-        txt = config['short_rnaseq']['bam_read_count']
-    threads: 1
-    resources:
-        mem_gb = 4
-    shell:
-        "samtools view -F 4 -c {input.bam} > {output.txt}"
-
-
-rule all_short_rnaseq:
-    input:
-        expand(config['encode']['fastq_read_count'],
-               encode_id=config['short_rnaseq']['se']),
-        expand(config['encode']['bam_read_count'],
-               encode_id=config['short_rnaseq']['se'])
+# rule all_short_rnaseq:
+#     input:
+#         expand(config['encode']['fastq_read_count'],
+#                encode_id=config['short_rnaseq']['se']),
+#         expand(config['encode']['bam_read_count'],
+#                encode_id=config['short_rnaseq']['se'])

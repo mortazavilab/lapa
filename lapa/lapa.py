@@ -112,7 +112,8 @@ def lapa(alignment, fasta, annotation, chrom_sizes, output_dir, method='end',
 
 
 def lapa_tss(alignment, fasta, annotation, chrom_sizes, output_dir,
-             method='start', mapq=10, cluster_extent_cutoff=3, cluster_window=25):
+             method='start', mapq=10, cluster_extent_cutoff=3, cluster_window=25,
+             cluster_ratio_cutoff=0.05):
 
     output_dir = Path(output_dir)
     output_dir.mkdir(exist_ok=True)

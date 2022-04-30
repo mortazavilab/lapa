@@ -11,9 +11,8 @@ genome:
     hg38: data/resources/common/gencode.v38.annotation.utr_fix.gtf
     mm10: data/resources/common/gencode.vM25.annotation.utr_fix.gtf
 
-  # star_index:
-  #   mm10: data/resources/common/lrgasp_mouse_star_index/
-  #   hg38: data/resources/common/lrgasp_human_star_index/
+  star_index:
+    hg38: data/results/common/star_index/hg38/
   
 long_read:
   PacBio:
@@ -66,10 +65,9 @@ short_rnaseq:
     - ENCFF742FDJ
       
   bam: data/results/short_read/{encode_id}/Aligned.sortedByCoord.out.bam
-  bam_read_count: data/resources/short_read/read_count/{encode_id}_bam.txt
 
   gene_exp: data/resources/short_read/gene_exp/{sample}.tsv
-  
+
 cage:
   bed: data/resources/cage/{geo_id}.count.bed.gz
 
@@ -88,8 +86,8 @@ common:
   bed: data/results/common/{genome}.bed
 
 encode:
-  fastq: data/resources/encode/fastq/{encode_id}.fastq.gz 
-  fasta: data/resources/encode/fasta/{encode_id}.fasta.gz 
+  fastq: data/resources/encode/fastq/{encode_id}.fastq.gz
+  fasta: data/resources/encode/fasta/{encode_id}.fasta.gz
   fastq_polyA: data/results/encode/fastq_polyA/{encode_id}_polyA.fastq.gz
 
   bam: data/results/encode/bam/{encode_id}.bam
