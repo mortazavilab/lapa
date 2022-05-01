@@ -1,8 +1,0 @@
-
-
-# rule all_short_rnaseq:
-#     input:
-#         expand(config['encode']['fastq_read_count'],
-#                encode_id=config['short_rnaseq']['se']),
-#         expand(config['encode']['bam_read_count'],
-#                encode_id=config['short_rnaseq']['se'])

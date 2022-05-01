@@ -9,6 +9,40 @@ rule figure_1:
         "figure-1.ipynb"
 
 
+rule figure_2:
+    input:
+        read_nums = "reports/figures/read_nums_datasets.png",
+        hist = 'reports/figures/hist_read_counts.png',
+        percent = 'reports/figures/percentage_of_reads_tes.png'
+    output:
+        fig = 'reports/figures/figure-2.png'
+    notebook:
+        "figure-2.ipynb"
+
+
+rule figure_3:
+    input:
+        hist = 'reports/figures/plot_major_isoform_gene_exp.png',
+        fracA = 'reports/figures/plot_fracA.png',
+        motif = 'reports/figures/polyA_motif.pdf'
+    output:
+        fig = 'reports/figures/figure-3.png'
+    notebook:
+        "figure-3.ipynb"
+
+rule figure_4:
+    input:
+        pr_curve_plot = 'reports/figures/benchmark_pr_curve.png',
+        heatmap = 'reports/figures/overlap_heatmap.png'
+    output:
+        fig = 'reports/figures/figure-4.png'
+    notebook:
+        "figure-4.ipynb"
+
+
 rule all_figure:
     input:
-        rules.figure_1.output
+        rules.figure_1.output,
+        rules.figure_2.output,
+        rules.figure_3.output,
+        rules.figure_4.output

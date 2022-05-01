@@ -135,5 +135,5 @@ rule plot_major_isoform_gene_exp:
 rule all_plot:
     input:
         rules.read_nums_datasets.output,
-        'reports/figures/plot_major_isoform_gene_exp.png',
-        'reports/figures/hist_read_counts.png'
+        rules.plot_hist_read_count.output,
+        rules.plot_major_isoform_gene_exp.output
