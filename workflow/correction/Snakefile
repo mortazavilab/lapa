@@ -219,4 +219,18 @@ rule plot_correction_tss_percentage:
 rule all_correction:
     input:
         'reports/figures/correction/correction_percentage.png',
-        'reports/figures/correction/correction_tss_percentage.png'
+        'reports/figures/correction/correction_tss_percentage.png',
+
+        expand(rules.plot_overlap_annotation.output,
+               platform='PacBio', counting=['end'],
+               library_prep=config['long_read']['PacBio']),
+        expand(rules.plot_overlap_tss_annotation.output,
+               platform='PacBio', counting=['end'],
+               library_prep=config['long_read']['PacBio']),
+
+        expand(rules.plot_overlap_annotation.output,
+               platform='ONT', counting=['end'],
+               library_prep=config['long_read']['ONT']),
+        expand(rules.plot_overlap_tss_annotation.output,
+               platform='ONT', counting=['end'],
+               library_prep=config['long_read']['ONT'])
