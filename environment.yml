@@ -14,7 +14,6 @@ dependencies:
   - snakemake
   - pip:
     - pdf2image
-    - seqlogo
     - biopython
     - jupyter
     - notebook

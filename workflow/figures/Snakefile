@@ -40,9 +40,24 @@ rule figure_4:
         "figure-4.ipynb"
 
 
+rule figure_5:
+    input:
+        correction = rules.plot_overlap_annotation.output[0].format(
+            platform='PacBio', counting='end', library_prep='cDNA'),
+        correction_tss = rules.plot_overlap_tss_annotation.output[0].format(
+            platform='PacBio', counting='end', library_prep='cDNA'),
+        percentage = 'reports/figures/correction/correction_percentage.png',
+        percentage_tss = 'reports/figures/correction/correction_tss_percentage.png'
+    output:
+        fig = 'reports/figures/figure-5.png'
+    notebook:
+        "figure-5.ipynb"
+
+
 rule all_figure:
     input:
         rules.figure_1.output,
         rules.figure_2.output,
         rules.figure_3.output,
-        rules.figure_4.output
+        rules.figure_4.output,
+        rules.figure_5.output
