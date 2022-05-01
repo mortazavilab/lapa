@@ -36,8 +36,7 @@ rule correct_talon:
         --gtf_input {input.gtf} \
         --gtf_output {output.gtf} \
         --abundance_input {input.abundance} \
-        --abundance_output {output.abundance} \
-        --keep_unsupported 2> {log}"
+        --abundance_output {output.abundance} 2> {log}"
 
 
 rule link_to_transcript:
@@ -220,18 +219,4 @@ rule plot_correction_tss_percentage:
 rule all_correction:
     input:
         'reports/figures/correction/correction_percentage.png',
-        'reports/figures/correction/correction_tss_percentage.png',
-
-        # expand(rules.plot_overlap_annotation.output,
-        #        platform='PacBio', counting=['end'],
-        #        library_prep=config['long_read']['PacBio']),
-        # expand(rules.plot_overlap_tss_annotation.output,
-        #        platform='PacBio', counting=['end'],
-        #        library_prep=config['long_read']['PacBio']),
-
-        # expand(rules.plot_overlap_annotation.output,
-        #        platform='ONT', counting=['end'],
-        #        library_prep=config['long_read']['ONT']),
-        # expand(rules.plot_overlap_tss_annotation.output,
-        #        platform='ONT', counting=['end'],
-        #        library_prep=config['long_read']['ONT'])
+        'reports/figures/correction/correction_tss_percentage.png'
