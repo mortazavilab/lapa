@@ -54,10 +54,23 @@ rule figure_5:
         "figure-5.ipynb"
 
 
+rule figure_6:
+    input:
+        differential = 'reports/drawing/myoblast_myotube.png',
+        volcona = 'reports/figures/c2c12_volcona.png',
+        heatmap = 'reports/figures/c2c12_heatmap.png',
+        gene_fc = 'reports/figures/c2c12_boxplot_gene.png'
+    output:
+        fig = 'reports/figures/figure-6.png'
+    notebook:
+        "figure-6.ipynb"
+
+
 rule all_figure:
     input:
         rules.figure_1.output,
         rules.figure_2.output,
         rules.figure_3.output,
         rules.figure_4.output,
-        rules.figure_5.output
+        rules.figure_5.output,
+        rules.figure_6.output

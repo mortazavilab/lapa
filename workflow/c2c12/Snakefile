@@ -73,7 +73,7 @@ rule differential_apa_abundance_c2c12:
     resources:
         mem_gb = 16
     output:
-        boxplot = '../../reports/figures/c2c12_boxplot_gene.png',
+        boxplot = 'reports/figures/c2c12_boxplot_gene.png',
     notebook:
         "./apa_differetial_gene_exp.ipynb"
 

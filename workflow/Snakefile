@@ -35,4 +35,5 @@ rule all:
         rules.all_figure.input,
         rules.all_plot.input,
         rules.all_benchmark.input,
-        rules.all_correction.input
+        rules.all_correction.input,
+        rules.all_c2c12.input
