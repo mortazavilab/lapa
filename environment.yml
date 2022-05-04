@@ -12,7 +12,6 @@ dependencies:
   - star
   - minimap2
   - snakemake
-  - idp
   - pip:
     - pdf2image
     - biopython
@@ -26,4 +25,5 @@ dependencies:
     - adjustText
     - patchworklib
     - sklearn
+    - git+https://github.com/nboley/idr.git
     - -e .
