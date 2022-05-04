@@ -12,10 +12,7 @@ if len(samples):
         df_abundance[df_abundance[samples].sum(axis=1) > 0].index)
     gr_tss = gr_tss[gr_tss.transcript_id.isin(express_transcripts)]
 
-pr_cage = functools.reduce(
-    lambda gr_x, gr_y: gr_x.merge(gr_y),
-    [pr.read_bed(i) for i in snakemake.input['cage']]
-)
+pr_cage = pr.read_bed(snakemake.input['cage'])
 
 # pr_cage.End = (pr_cage.Start + pr_cage.End) // 2
 

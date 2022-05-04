@@ -70,6 +70,7 @@ short_rnaseq:
 
 cage:
   bed: data/resources/cage/{geo_id}.count.bed.gz
+  bed9: data/results/cage/bed9/{geo_id}.bed
 
   geo_id:
     GSM5625727: GSM5625727_WTC11-1_rep1
@@ -78,6 +79,8 @@ cage:
     GSM5625730: GSM5625730_WTC11-3_rep1
     GSM5625731: GSM5625731_WTC11-3_rep2
     GSM5625732: GSM5625732_WTC11-3_rep3
+
+  replicated: data/results/cage/wtc11_replicated.bed
 
 common:
   chrom_sizes: data/results/common/{genome}.chrom_sizes

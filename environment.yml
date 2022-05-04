@@ -12,6 +12,7 @@ dependencies:
   - star
   - minimap2
   - snakemake
+  - idp
   - pip:
     - pdf2image
     - biopython

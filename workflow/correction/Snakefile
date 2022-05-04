@@ -39,20 +39,20 @@ rule correct_talon:
         --abundance_output {output.abundance} 2> {log}"
 
 
-rule link_to_transcript:
-    input:
-        read_annot = config['talon']['read_annot'],
-        abundance = config['talon']['abundance'],
-        links = config['talon']['link'],
-        quantseq_lapa_dir = config['lapa']['lapa_quantseq_dir'],
-        cage = expand(config['cage']['bed'], geo_id=config['cage']['geo_id'])
-    threads: 1
-    resources:
-        mem_gb = 32
-    output:
-        fig = 'reports/figures/correction/{library_prep}_{platform}_{counting}_tss_tes_support.csv'
-    notebook:
-        "./tss_tes_support.ipynb"
+# rule link_to_transcript:
+#     input:
+#         read_annot = config['talon']['read_annot'],
+#         abundance = config['talon']['abundance'],
+#         links = config['talon']['link'],
+#         quantseq_lapa_dir = config['lapa']['lapa_quantseq_dir'],
+#         cage = expand(config['cage']['bed'], geo_id=config['cage']['geo_id'])
+#     threads: 1
+#     resources:
+#         mem_gb = 32
+#     output:
+#         fig = 'reports/figures/correction/{library_prep}_{platform}_{counting}_tss_tes_support.csv'
+#     notebook:
+#         "./tss_tes_support.ipynb"
 
 
 rule overlap_tes_talon:
@@ -87,11 +87,38 @@ rule overlap_tes_corrected_talon:
         "../common/overlap_talon.py"
 
 
+rule bed9_cage:
+    input:
+        bed = config['cage']['bed']
+    output:
+        bed = config['cage']['bed9']
+    script:
+        "./bed_to_bed9.py"
+
+
+rule reproducable_reads:
+    input:
+        rep1 = config['cage']['bed9'].format(geo_id='GSM5625727'),
+        rep2 = config['cage']['bed9'].format(geo_id='GSM5625732')
+    threads: 1
+    params:
+        idr_threshold = 0.05
+    output:
+        bed = config['cage']['replicated'],
+        fig = config['cage']['replicated'] + '.png'
+    shell:
+        "idr \
+        --rank 7 \
+        --idr-threshold {params.idr_threshold} \
+        --input-file-type bed \
+        --samples {input.rep1} {input.rep2} \
+        --plot \
+        -o {output.bed}"
+
+
 rule overlap_tss_talon:
     input:
-        cage = (lambda wildcards:
-                expand(config['cage']['bed'],
-                       geo_id=config['cage']['geo_id'])),
+        cage = config['cage']['replicated'],
         gtf = config['talon']['gtf'],
         abundance = config['talon']['abundance']
     threads: 1
@@ -108,9 +135,7 @@ rule overlap_tss_talon:
 
 rule overlap_tss_corrected_talon:
     input:
-        cage = (lambda wildcards:
-                expand(config['cage']['bed'],
-                       geo_id=config['cage']['geo_id'])),
+        cage = config['cage']['replicated'],
         gtf = config['talon']['gtf_corrected'],
         abundance = config['talon']['abundance']
     threads: 1
