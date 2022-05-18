@@ -13,6 +13,7 @@ def test_LapaResult_fisher_exact_test(tmp_path):
     df_read_annot2['dataset'] += '2'
 
     sample_read_annot = str(tmp_path / 'sample_read_annot.tsv')
+
     pd.concat([df_read_annot, df_read_annot2]).to_csv(
         sample_read_annot, sep='\t', index=False)
 
@@ -30,6 +31,7 @@ def test_LapaResult_fisher_exact_test(tmp_path):
     df.columns == [
         'odds_ratio', 'pval', 'delta_usage', 'gene_id', 'pval_adj'
     ]
+
     assert df[(df['pval_adj'] < 0.05) & (
         df['delta_usage'].abs() > 0.3)].shape[0]
 

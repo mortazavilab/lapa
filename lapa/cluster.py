@@ -1,8 +1,20 @@
+import logging
 import pandas as pd
 from tqdm import tqdm
 from kipoiseq import Interval
 from kipoiseq.extractors import FastaStringExtractor
 from lapa.utils.common import pad_series, polyA_signal_seqs
+
+
+def _tqdm_clustering(iterable):
+    '''
+    Adaptor for tqdm to integrate to logging
+    '''
+    logger = logging.getLogger('progress')
+    file = logger.handlers[0].stream if logger.handlers else None
+
+    return tqdm(iterable, mininterval=5, file=file,
+                bar_format='- {n_fmt} Chromosome/Strand clustered...\n')
 
 
 class Cluster:
@@ -131,7 +143,12 @@ class PolyACluster(Cluster):
 
 
 class TssCluster(Cluster):
-    pass
+
+    def to_dict(self, fasta):
+        cluster = super().to_dict(fasta)
+        cluster['tss_site'] = cluster['peak']
+        del cluster['peak']
+        return cluster
 
 
 class Clustering:
@@ -151,7 +168,7 @@ class Clustering:
     def cluster(self, df_tes):
         _groupby = df_tes.groupby(self.groupby)
         if self.progress:
-            _groupby = tqdm(_groupby)
+            _groupby = _tqdm_clustering(_groupby)
 
         for _, _df in _groupby:
             cluster = None

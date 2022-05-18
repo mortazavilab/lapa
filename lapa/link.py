@@ -2,9 +2,8 @@ from pathlib import Path
 import numpy as np
 import pyranges as pr
 import pandas as pd
-from lapa.result import LapaResult
 from lapa.utils.io import read_talon_read_annot, \
-    read_tss_cluster
+    read_tss_cluster, read_polyA_cluster
 
 
 _reads_cols = ['read_name', 'Chromosome', 'read_Start', 'read_End', 'Strand']
@@ -46,7 +45,7 @@ def _link_reads_to_tes(df_tes_cluster, df_reads, distance=50):
     df_reads['Start'] = df_reads['End'] - 1
     gr_reads = pr.PyRanges(df_reads)
 
-    df = gr_reads.nearest(pr.PyRanges(df_tes_cluster),  # how='downstream',
+    df = gr_reads.nearest(pr.PyRanges(df_tes_cluster),
                           strandedness='same').df
     df.loc[df['Distance'] > distance, 'polyA_site'] = -1
     return df[[*_reads_cols, 'polyA_site']]
@@ -62,14 +61,14 @@ def _link_reads_to_tss(df_tss_cluster, df_reads, distance=50):
     df_reads['Start'] = df_reads['End'] - 1
     gr_reads = pr.PyRanges(df_reads)
 
-    df = gr_reads.nearest(pr.PyRanges(df_tss_cluster),  # how='upstream',
+    df = gr_reads.nearest(pr.PyRanges(df_tss_cluster),
                           strandedness='same').df
-    df.loc[df['Distance'] > distance, 'start_site'] = -1
-    return df[[*_reads_cols, 'start_site', 'polyA_site']]
+    df.loc[df['Distance'] > distance, 'tss_site'] = -1
+    return df[[*_reads_cols, 'tss_site', 'polyA_site']]
 
 
 def link_tss_to_tes(alignment, lapa_dir, lapa_tss_dir, distance=50,
-                    mapq=10, min_read_length=100):
+                    mapq=10, min_read_length=100, raw=False):
     '''
     Link transcript site sites to transcript end sites using
       long-read from the alignment file.
@@ -86,18 +85,28 @@ def link_tss_to_tes(alignment, lapa_dir, lapa_tss_dir, distance=50,
                                      min_read_length=min_read_length)
 
     print('TES read mapping...')
-    df_cluster = LapaResult(lapa_dir, tpm_cutoff=1).read_cluster()
+    if raw:
+        df_cluster = read_polyA_cluster(
+            Path(lapa_dir) / 'raw_polyA_clusters.bed')
+        df_cluster = df_cluster[~((df_cluster['fracA'] > 7)
+                                  & (df_cluster['signal'] == 'None@None'))]
+    else:
+        df_cluster = read_polyA_cluster(Path(lapa_dir) / 'polyA_clusters.bed')
+
     df_reads = _link_reads_to_tes(df_cluster, df_reads, distance=distance)
 
     print('TSS read mapping...')
-    df_tss_cluster = read_tss_cluster(
-        Path(lapa_tss_dir) / 'tss_clusters.bed')
+    tss_file_path = 'tss_clusters.bed'
+    if raw:
+        tss_file_path = 'raw' + tss_file_path
+    df_tss_cluster = read_tss_cluster(Path(lapa_tss_dir) / tss_file_path)
+
     df_reads = _link_reads_to_tss(df_tss_cluster, df_reads, distance=distance)
 
     valid = np.where(df_reads['Strand'] == '+',
-                     df_reads['start_site'] < df_reads['polyA_site'],
-                     df_reads['polyA_site'] < df_reads['start_site'])
-    valid = valid | (df_reads['start_site'] == -1) \
+                     df_reads['tss_site'] < df_reads['polyA_site'],
+                     df_reads['polyA_site'] < df_reads['tss_site'])
+    valid = valid | (df_reads['tss_site'] == -1) \
         | (df_reads['polyA_site'] == -1)
 
     return df_reads[valid]

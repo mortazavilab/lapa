@@ -34,13 +34,16 @@ def lapa_dir_link(tmp_path):
         'Start': [10000, 10000000],
         'End': [10010, 10000001],
         'polyA_site': [10005, 10000000],
-        'tpm': [1, 1],
+        'count': [100, 100],
         'Strand': ['+', '+'],
         'Feature': ['three_prime_utr', 'three_prime_utr'],
-        'count': [100, 100],
+        'gene_id': ['gene_a', 'gene_a'],
+        'tpm': [1, 1],
+        'gene_count': [100, 100],
+        'usage': [0.5, 0.5],
         'fracA': [0, 0],
         'signal': ['AATAAA', 'AATAAA'],
-        'canonical_site': [10005, 10000000]
+        'annotated_site': [10005, 10000000]
     }).to_csv(lapa_dir / 'polyA_clusters.bed',
               index=False, sep='\t', header=False)
 
@@ -56,9 +59,15 @@ def lapa_tss_dir_link(tmp_path):
         'Chromosome': ['chr1', 'chr1'],
         'Start': [4990, 100],
         'End': [5010, 110],
-        'start_site': [5000, 105],
+        'tss_site': [5000, 105],
         'count': [100, 100],
-        'Strand': ['+', '+']
+        'Strand': ['+', '+'],
+        'Feature': ['five_prime_utr', 'five_prime_utr'],
+        'gene_id': ['gene_a', 'gene_a'],
+        'tpm': [1, 1],
+        'gene_count': [2, 2],
+        'usage': [0.5, 0.5],
+        'annotated_site': [10005, 10000000]
     }).to_csv(lapa_tss_dir / 'tss_clusters.bed', index=False,
               sep='\t', header=False)
 
@@ -79,7 +88,7 @@ def test_link_reads_to_tes(read_annot_link_path,
         'read_Start': [5000, 5050, 90000],
         'read_End': [10001, 9970, 100000],
         'Strand': pd.Categorical(['+', '+', '+']),
-        'start_site': [5000, 5000, -1],
+        'tss_site': [5000, 5000, -1],
         'polyA_site': [10005, 10005, -1]
     }))
 
@@ -91,11 +100,11 @@ def test_link_reads_to_tes_read_annot(lapa_read_annot,
                          lapa_tss_read_annot,
                          distance=1000)
 
-    _df = df.loc[(df['start_site'] != -1) & (df['polyA_site'] != -1)]
+    _df = df.loc[(df['tss_site'] != -1) & (df['polyA_site'] != -1)]
 
     assert all(np.where(_df['Strand'] == '+',
-                        _df['start_site'] < _df['polyA_site'],
-                        _df['polyA_site'] < _df['start_site']))
+                        _df['tss_site'] < _df['polyA_site'],
+                        _df['polyA_site'] < _df['tss_site']))
 
 
 def test_link_reads_to_tes_bam(lapa_pb_brca1,
@@ -105,19 +114,19 @@ def test_link_reads_to_tes_bam(lapa_pb_brca1,
                          lapa_tss_pb_brca1,
                          distance=1000)
 
-    _df = df.loc[(df['start_site'] != -1) & (df['polyA_site'] != -1)]
+    _df = df.loc[(df['tss_site'] != -1) & (df['polyA_site'] != -1)]
     assert all(np.where(_df['Strand'] == '+',
-                        _df['start_site'] < _df['polyA_site'],
-                        _df['polyA_site'] < _df['start_site']))
+                        _df['tss_site'] < _df['polyA_site'],
+                        _df['polyA_site'] < _df['tss_site']))
 
     df2 = link_tss_to_tes(f'{pb_brca1_bam},{pb_brca1_bam}',
                           lapa_pb_brca1,
                           lapa_tss_pb_brca1,
                           distance=1000)
 
-    _df2 = df2.loc[(df2['start_site'] != -1) & (df2['polyA_site'] != -1)]
+    _df2 = df2.loc[(df2['tss_site'] != -1) & (df2['polyA_site'] != -1)]
     assert all(np.where(_df2['Strand'] == '+',
-                        _df2['start_site'] < _df2['polyA_site'],
-                        _df2['polyA_site'] < _df2['start_site']))
+                        _df2['tss_site'] < _df2['polyA_site'],
+                        _df2['polyA_site'] < _df2['tss_site']))
 
     assert df.shape[0] * 2 == df2.shape[0]

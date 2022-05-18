@@ -1,3 +1,3 @@
 sample,path
-gm12878,tests/data/quantseq3_gm12878_chr17_rep1.bam
-gm12878,tests/data/quantseq3_gm12878_chr17_rep2.bam
+gm12878_1,tests/data/quantseq3_gm12878_chr17_rep1.bam
+gm12878_2,tests/data/quantseq3_gm12878_chr17_rep2.bam

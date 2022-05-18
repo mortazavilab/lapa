@@ -54,13 +54,13 @@ class Transcript:
         df['exon_id'] = df['exon_id'] + '#' + prefix
         return Transcript(new_transcript_id, df)
 
-    def valid_five_prime_exon_len(self, start_site):
+    def valid_five_prime_exon_len(self, tss_site):
         exon_idx = self.five_prime_exon_idx
 
         if self.strand == '+':
-            exon_len = self.df.loc[exon_idx, 'End'] - start_site
+            exon_len = self.df.loc[exon_idx, 'End'] - tss_site
         elif self.strand == '-':
-            exon_len = start_site - self.df.loc[exon_idx, 'Start']
+            exon_len = tss_site - self.df.loc[exon_idx, 'Start']
 
         return exon_len > self.min_exon_len
 
@@ -74,22 +74,22 @@ class Transcript:
 
         return exon_len > self.min_exon_len
 
-    def update_start_site(self, start_site):
+    def update_tss_site(self, tss_site):
         exon_idx = self.five_prime_exon_idx
 
-        if not self.valid_five_prime_exon_len(start_site):
+        if not self.valid_five_prime_exon_len(tss_site):
             raise ValueError(
                 f'Exon length is shorter than min_exon_len={self.min_exon_len}'
                 f' for transcript={self.transcript_id} '
-                f' and start_site={start_site}')
+                f' and tss_site={tss_site}')
 
         if self.strand == '+':
-            self.df.loc[exon_idx, 'Start'] = start_site
-            self.df['Start'].iloc[0] = start_site
+            self.df.loc[exon_idx, 'Start'] = tss_site
+            self.df['Start'].iloc[0] = tss_site
 
         if self.strand == '-':
-            self.df.loc[exon_idx, 'End'] = start_site
-            self.df['End'].iloc[0] = start_site
+            self.df.loc[exon_idx, 'End'] = tss_site
+            self.df['End'].iloc[0] = tss_site
 
     def update_polyA_site(self, polyA_site):
         exon_idx = self.three_prime_exon_idx
@@ -196,7 +196,7 @@ def _links_transcript_agg(links, read_annot_path):
 
     df['count'] = 1
     return df.groupby([
-        'transcript_id', 'Strand', 'start_site', 'polyA_site', 'sample'
+        'transcript_id', 'Strand', 'tss_site', 'polyA_site', 'sample'
     ]).agg({
         'read_Start': 'min', 'read_End': 'max', 'count': 'sum'
     }).reset_index()
@@ -205,24 +205,24 @@ def _links_transcript_agg(links, read_annot_path):
 def _transcript_tss_tes(df, threshold=1):
     '''
     '''
-    df = df[(df['polyA_site'] != -1) & (df['start_site'] != -1)]
-    df = df.set_index(['transcript_id', 'start_site', 'polyA_site'])
+    df = df[(df['polyA_site'] != -1) & (df['tss_site'] != -1)]
+    df = df.set_index(['transcript_id', 'tss_site', 'polyA_site'])
 
-    _df = df.groupby(['transcript_id', 'start_site',
+    _df = df.groupby(['transcript_id', 'tss_site',
                      'polyA_site']).agg({'count': 'sum'})
     df = df[_df['count'] > threshold]
 
     # update transcript_ids
     _df = df.reset_index().drop_duplicates(
-        subset=['transcript_id', 'start_site', 'polyA_site'])
+        subset=['transcript_id', 'tss_site', 'polyA_site'])
     _df['suffix'] = _df.groupby(
         'transcript_id').cumcount().astype(str).radd('#')
     df = df.join(_df.set_index(
-        ['transcript_id', 'start_site', 'polyA_site'])['suffix']).reset_index()
+        ['transcript_id', 'tss_site', 'polyA_site'])['suffix']).reset_index()
     df['transcript_id'] += df['suffix']
     del df['suffix']
 
-    return df[['transcript_id', 'start_site', 'polyA_site', 'sample', 'count']]
+    return df[['transcript_id', 'tss_site', 'polyA_site', 'sample', 'count']]
 
 
 def _save_corrected_gtf(df, gtf, gtf_output, keep_unsupported=False):
@@ -247,11 +247,11 @@ def _save_corrected_gtf(df, gtf, gtf_output, keep_unsupported=False):
             .fetch_transcript(templete_transcript) \
             .copy(row.transcript_id)
 
-        if not transcript.valid_five_prime_exon_len(int(row.start_site)):
+        if not transcript.valid_five_prime_exon_len(int(row.tss_site)):
             print(f'Transcript {row.transcript_id} is not corrected '
                   'because exon chain longer than ends')
             continue
-        transcript.update_start_site(int(row.start_site))
+        transcript.update_tss_site(int(row.tss_site))
 
         if not transcript.valid_three_prime_exon_len(int(row.polyA_site)):
             print(f'Transcript {row.transcript_id} is not corrected '
@@ -327,5 +327,5 @@ def correct_talon(links_path, read_annot_path, gtf_input,
         abundance_output, index=False, sep='\t')
 
     df = df.drop_duplicates(
-        subset=['transcript_id', 'start_site', 'polyA_site'])
+        subset=['transcript_id', 'tss_site', 'polyA_site'])
     _save_corrected_gtf(df, gtf_input, gtf_output, keep_unsupported)

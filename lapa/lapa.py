@@ -1,140 +1,449 @@
+import logging
 from pathlib import Path
 import pandas as pd
 import pyranges as pr
 from lapa.cluster import PolyAClustering, TssClustering
-from lapa.genomic_regions import GenomicRegions
+from lapa.genomic_regions import PolyAGenomicRegions, TssGenomicRegions
 from lapa.count import TesMultiCounter, TssMultiCounter
-from lapa.utils.io import cluster_col_order, sample_col_order
+from lapa.utils.io import cluster_col_order, tss_cluster_col_order, \
+    read_talon_read_annot
+from lapa.replication import replication_dataset
 
 
-def tes_cluster_annotate(df_cluster, annotation):
-    gr_apa = pr.PyRanges(df_cluster)
+class _Lapa:
 
-    total = gr_apa.count.sum()
+    def __init__(self, fasta, annotation, chrom_sizes, output_dir,
+                 method, mapq=10,
+                 cluster_extent_cutoff=3, cluster_window=25,
+                 cluster_ratio_cutoff=0.05,
+                 min_replication_rate=0.75, replication_rolling_size=1000,
+                 filter_intergenic=True):
 
-    gr_gtf = pr.read_gtf(annotation)
-    greg = GenomicRegions(gr_gtf)
+        self.fasta = fasta
+        self.annotation = annotation
+        self.chrom_sizes = chrom_sizes
+        self.output_dir = Path(output_dir)
 
-    df = greg.annotate(gr_apa)
+        # parameters
+        self.method = method
+        self.mapq = mapq
 
-    df['tpm'] = df['count'] * 1000000 / total
+        # clustering parameters
+        self.cluster_extent_cutoff = cluster_extent_cutoff
+        self.cluster_window = cluster_window
+        self.cluster_ratio_cutoff = cluster_ratio_cutoff
 
-    return df.sort_values(['Chromosome', 'End'])
+        # replication parameters
+        self.min_replication_rate = min_replication_rate
+        self.replication_rolling_size = replication_rolling_size
+
+        # annotation parameters
+        self.filter_intergenic = filter_intergenic
+
+        # create file structure
+        self.output_dir.mkdir()
+        self.sample_dir.mkdir()
+        self.raw_sample_dir.mkdir()
+        self.dataset_dir.mkdir()
+
+        self.is_read_annot = False
+
+        # initilize logs directory and files
+        self.make_logs()
+
+    @property
+    def sample_dir(self):
+        return self.output_dir / 'sample'
+
+    @property
+    def raw_sample_dir(self):
+        return self.output_dir / 'raw_sample'
+
+    @property
+    def dataset_dir(self):
+        return self.output_dir / 'dataset'
+
+    def make_logs(self):
+        log_dir = self.output_dir / 'logs'
+        log_dir.mkdir()
+
+        # logs files
+        self.progress_log = logging.getLogger('progress')
+        self.progress_log.setLevel(logging.INFO)
+        self.progress_log.addHandler(logging.FileHandler(
+            log_dir / 'progress.log'))
+
+        self.warn_log = logging.getLogger('warning')
+        self.warn_log.setLevel(logging.WARN)
+        self.warn_log.addHandler(logging.FileHandler(
+            log_dir / 'warnings.log'))
+
+        self.final_log = logging.getLogger('final')
+        self.final_log.setLevel(logging.INFO)
+        self.final_log.addHandler(logging.FileHandler(
+            log_dir / 'final_stats.log'))
+
+    def prepare_alignment(self, alignment):
+        '''
+        Get sample and dataset mapping and respective bam files
+        from the given alignment file.
+        '''
+        if alignment.endswith('.csv'):
+            df = pd.read_csv(alignment)
+
+            if 'dataset' not in df.columns:
+                df['dataset'] = 'all'
+
+            assert all(pd.Series(['sample', 'path', 'dataset']).isin(df.columns)), \
+                'provided csv file should be consist of columns `sample` and `path`'
+
+            df_alignment = df[['sample', 'path', 'dataset']]
+
+        elif alignment.endswith('.bam'):
+            alignments = alignment.split(',')
+
+            df_alignment = pd.DataFrame({
+                'sample': [Path(i).stem for i in alignments],
+                'dataset': ['all'] * len(alignments),
+                'path': alignments
+            })
+
+        elif alignment.endswith('_read_annot.tsv'):
+            # HACKED: to support talon read_annot
+            self.is_read_annot = True
+            self.method = None
+            self.df_read_annot = read_talon_read_annot(alignment)
+            df_alignment = None
+
+        else:
+            raise ValueError(
+                'Unknown file alignment format: supported '
+                'file formats are `bam` and `sample.csv`')
+
+        if not self.is_read_annot:
+            sample_dataset_mapping = df_alignment \
+                .groupby('dataset')['sample'] \
+                .agg(list).to_dict()
+        else:
+            sample_dataset_mapping = {
+                'all': self.df_read_annot['sample'].unique().tolist()
+            }
+
+        return df_alignment, sample_dataset_mapping
+
+    def counting(self, alignment):
+        if not self.is_read_annot:
+            counter = self.create_counter(alignment)
+        else:
+            counter = self.create_counter(
+                self.df_read_annot, is_read_annot=True)
+
+        df_all_count, sample_counts = counter.to_df()
+        counter._to_bigwig(df_all_count, sample_counts, self.chrom_sizes,
+                           self.output_dir, prefix=self.prefix)
+
+        return df_all_count, sample_counts
+
+    def clustering(self, df_counts):
+        return self.create_clustering().to_df(df_counts)
+
+    def annotate_cluster(self, df_cluster):
+        gr = pr.PyRanges(df_cluster)
+
+        total = gr.count.sum()
+        df = self.create_genomic_regions().annotate(gr)
+
+        df['tpm'] = df['count'] * 1000000 / total
+
+        return df.sort_values(['Chromosome', 'End'])
+
+    def save_cluster(self, df, path):
+        return df[self.cluster_col_order].to_csv(
+            path, index=False, sep='\t', header=False)
+
+    def save_clusters(self, df_cluster, raw=False):
+        filename = f'{self.prefix}_clusters.bed'
+        if raw:
+            filename = 'raw_' + filename
+
+        self.save_cluster(df_cluster, self.output_dir / filename)
+
+    def save_samples(self, samples, raw):
+        if raw:
+            sample_dir = self.raw_sample_dir
+        else:
+            sample_dir = self.sample_dir
+
+        for sample, df in samples.items():
+            self.save_cluster(
+                df, sample_dir / f'{sample}.bed')
+
+    def save_datasets(self, datasets):
+        for dataset, df in datasets.items():
+            self.save_cluster(
+                df, self.dataset_dir / f'{dataset}.bed')
+
+    def filter_replication(self, sample_clusters, sample_dataset_mapping):
+
+        replicated_samples = dict()
+
+        for _, samples in sample_dataset_mapping.items():
+
+            rep_samples = {
+                sample: sample_clusters[sample] for sample in samples
+            }
+
+            if len(samples) < 2:
+                self.warn_log.warning(
+                    f'Cannot filter sample {samples[0]} due to \
+                    lack of replicates in dataset.')
+
+            else:
+                rep_samples = replication_dataset(
+                    rep_samples, 'count',
+                    self.replication_rolling_size, self.min_replication_rate)
+
+            for sample, df in rep_samples.items():
+                replicated_samples[sample] = self.calculate_usage(
+                    df.drop(['tpm', 'gene_count', 'usage'], axis=1))
+
+        return replicated_samples
+
+    def sample_cluster(self, df_cluster, sample_counts):
+        gr = pr.PyRanges(sample_counts)
+
+        if self.filter_intergenic:
+            df_cluster = df_cluster[df_cluster['Feature'] != 'intergenic']
+
+        columns = ['Chromosome', 'Start', 'End', 'Strand', 'gene_id']
+
+        gr_cluster = pr.PyRanges(df_cluster[columns].drop_duplicates())
+        df_join = gr_cluster.join(gr, suffix='_sample').df
+
+        df_join = df_join.groupby(columns, observed=True) \
+                         .agg({'count': 'sum'}).reset_index()
+        df_join = df_join[df_join['count'] > 0]
+
+        df_apa = df_join.reset_index().set_index(columns).join(
+            df_cluster.set_index(columns)[self._keep_cols], rsuffix='_cluster'
+        ).reset_index()
+
+        return df_apa
+
+    def calculate_usage(self, df_cluster):
+        # get number of tes in the gene
+        df_cluster = df_cluster.set_index('gene_id').join(
+            df_cluster[['gene_id', 'count']]
+            .groupby('gene_id').agg('sum').rename(
+                columns={'count': 'gene_count'}))
+
+        # calculate usage
+        df_cluster['usage'] = df_cluster['count'] / df_cluster['gene_count']
+
+        df_cluster['tpm'] = (df_cluster['count'] * 1000000 /
+                             df_cluster['count'].sum()).round(2)
+
+        # usage and gene count undefined for intergenic
+        intergenic = df_cluster['Feature'] == 'intergenic'
+        df_cluster.loc[intergenic, 'usage'] = None
+        df_cluster.loc[intergenic, 'gene_count'] = None
+
+        return df_cluster.reset_index()
+
+    def aggregate_samples(self, samples):
+
+        aggregation = {'count': 'sum'}
+
+        for i in self._keep_cols:
+            aggregation[i] = 'first'
+
+        df = pd.concat(samples).groupby([
+            'gene_id', 'Chromosome', 'Start', 'End', 'Strand'
+        ], observed=True).agg(aggregation).reset_index()
+
+        return self.calculate_usage(df)
+
+    def create_counter(self, alignment):
+        raise NotImplementedError()
+
+    def create_clustering(self):
+        raise NotImplementedError()
+
+    def create_genomic_regions(self):
+        raise NotADirectoryError()
+
+    def __call__(self, alignment):
+        '''
+        Main function run all the steps of LAPA
+        '''
+        # Create alignment dataframe from given input file
+        alignment, sample_dataset_mapping = self.prepare_alignment(alignment)
+
+        # Count read numbers
+        self.progress_log.info('===== Counting reads (1 / 5) ===== \n')
+        df_all_count, sample_counts = self.counting(alignment)
+
+        # Create clusters from read count numbers
+        self.progress_log.info(
+            '===== Clustering and calling peaks (2 / 5) ===== \n')
+        df_cluster = self.clustering(df_all_count)
+
+        # Annotate clusters and save
+        self.progress_log.info('===== Annotating cluster (3 / 5) ===== \n')
+        df_cluster = self.annotate_cluster(df_cluster)
+        df_cluster = self.calculate_usage(df_cluster)
+
+        self.save_clusters(df_cluster, raw=True)
+
+        # Get clusters of samples from all cluster and sample count
+        self.progress_log.info(
+            '===== Calculating and subseting clusters samples (4 / 5) ===== \n')
+
+        sample_clusters = dict()
+        for sample, df_counts in sample_counts.items():
+            df_sample_cluster = self.sample_cluster(df_cluster, df_counts)
+            df_sample_cluster = self.calculate_usage(df_sample_cluster)
+            sample_clusters[sample] = df_sample_cluster
+
+        self.save_samples(sample_clusters, raw=True)
+
+        # Subset samples based on the replication rate
+        self.progress_log.info('===== Calculating replication and producing '
+                               'replicated clusters (5 / 5) ===== \n')
+        replicated_sample_clusters = self.filter_replication(
+            sample_clusters, sample_dataset_mapping)
+        self.save_samples(replicated_sample_clusters, raw=False)
+
+        # Aggreate to dataset level and save dataset clusters
+        datasets = dict()
+        for dataset, samples in sample_dataset_mapping.items():
+            datasets[dataset] = self.aggregate_samples(
+                [replicated_sample_clusters[i] for i in samples])
+        self.save_datasets(datasets)
+
+        # Aggreate and save all clusters
+        df_all = self.aggregate_samples(
+            replicated_sample_clusters.values())
+        self.save_clusters(df_all)
 
 
-def tes_sample(df_cluster, df_tes_sample,
-               filter_intergenic=True,
-               filter_internal_priming=True):
+class Lapa(_Lapa):
 
-    columns = ['Chromosome', 'Start', 'End', 'Strand', 'gene_id']
-    gr = pr.PyRanges(df_tes_sample)
+    def __init__(self, fasta, annotation, chrom_sizes, output_dir, method='end',
+                 min_tail_len=10, min_percent_a=0.9, mapq=10,
+                 cluster_extent_cutoff=3, cluster_window=25, cluster_ratio_cutoff=0.05,
+                 min_replication_rate=0.75, replication_rolling_size=1000,
+                 filter_intergenic=True, filter_internal_priming=True):
 
-    if filter_intergenic:
-        df_cluster = df_cluster[df_cluster['Feature'] != 'intergenic']
+        if method not in {'tail', 'end'}:
+            raise ValueError(
+                f'`method` need to be either `tail` or `end` but {method} given')
 
-    if filter_internal_priming:
-        df_cluster = df_cluster[~((df_cluster['fracA'] > 7)
-                                  & (df_cluster['signal'] == 'None@None'))]
+        super().__init__(fasta, annotation, chrom_sizes, output_dir,
+                         method, mapq,
+                         cluster_extent_cutoff, cluster_window,
+                         cluster_ratio_cutoff,
+                         min_replication_rate, replication_rolling_size,
+                         filter_intergenic)
 
-    gr_cluster = pr.PyRanges(df_cluster[columns])
-    df_join = gr_cluster.join(gr, suffix='_sample').df
+        self.min_tail_len = min_tail_len
+        self.min_percent_a = min_percent_a
 
-    df_join = df_join.groupby(columns, observed=True) \
-                     .agg({'count': 'sum'}).reset_index()
-    df_join = df_join[df_join['count'] > 0]
+        self.filter_internal_priming = filter_internal_priming
 
-    # get number of tes in the gene
-    df_join = df_join.set_index('gene_id').join(
-        df_join[['gene_id', 'count']]
-        .groupby('gene_id').agg('sum').rename(
-            columns={'count': 'gene_count'}))
+        self.prefix = 'polyA'
+        self.cluster_col_order = cluster_col_order
 
-    # calculate apa usage
-    df_join['usage'] = df_join['count'] / df_join['gene_count']
+        self._keep_cols = [
+            'polyA_site', 'fracA', 'signal',
+            'Feature', 'annotated_site'
+        ]
 
-    df_apa = df_join.reset_index().set_index(columns).join(
-        df_cluster.set_index(columns), rsuffix='_cluster')
+    def create_counter(self, alignment, is_read_annot=False):
+        return TesMultiCounter(alignment, self.method, self.mapq,
+                               self.min_tail_len, self.min_percent_a,
+                               is_read_annot=is_read_annot)
 
-    df_apa['tpm'] = (df_apa['count'] * 1000000 /
-                     df_apa['count'].sum()).round(2)
-    return df_apa.reset_index()
+    def create_clustering(self):
+        return PolyAClustering(self.fasta,
+                               extent_cutoff=self.cluster_extent_cutoff,
+                               ratio_cutoff=self.cluster_ratio_cutoff,
+                               window=self.cluster_window)
+
+    def create_genomic_regions(self):
+        return PolyAGenomicRegions(self.annotation)
+
+    def sample_cluster(self, df_cluster, sample_counts):
+
+        if self.filter_internal_priming:
+            df_cluster = df_cluster[~((df_cluster['fracA'] > 7)
+                                      & (df_cluster['signal'] == 'None@None'))]
+
+        return super().sample_cluster(df_cluster, sample_counts)
 
 
-def tss_sample(df_cluster, df_tss_sample):
-    columns = ['Chromosome', 'Start', 'End', 'Strand']
-    gr = pr.PyRanges(df_tss_sample)
+class LapaTss(_Lapa):
 
-    gr_cluster = pr.PyRanges(df_cluster[columns])
-    df_join = gr_cluster.join(gr, suffix='_sample').df
+    def __init__(self, fasta, annotation, chrom_sizes, output_dir,
+                 method='start', mapq=10,
+                 cluster_extent_cutoff=3, cluster_window=25,
+                 cluster_ratio_cutoff=0.05,
+                 min_replication_rate=0.75, replication_rolling_size=1000,
+                 filter_intergenic=True):
 
-    df_join = df_join.groupby(columns, observed=True) \
-                     .agg({'count': 'sum'}).reset_index()
-    df_join = df_join[df_join['count'] > 0]
+        if method not in {'start'}:
+            raise ValueError(
+                f'`method` need to be either `start` but {method} given')
 
-    df_tss = df_join.set_index(columns).join(
-        df_cluster.set_index(columns), rsuffix='_cluster').reset_index()
+        super().__init__(fasta, annotation, chrom_sizes, output_dir,
+                         method, mapq,
+                         cluster_extent_cutoff, cluster_window,
+                         cluster_ratio_cutoff,
+                         min_replication_rate, replication_rolling_size,
+                         filter_intergenic)
 
-    cols = ['Chromosome', 'Start', 'End', 'peak', 'count', 'Strand']
-    return df_tss[cols]
+        self.prefix = 'tss'
+        self.cluster_col_order = tss_cluster_col_order
+
+        self._keep_cols = [
+            'tss_site', 'Feature', 'annotated_site'
+        ]
+
+    def create_counter(self, alignment, is_read_annot=False):
+        return TssMultiCounter(alignment, self.method, self.mapq,
+                               is_read_annot=is_read_annot)
+
+    def create_clustering(self):
+        return TssClustering(self.fasta,
+                             extent_cutoff=self.cluster_extent_cutoff,
+                             ratio_cutoff=self.cluster_ratio_cutoff,
+                             window=self.cluster_window)
+
+    def create_genomic_regions(self):
+        return TssGenomicRegions(self.annotation)
 
 
 def lapa(alignment, fasta, annotation, chrom_sizes, output_dir, method='end',
          min_tail_len=10, min_percent_a=0.9, mapq=10,
-         cluster_extent_cutoff=3, cluster_window=25, cluster_ratio_cutoff=0.05):
-
-    output_dir = Path(output_dir)
-    output_dir.mkdir(exist_ok=True)
-
-    print('Counting TES (1 / 4)...')
-    counter = TesMultiCounter(alignment, method, mapq,
-                              min_tail_len, min_percent_a)
-    df_tes, tes = counter.to_df()
-    counter._to_bigwig(df_tes, tes, chrom_sizes,
-                       output_dir, prefix='tes_counts')
-
-    print('Clustering TES and calculating polyA_sites (2 / 4)...')
-    df_cluster = PolyAClustering(fasta,
-                                 extent_cutoff=cluster_extent_cutoff,
-                                 ratio_cutoff=cluster_ratio_cutoff,
-                                 window=cluster_window).to_df(df_tes)
-    del df_tes
-
-    print('Annotating TES cluster (3 / 4)...')
-    df_cluster = tes_cluster_annotate(df_cluster, annotation)
-    df_cluster[cluster_col_order].to_csv(output_dir / 'polyA_clusters.bed',
-                                         index=False, sep='\t', header=False)
-
-    print('Calculationg APA per samples (4 / 4)...')
-    for sample, df_tes_sample in tes.items():
-        df_apa = tes_sample(df_cluster, df_tes_sample)
-        df_apa[sample_col_order].to_csv(output_dir / f'{sample}_apa.bed',
-                                        index=False, sep='\t', header=False)
+         cluster_extent_cutoff=3, cluster_window=25, cluster_ratio_cutoff=0.05,
+         min_replication_rate=0.75, replication_rolling_size=1000):
+    _lapa = Lapa(fasta, annotation, chrom_sizes, output_dir, method=method,
+                 min_tail_len=min_tail_len, min_percent_a=min_percent_a, mapq=mapq,
+                 cluster_extent_cutoff=cluster_extent_cutoff,
+                 cluster_window=cluster_window, cluster_ratio_cutoff=cluster_ratio_cutoff,
+                 min_replication_rate=min_replication_rate,
+                 replication_rolling_size=replication_rolling_size)
+    _lapa(alignment)
 
 
 def lapa_tss(alignment, fasta, annotation, chrom_sizes, output_dir,
-             method='start', mapq=10, cluster_extent_cutoff=3, cluster_window=25,
-             cluster_ratio_cutoff=0.05):
-
-    output_dir = Path(output_dir)
-    output_dir.mkdir(exist_ok=True)
-
-    print('Counting TSS (1 / 4)...')
-    counter = TssMultiCounter(alignment, method, mapq)
-    df_tss, tss = counter.to_df()
-    counter._to_bigwig(df_tss, tss, chrom_sizes,
-                       output_dir, prefix='tss_counts')
-
-    print('Clustering TES and calculating polyA_sites (2 / 4)...')
-    df_cluster = TssClustering(fasta,
-                               extent_cutoff=cluster_extent_cutoff,
-                               window=cluster_window).to_df(df_tss)
-    del df_tss
-
-    cluster_cols = ['Chromosome', 'Start', 'End', 'peak', 'count', 'Strand']
-    df_cluster[cluster_cols].to_csv(output_dir / 'tss_clusters.bed',
-                                    index=False, sep='\t', header=False)
-
-    for sample, df_tss_sample in tss.items():
-        df_tss = tss_sample(df_cluster, df_tss_sample)
-        df_tss[cluster_cols].to_csv(output_dir / f'{sample}_tss.bed',
-                                    index=False, sep='\t', header=False)
+             method='start', mapq=10,
+             cluster_extent_cutoff=3, cluster_window=25, cluster_ratio_cutoff=0.05,
+             min_replication_rate=0.75, replication_rolling_size=1000):
+    _lapa = LapaTss(fasta, annotation, chrom_sizes, output_dir,
+                    method=method, mapq=mapq,
+                    cluster_extent_cutoff=cluster_extent_cutoff,
+                    cluster_window=cluster_window, cluster_ratio_cutoff=cluster_ratio_cutoff,
+                    min_replication_rate=min_replication_rate,
+                    replication_rolling_size=replication_rolling_size)
+    _lapa(alignment)

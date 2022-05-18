@@ -6,7 +6,7 @@ from tqdm import tqdm
 from scipy.stats import fisher_exact
 from statsmodels.stats.multitest import multipletests
 # from betabinomial import BetaBinomial, pval_adj
-from lapa.utils.io import read_apa_sample, read_polyA_cluster
+from lapa.utils.io import read_polyA_cluster, read_tss_cluster
 
 
 _core_cols = ['Chromosome', 'Start', 'End', 'Strand']
@@ -14,44 +14,58 @@ _core_cols = ['Chromosome', 'Start', 'End', 'Strand']
 
 class LapaResult:
 
-    def __init__(self, path, tpm_cutoff=1):
+    def __init__(self, path, replicated=True):
         self.lapa_dir = Path(path)
-        self.tpm_cutoff = tpm_cutoff
+        self.replicated = replicated
+
         self.samples = [
-            i.stem.replace('_apa', '')
-            for i in self.lapa_dir.iterdir()
-            if i.stem.endswith('_apa')
+            i.stem.replace('.bed', '')
+            for i in self.sample_dir.iterdir()
         ]
 
-    def read_apa(self, sample):
+    @property
+    def count_dir(self):
+        return self.lapa_dir / 'counts'
+
+    @property
+    def sample_dir(self):
+        if not self.replicated:
+            return self.lapa_dir / 'raw_sample'
+        return self.lapa_dir / 'sample'
+
+    @property
+    def cluster_path(self):
+        if not self.replicated:
+            return self.lapa_dir / 'raw_polyA_clusters.bed'
+        return self.lapa_dir / 'polyA_clusters.bed'
+
+    def read_sample(self, sample):
         if sample not in self.samples:
             raise ValueError(
                 'sample `%s` does not exist in directory' % sample)
-        df = read_apa_sample(self.lapa_dir / ('%s_apa.bed' % sample))
-        return self._filter_tpm(self._set_index(df))
+        return read_polyA_cluster(self.sample_dir / ('%s.bed' % sample))
 
-    def read_cluster(self, filter_internal_priming=True):
+    def read_clusters(self, filter_internal_priming=True):
         df = read_polyA_cluster(self.lapa_dir / 'polyA_clusters.bed')
+
         if filter_internal_priming:
-            df = df[(
-                ~(
-                    (df['fracA'] > 7) &
-                    (df['signal'] == 'None@None')
-                )) | (df['canonical_site'] != -1)
-            ]
-        return self._filter_tpm(self._set_index(df))
+            df = df[~(
+                (df['fracA'] > 7) &
+                (df['signal'] == 'None@None')
+            )]
+        return df
 
     def read_counts(self, sample=None, strand=None):
         sample = sample or 'all'
 
         if strand == '+':
             df = pr.read_bigwig(
-                str(self.lapa_dir / ('%s_tes_counts_pos.bw' % sample))).df
+                str(self.count_dir / ('%s_polyA_counts_pos.bw' % sample))).df
             df['Strand'] = '+'
             return df.rename(columns={'Value': 'count'})
         elif strand == '-':
             df = pr.read_bigwig(
-                str(self.lapa_dir / ('%s_tes_counts_neg.bw' % sample))).df
+                str(self.count_dir / ('%s_polyA_counts_neg.bw' % sample))).df
             df['Strand'] = '-'
             return df.rename(columns={'Value': 'count'})
         else:
@@ -62,7 +76,7 @@ class LapaResult:
 
     def attribute(self, field):
         df = pd.concat([
-            self.read_apa(sample)
+            self.read_sample(sample)
             .drop_duplicates(_core_cols)
             .rename(columns={field: sample})[sample]
             for sample in self.samples
@@ -79,6 +93,13 @@ class LapaResult:
     def gene_id(self):
         return self.attribute('gene_id').apply(
             lambda row: row[~row.isna()][0], axis=1)
+
+    @staticmethod
+    def _set_index(df):
+        df['name'] = df['Chromosome'] + ':' \
+            + df['polyA_site'].astype('str') + ':' \
+            + df['Strand'].astype('str')
+        return df.set_index('name')
 
     @staticmethod
     def _agg_per_groups(df, groups, agg_func):
@@ -197,13 +218,3 @@ class LapaResult:
     #     ], axis=1)
 
     #     return df
-
-    @staticmethod
-    def _set_index(df):
-        df['name'] = df['Chromosome'] + ':' \
-            + df['polyA_site'].astype('str') + ':' \
-            + df['Strand'].astype('str')
-        return df.set_index('name')
-
-    def _filter_tpm(self, df):
-        return df[df['tpm'] >= self.tpm_cutoff]

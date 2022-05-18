@@ -32,9 +32,4 @@ include: "figures/Snakefile"
 
 rule all:
     input:
-        rules.all_correction.input,
-        rules.all_figure.input,
-        # rules.all_plot.input,
-        # rules.all_benchmark.input,
-        # rules.all_correction.input,
-        # rules.all_c2c12.input
+        rules.all_figure.input

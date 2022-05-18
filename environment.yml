@@ -18,6 +18,7 @@ dependencies:
     - jupyter
     - notebook
     - pytest
+    - pytest-xdist
     - cython
     - pyfaidx
     - seaborn

@@ -36,7 +36,7 @@ def link_path(tmp_path):
         'read_Start': [5000, 6000, 5000, 90000, 10, 100, 4000],
         'read_End': [10001, 9750, 9000, 100000, 20, 200, 10000],
         'Strand': pd.Categorical(['+', '+', '+', '+', '+', '-', '+']),
-        'start_site': [5000, 5000, 5000, -1, 10, 200, 4000],
+        'tss_site': [5000, 5000, 5000, -1, 10, 200, 4000],
         'polyA_site': [10005, 10005, -1, -1, 20, -1, 10000]
     }).to_csv(link_path, index=False)
 
@@ -48,7 +48,7 @@ def test__transcript_tss_tes(link_path, read_annot_link_path):
     pd.testing.assert_frame_equal(df, pd.DataFrame({
         'transcript_id': ['t1', 't1', 't1', 't2'],
         'Strand': ['+', '+', '+', '+'],
-        'start_site': [4000, 5000, 5000, -1],
+        'tss_site': [4000, 5000, 5000, -1],
         'polyA_site': [10000, -1, 10005, -1],
         'sample': ['test', 'test', 'test', 'test'],
         'read_Start': [4000, 5000, 5000, 90000],
@@ -59,7 +59,7 @@ def test__transcript_tss_tes(link_path, read_annot_link_path):
     df = _transcript_tss_tes(df)
     pd.testing.assert_frame_equal(df, pd.DataFrame({
         'transcript_id': ['t1#0'],
-        'start_site': [5000],
+        'tss_site': [5000],
         'polyA_site': [10005],
         'sample': ['test'],
         'count': [2]
@@ -90,18 +90,18 @@ def test_Transcript_copy(modifier):
     assert all(df_exons['exon_id'].str.endswith('#0'))
 
 
-def test_Transcript_update_start_site(modifier):
+def test_Transcript_update_tss_site(modifier):
     transcript = modifier.fetch_transcript('ENST00000308278.12') \
                          .copy('ENST00000308278.12#0')
 
-    transcript.update_start_site(732411 - 100)
+    transcript.update_tss_site(732411 - 100)
     transcript.df['Start'].iloc[0] == 732411 - 100
     transcript.df['Start'].iloc[1] == 732411 - 100
 
     transcript = modifier.fetch_transcript('ENST00000579788.5') \
                          .copy('ENST00000579788.5#0')
 
-    transcript.update_start_site(64020602 + 100)
+    transcript.update_tss_site(64020602 + 100)
     transcript.df['End'].iloc[0] == 64020602 + 100
     transcript.df['End'].iloc[0] == 64020602 + 100
 
@@ -130,10 +130,10 @@ def test_GtfModifier_to_gtf(tmp_path, modifier):
     t2 = modifier.fetch_transcript('ENST00000308278.12').copy(
         'ENST00000308278.12#1')
 
-    t1.update_start_site(732411 - 100)
+    t1.update_tss_site(732411 - 100)
     t1.update_polyA_site(742972 + 100)
 
-    t2.update_start_site(732411 + 100)
+    t2.update_tss_site(732411 + 100)
     t2.update_polyA_site(742972 - 100)
 
     modifier.add_transcript(t1)
@@ -189,7 +189,7 @@ def test_correct_talon(tmp_path, lapa_links_chr17):
 
     df_links = pd.read_csv(lapa_links_chr17)
     df_links = df_links[(df_links['polyA_site'] != -1) &
-                        (df_links['start_site'] != -1)]
+                        (df_links['tss_site'] != -1)]
     linked_transcripts = df_read_annot[
         df_read_annot['read_name'].isin(df_links['read_name'])]['annot_transcript_id']
 

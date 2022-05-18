@@ -3,6 +3,7 @@ import pysam
 import pyBigWig
 import pandas as pd
 import numpy as np
+from lapa.utils.io import read_talon_read_annot
 from lapa.count import PolyaTailCounter, FivePrimeCounter, \
     ThreePrimeCounter,  FivePrimeCounter, \
     TesMultiCounter, TssMultiCounter
@@ -165,12 +166,11 @@ def test_TesMultiCounter_samples(tmp_path):
     # Test multiple samples
     df = pd.DataFrame({
         'sample': ['short_rep1', 'short_rep2', 'short', 'short'],
+        'dataset': ['short', 'short', 'short', 'short'],
         'path': [short_bam, short_bam, short_bam, short_bam]
     })
-    csv_path = tmp_path / 'samples.csv'
-    df.to_csv(csv_path)
 
-    counter = TesMultiCounter(csv_path, method='tail')
+    counter = TesMultiCounter(df, method='tail')
     df_all, tes = counter.to_df()
 
     pd.testing.assert_frame_equal(
@@ -192,40 +192,45 @@ def test_TesMultiCounter_samples(tmp_path):
     output_dir.mkdir()
 
     TesMultiCounter._to_bigwig(df_all, tes, chr17_chrom_sizes,
-                               output_dir, prefix='tes')
+                               output_dir)
 
-    assert {i.name for i in output_dir.iterdir()} == {
-        'all_tes_counts_pos.bw',
-        'all_tes_counts_neg.bw',
-        'all_tes_coverage_pos.bw',
-        'all_tes_coverage_neg.bw',
-        'all_tes_ratio_pos.bw',
-        'all_tes_ratio_neg.bw',
-
-        'short_tes_counts_pos.bw',
-        'short_tes_counts_neg.bw',
-        'short_tes_coverage_pos.bw',
-        'short_tes_coverage_neg.bw',
-        'short_tes_ratio_pos.bw',
-        'short_tes_ratio_neg.bw',
-
-        'short_rep1_tes_counts_pos.bw',
-        'short_rep1_tes_counts_neg.bw',
-        'short_rep1_tes_coverage_pos.bw',
-        'short_rep1_tes_coverage_neg.bw',
-        'short_rep1_tes_ratio_pos.bw',
-        'short_rep1_tes_ratio_neg.bw',
-
-        'short_rep2_tes_counts_pos.bw',
-        'short_rep2_tes_counts_neg.bw',
-        'short_rep2_tes_coverage_pos.bw',
-        'short_rep2_tes_coverage_neg.bw',
-        'short_rep2_tes_ratio_pos.bw',
-        'short_rep2_tes_ratio_neg.bw'
+    assert {i.name for i in (output_dir / 'counts').iterdir()} == {
+        'all_polyA_counts_pos.bw',
+        'all_polyA_counts_neg.bw',
+        'short_polyA_counts_pos.bw',
+        'short_polyA_counts_neg.bw',
+        'short_rep1_polyA_counts_pos.bw',
+        'short_rep1_polyA_counts_neg.bw',
+        'short_rep2_polyA_counts_pos.bw',
+        'short_rep2_polyA_counts_neg.bw'
     }
 
-    bw_pos = pyBigWig.open(str(output_dir / 'all_tes_counts_pos.bw'))
-    bw_neg = pyBigWig.open(str(output_dir / 'all_tes_counts_neg.bw'))
+    assert {i.name for i in (output_dir / 'coverage').iterdir()} == {
+        'all_polyA_coverage_pos.bw',
+        'all_polyA_coverage_neg.bw',
+        'short_polyA_coverage_pos.bw',
+        'short_polyA_coverage_neg.bw',
+        'short_rep1_polyA_coverage_pos.bw',
+        'short_rep1_polyA_coverage_neg.bw',
+        'short_rep2_polyA_coverage_pos.bw',
+        'short_rep2_polyA_coverage_neg.bw'
+    }
+
+    assert {i.name for i in (output_dir / 'ratio').iterdir()} == {
+        'all_polyA_ratio_pos.bw',
+        'all_polyA_ratio_neg.bw',
+        'short_polyA_ratio_pos.bw',
+        'short_polyA_ratio_neg.bw',
+        'short_rep1_polyA_ratio_pos.bw',
+        'short_rep1_polyA_ratio_neg.bw',
+        'short_rep2_polyA_ratio_pos.bw',
+        'short_rep2_polyA_ratio_neg.bw'
+    }
+
+    bw_pos = pyBigWig.open(
+        str(output_dir / 'counts' / 'all_polyA_counts_pos.bw'))
+    bw_neg = pyBigWig.open(
+        str(output_dir / 'counts' / 'all_polyA_counts_neg.bw'))
     count = np.nansum(
         bw_pos.values('chr17',
                       int(df_all['End'].min() - 1),
@@ -237,8 +242,10 @@ def test_TesMultiCounter_samples(tmp_path):
     )
     assert df_all['count'].sum() == count
 
-    bw_pos = pyBigWig.open(str(output_dir / 'short_tes_counts_pos.bw'))
-    bw_neg = pyBigWig.open(str(output_dir / 'short_tes_counts_neg.bw'))
+    bw_pos = pyBigWig.open(
+        str(output_dir / 'counts' / 'short_polyA_counts_pos.bw'))
+    bw_neg = pyBigWig.open(
+        str(output_dir / 'counts' / 'short_polyA_counts_neg.bw'))
     count = np.nansum(
         bw_pos.values('chr17',
                       int(df_all['End'].min() - 1),
@@ -255,31 +262,38 @@ def test_TesMultiCounter_single_sample(tmp_path):
     # Test single sample
     df = pd.DataFrame({
         'sample': ['short', 'short'],
-        'path': [short_bam, short_bam]
+        'path': [short_bam, short_bam],
+        'dataset': ['short', 'short']
     })
-    csv_path = tmp_path / 'samples.csv'
-    df.to_csv(csv_path)
 
-    counter = TesMultiCounter(csv_path, method='tail')
+    counter = TesMultiCounter(df, method='tail')
     df_all, tes = counter.to_df()
 
     output_dir = tmp_path / 'single_sample'
     output_dir.mkdir()
     TesMultiCounter._to_bigwig(df_all, tes, chr17_chrom_sizes,
-                               output_dir, prefix='tes')
-    assert {i.name for i in output_dir.iterdir()} == {
-        'all_tes_counts_pos.bw',
-        'all_tes_counts_neg.bw',
-        'all_tes_coverage_pos.bw',
-        'all_tes_coverage_neg.bw',
-        'all_tes_ratio_pos.bw',
-        'all_tes_ratio_neg.bw'
+                               output_dir)
+
+    assert {i.name for i in (output_dir / 'counts').iterdir()} == {
+        'all_polyA_counts_pos.bw',
+        'all_polyA_counts_neg.bw'
+    }
+
+    assert {i.name for i in (output_dir / 'coverage').iterdir()} == {
+        'all_polyA_coverage_pos.bw',
+        'all_polyA_coverage_neg.bw'
+    }
+
+    assert {i.name for i in (output_dir / 'ratio').iterdir()} == {
+        'all_polyA_ratio_pos.bw',
+        'all_polyA_ratio_neg.bw'
     }
 
 
 def test_TesMultiCounter_samples_read_annot(tmp_path):
-    # Test read_annot
-    counter = TesMultiCounter(read_annot)
+    df_read_annot = read_talon_read_annot(read_annot)
+
+    counter = TesMultiCounter(df_read_annot, is_read_annot=True)
     df_all, tes = counter.to_df()
 
     output_dir = tmp_path / 'read_annot_dir'
@@ -287,25 +301,31 @@ def test_TesMultiCounter_samples_read_annot(tmp_path):
     TesMultiCounter._to_bigwig(df_all, tes, chr17_chrom_sizes,
                                output_dir, prefix='tes')
 
-    assert {i.name for i in output_dir.iterdir()} == {
+    assert {i.name for i in (output_dir / 'counts').iterdir()} == {
         'all_tes_counts_pos.bw',
         'all_tes_counts_neg.bw',
-        'all_tes_coverage_pos.bw',
-        'all_tes_coverage_neg.bw',
-        'all_tes_ratio_pos.bw',
-        'all_tes_ratio_neg.bw',
-
         'gm12878_tes_counts_neg.bw',
         'gm12878_tes_counts_pos.bw',
+        'all_tes_counts_pos.bw',
+        'all_tes_counts_neg.bw',
+        'hepg2_tes_counts_neg.bw',
+        'hepg2_tes_counts_pos.bw'
+    }
+
+    assert {i.name for i in (output_dir / 'coverage').iterdir()} == {
+        'all_tes_coverage_pos.bw',
+        'all_tes_coverage_neg.bw',
         'gm12878_tes_coverage_neg.bw',
         'gm12878_tes_coverage_pos.bw',
+        'hepg2_tes_coverage_neg.bw',
+        'hepg2_tes_coverage_pos.bw'
+    }
+
+    assert {i.name for i in (output_dir / 'ratio').iterdir()} == {
+        'all_tes_ratio_pos.bw',
+        'all_tes_ratio_neg.bw',
         'gm12878_tes_ratio_neg.bw',
         'gm12878_tes_ratio_pos.bw',
-
-        'hepg2_tes_counts_neg.bw',
-        'hepg2_tes_counts_pos.bw',
-        'hepg2_tes_coverage_neg.bw',
-        'hepg2_tes_coverage_pos.bw',
         'hepg2_tes_ratio_neg.bw',
         'hepg2_tes_ratio_pos.bw'
     }
@@ -313,7 +333,9 @@ def test_TesMultiCounter_samples_read_annot(tmp_path):
 
 def test_TssMultiCounter_samples(tmp_path):
     # Test read_annot
-    counter = TssMultiCounter(read_annot)
+    df_read_annot = read_talon_read_annot(read_annot)
+
+    counter = TssMultiCounter(df_read_annot, is_read_annot=True)
     df_all, tes = counter.to_df()
 
     output_dir = tmp_path / 'read_annot_dir'
@@ -321,26 +343,30 @@ def test_TssMultiCounter_samples(tmp_path):
     TssMultiCounter._to_bigwig(df_all, tes, chr17_chrom_sizes,
                                output_dir, prefix='tss')
 
-    assert {i.name for i in output_dir.iterdir()} == {
+    assert {i.name for i in (output_dir / 'counts').iterdir()} == {
         'all_tss_counts_pos.bw',
         'all_tss_counts_neg.bw',
-        'all_tss_coverage_pos.bw',
-        'all_tss_coverage_neg.bw',
-        'all_tss_ratio_pos.bw',
-        'all_tss_ratio_neg.bw',
-
         'gm12878_tss_counts_neg.bw',
         'gm12878_tss_counts_pos.bw',
+        'hepg2_tss_counts_neg.bw',
+        'hepg2_tss_counts_pos.bw'
+    }
+
+    assert {i.name for i in (output_dir / 'coverage').iterdir()} == {
+        'all_tss_coverage_pos.bw',
+        'all_tss_coverage_neg.bw',
         'gm12878_tss_coverage_neg.bw',
         'gm12878_tss_coverage_pos.bw',
+        'hepg2_tss_coverage_neg.bw',
+        'hepg2_tss_coverage_pos.bw'
+    }
+
+    assert {i.name for i in (output_dir / 'ratio').iterdir()} == {
+        'all_tss_ratio_pos.bw',
+        'all_tss_ratio_neg.bw',
         'gm12878_tss_ratio_neg.bw',
         'gm12878_tss_ratio_pos.bw',
-
-
-        'hepg2_tss_counts_neg.bw',
-        'hepg2_tss_counts_pos.bw',
-        'hepg2_tss_coverage_neg.bw',
-        'hepg2_tss_coverage_pos.bw',
         'hepg2_tss_ratio_neg.bw',
         'hepg2_tss_ratio_pos.bw'
+
     }

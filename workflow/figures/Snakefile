@@ -42,10 +42,8 @@ rule figure_4:
 
 rule figure_5:
     input:
-        correction = rules.plot_overlap_annotation.output[0].format(
-            platform='PacBio', counting='end', library_prep='cDNA'),
-        correction_tss = rules.plot_overlap_tss_annotation.output[0].format(
-            platform='PacBio', counting='end', library_prep='cDNA'),
+        correction = 'reports/figures/correction/cDNA_PacBio_end_overlap_annotation_both.png',
+        correction_tss = 'reports/figures/correction/cDNA_PacBio_end_overlap_tss_annotation_both.png',
         percentage = 'reports/figures/correction/correction_percentage.png',
         percentage_tss = 'reports/figures/correction/correction_tss_percentage.png'
     output:

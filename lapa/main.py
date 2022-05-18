@@ -6,7 +6,7 @@ from lapa.correction import correct_talon
 
 @click.command()
 @click.option('--alignment',
-              help='Bam or Sam files',
+              help='Bam or csv file.',
               required=True)
 @click.option('--fasta',
               help='Genome reference (Encode or Ensembl fasta)',
@@ -52,9 +52,10 @@ from lapa.correction import correct_talon
               'if number of reads subceed `the cluster_extent_cutoff`',
               default=25,
               type=int)
-def cli_lapa(alignment, fasta, annotation, chrom_sizes, output_dir, counting_method,
-             min_tail_len=10, min_percent_a=0.9, mapq=10,
-             cluster_extent_cutoff=3, cluster_ratio_cutoff=0.05, cluster_window=25):
+def cli_lapa(alignment, fasta, annotation, chrom_sizes, output_dir,
+             counting_method, min_tail_len=10, min_percent_a=0.9, mapq=10,
+             cluster_extent_cutoff=3, cluster_ratio_cutoff=0.05,
+             cluster_window=25):
     lapa(alignment, fasta, annotation, chrom_sizes, output_dir,
          counting_method, min_tail_len=min_tail_len,
          min_percent_a=min_percent_a,
@@ -129,31 +130,6 @@ def cli_lapa_link_tss_to_tes(alignment, lapa_dir, lapa_tss_dir, output,
     df = link_tss_to_tes(alignment, lapa_dir, lapa_tss_dir,
                          mapq=mapq, min_read_length=min_read_length)
     df.to_csv(output, index=False)
-
-
-# @click.command()
-# @click.option('--gtf_input',
-#               help='Input gtf file need to corrected',
-#               required=True)
-# @click.option('--gtf_output',
-#               help='Output corrected gtf file',
-#               required=True)
-# @click.option('--lapa_dir',
-#               help='LAPA output directory of generated before with `lapa` command',
-#               required=True)
-# @click.option('--lapa_tss_dir',
-#               help='LAPA output directory of generated before with `lapa_tss` command',
-#               required=True)
-# @click.option('--read_annot',
-#               help='read_annot file output by TALON',
-#               required=True)
-# @click.option('--fasta',
-#               help='Genome reference (Encode or Ensembl fasta)',
-#               required=True)
-# def cli_lapa_correct_talon_gtf(gtf_input, gtf_output, lapa_dir, lapa_tss_dir,
-#                                read_annot, fasta):
-#     correct_gtf(gtf_input, gtf_output, lapa_dir, lapa_tss_dir,
-#                 read_annot, fasta)
 
 
 @click.command()

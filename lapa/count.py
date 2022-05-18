@@ -1,15 +1,24 @@
-import math
+import logging
 from collections import defaultdict, Counter
 import pysam
 import pandas as pd
 import pyranges as pr
-import heapq
 from tqdm import tqdm
 import matplotlib.pyplot as plt
 from lapa.utils.io import bw_from_pyranges, \
-    read_sample_csv, read_talon_read_annot, \
     _read_talon_read_annot_five_prime_count, \
     _read_talon_read_annot_three_prime_count
+
+
+def _tqdm_counting(iterable):
+    '''
+    Adaptor for tqdm to integrate to logging
+    '''
+    logger = logging.getLogger('progress')
+    file = logger.handlers[0].stream if logger.handlers else None
+
+    return tqdm(iterable, mininterval=5, file=file,
+                bar_format='- {n_fmt} reads counted...\n')
 
 
 class BaseCounter:
@@ -36,12 +45,12 @@ class BaseCounter:
         >>> os.listdir(output_dir)
         ['mid_pos.bw', 'mid_neg.bw']
         >>> counter.to_df()
-        +--------------+-----------+-----------+--------------+------------+
-        | Chromosome   | Start     | End       | Strand       | count      |
-        | (category)   | (int32)   | (int32)   | (category)   | (uint16)   |
-        |--------------+-----------+-----------+--------------+------------|
-        | chr1         | 887771    | 887772    | +            | 5          |
-        | chr1         | 994684    | 994685    | -            | 8          |
+        +--------------+-----------+-----------+--------------+-----------+------------+
+        | Chromosome   | Start     | End       | Strand       | count     | coverage   |
+        | (category)   | (int32)   | (int32)   | (category)   | (int64)   | (int64)    |
+        |--------------+-----------+-----------+--------------+-----------+------------|
+        | chr1         | 887771    | 887772    | +            | 5         | 5          |
+        | chr1         | 994684    | 994685    | -            | 8         | 10         |
         ...
     '''
 
@@ -69,7 +78,7 @@ class BaseCounter:
             bam = self.bam
 
         if self.progress:
-            bam = tqdm(bam)
+            bam = _tqdm_counting(bam)
 
         for read in bam:
             if self.filter_read(read):
@@ -94,6 +103,8 @@ class BaseCounter:
             Dict[(chrom, pos, strand), int]: Returns dictionary of
                 chromosome, position and strand ad index and counts as values.
         '''
+        logging.getLogger('progress').info(f'Counting `{self.bam_file}`:')
+
         counts = Counter()
 
         for read in self.iter_reads():
@@ -102,47 +113,6 @@ class BaseCounter:
             counts[(read.reference_name, site, strand)] += 1
 
         return dict(counts)
-
-    # def _coverage(self, pq_pos, reads):
-    #     heapq.heapify(pq_pos)
-
-    #     pq_ends = [math.inf]
-
-    #     # reads = list(reads)
-    #     read = next(reads)
-    #     cov = 0
-
-    #     while pq_pos:
-    #         cur_pos = pq_pos[0] if pq_pos[0] < pq_ends[0] else pq_ends[0]
-
-    #         if read.reference_start < cur_pos:
-    #             cov += 1
-    #             read = next(reads)
-    #             heapq.heappush(pq_ends, read.reference_end)
-    #         else:
-    #             if pq_pos[0] < pq_ends[0]:
-    #                 yield heapq.heappop(pq_pos), cov
-    #             else:
-    #                 heapq.heappop(pq_ends)
-    #                 cov -= 1
-
-    # def coverage(self, positions):
-    #     '''Calculate coverage for given positions'''
-
-    #     chrom_strand_pos = defaultdict(list)
-
-    #     for chrom, pos, strand in positions:
-    #         chrom_strand_pos[(chrom, strand)].append(pos)
-
-    #     coverages = dict()
-
-    #     for (chrom, strand), pos in chrom_strand_pos.items():
-    #         pos_coverage = self._coverage(pos, self.iter_reads(chrom, strand))
-
-    #         for pos, cov in pos_coverage:
-    #             coverages[(chrom, pos, strand)] = cov
-
-    #     return coverages
 
     def count_read(self, read: pysam.AlignedSegment):
         raise NotImplementedError()
@@ -176,24 +146,28 @@ class BaseCounter:
         if isinstance(gr, pd.DataFrame):
             gr = pr.PyRanges(gr)
 
+        (output_dir / 'counts').mkdir(exist_ok=True)
+        (output_dir / 'coverage').mkdir(exist_ok=True)
+        (output_dir / 'ratio').mkdir(exist_ok=True)
+
         bw_from_pyranges(
             gr, 'count',
             chrom_sizes,
-            str(output_dir / f'{prefix}_counts_pos.bw'),
-            str(output_dir / f'{prefix}_counts_neg.bw')
+            str(output_dir / 'counts' / f'{prefix}_counts_pos.bw'),
+            str(output_dir / 'counts' / f'{prefix}_counts_neg.bw')
         )
         bw_from_pyranges(
             gr, 'coverage',
             chrom_sizes,
-            str(output_dir / f'{prefix}_coverage_pos.bw'),
-            str(output_dir / f'{prefix}_coverage_neg.bw')
+            str(output_dir / 'coverage' / f'{prefix}_coverage_pos.bw'),
+            str(output_dir / 'coverage' / f'{prefix}_coverage_neg.bw')
         )
         gr = gr.assign('ratio', lambda df: df['count'] / df['coverage'])
         bw_from_pyranges(
             gr, 'ratio',
             chrom_sizes,
-            str(output_dir / f'{prefix}_ratio_pos.bw'),
-            str(output_dir / f'{prefix}_ratio_neg.bw')
+            str(output_dir / 'ratio' / f'{prefix}_ratio_pos.bw'),
+            str(output_dir / 'ratio' / f'{prefix}_ratio_neg.bw')
         )
 
     def to_bigwig(self, chrom_sizes, output_dir, prefix='lapa_counts'):
@@ -268,7 +242,7 @@ class ThreePrimeCounter(BaseCounter):
     Examples:
         Count 3' ends of the read per position.
 
-        >>> counter = EndCounter(bam_file)
+        >>> counter = ThreePrimeCounter(bam_file)
         >>> counter.to_bigwig(chrom_sizes, output_dir, 'mid')
         >>> os.listdir(output_dir)
         ['lapa_count_pos.bw', 'lapa_count_neg.bw']
@@ -492,51 +466,36 @@ class PolyaTailCounter(ThreePrimeCounter):
 
 
 class BaseMultiCounter:
+    '''
+    Base class to counts reads from multiple aligment files.
 
-    def __init__(self, alignment: str, method: str, mapq=10):
-        self.alignment = alignment
+    Args:
+      df_alignment: DataFrame with columns of ['sample', 'dataset', 'path']
+        where sample is the sample name, dataset is name of the group
+        (replicates) of sample belong, path is the path to bam file.
+      method: Counting method implemented by child class.
+      mapq: minimum mapping quality
+      is_read_annot: Talon reads annotate file can be provided to `df_alignment`
+        argument in that case this argument need to True.
+    '''
+
+    def __init__(self, df_alignment: pd.DataFrame, method: str, mapq=10,
+                 is_read_annot=False):
+        self.df_alignment = df_alignment
         self.method = method
         self.mapq = mapq
 
-        self.is_read_annot = False
-        self.df_alignment = self._prepare_alignment(str(alignment))
+        self.is_read_annot = is_read_annot
 
     def build_counter(self, bam):
         raise NotImplementedError()
 
     def _count_read_annot(self):
-        raise NotADirectoryError()
-
-    def _prepare_alignment(self, alignment):
-        '''
-        '''
-        if alignment.endswith('.csv'):
-            df = pd.read_csv(alignment)
-            assert all(pd.Series(['sample', 'path']).isin(df.columns)), \
-                'provided csv file should be consist of columns `sample` and `path`'
-            return df[['sample', 'path']]
-
-        elif alignment.endswith('.bam'):
-            alignments = alignment.split(',')
-            return pd.DataFrame({
-                'sample': ['all'] * len(alignments),
-                'path': alignments
-            })
-
-        elif alignment.endswith('_read_annot.tsv'):
-            # HACKED: to support talon read_annot
-            self.is_read_annot = True
-            self.method = None
-            return None
-
-        else:
-            raise ValueError(
-                'Unknown file alignment format: supported '
-                'file formats are `bam` and `sample.csv`')
+        raise NotImplementedError()
 
     @staticmethod
     def _to_bigwig(df_all, tes, chrom_sizes,
-                   output_dir, prefix='lapa_counts'):
+                   output_dir, prefix='polyA'):
         save_count_bw(df_all, output_dir, chrom_sizes, f'all_{prefix}')
 
         if len(tes) > 1:
@@ -545,6 +504,15 @@ class BaseMultiCounter:
                               f'{sample}_{prefix}')
 
     def to_df(self):
+        '''
+        Export counts as dataframe.
+
+        Returns:
+          (pd.DataFrame, Dict[str, pd.DataFrame]): Counst as tuple
+          the first element is dataframe of all the counts and second element
+          dictonary where first element is the name of sample and second element
+          dataframe of counts.
+        '''
         # Counting from alignment files
         if self.is_read_annot:
             # HACKED: to support talon read_annot
@@ -574,12 +542,53 @@ class BaseMultiCounter:
 
 
 class TesMultiCounter(BaseMultiCounter):
+    '''
+    Counts transcript end sites from multiple aligment files.
+
+    Args:
+        df_alignment: DataFrame with columns of ['sample', 'dataset', 'path']
+          where sample is the sample name, dataset is name of the group
+          (replicates) of sample belong, path is the path to bam file.
+        method: either `end` or `tail` see `PolyaTailCounter` \
+          and `ThreePrimeCounter` for countering behavior.
+        mapq: minimum mapping quality
+        is_read_annot: Talon reads annotate file can be provided to `df_alignment`
+          argument in that case this argument need to True.
+
+    Examples:
+        Counts transcript end files for two samples with two replicates
+
+        >>> df_alignment = pd.DataFrame({
+        >>>     'sample': ['s1', 's2', 's3', 's4'],
+        >>>     'dataset': ['d1', 'd2', 'd3', 'd4'],
+        >>>     'path': ['s1.bam', 's2.bam', 's3.bam', 's4.bam']
+        >>> })
+        >>> counter = TesMultiCounter(df_alignment)
+        >>> counter.to_bigwig(chrom_sizes, output_dir) # export counts as bw
+        >>> df_all, samples = counter.to_df() # or export as df
+        >>> df_all
+        +--------------+-----------+-----------+--------------+-----------+------------+
+        | Chromosome   | Start     | End       | Strand       | count     | coverage   |
+        | (category)   | (int32)   | (int32)   | (category)   | (int64)   | (int64)    |
+        |--------------+-----------+-----------+--------------+-----------+------------|
+        | chr1         | 887771    | 887772    | +            | 5         | 5          |
+        | chr1         | 994684    | 994685    | -            | 8         | 10         |
+        ...
+        >>> samples['s1']
+        +--------------+-----------+-----------+--------------+-----------+------------+
+        | Chromosome   | Start     | End       | Strand       | count     | coverage   |
+        | (category)   | (int32)   | (int32)   | (category)   | (int64)   | (int64)    |
+        |--------------+-----------+-----------+--------------+-----------+------------|
+        | chr1         | 887771    | 887772    | +            | 5         | 5          |
+        | chr1         | 994684    | 994685    | -            | 8         | 10         |
+        ...
+    '''
 
     def __init__(self, alignment, method='end', mapq=10,
-                 min_tail_len=10, min_percent_a=0.9):
+                 min_tail_len=10, min_percent_a=0.9, is_read_annot=False):
         self.min_tail_len = min_tail_len
         self.min_percent_a = min_percent_a
-        super().__init__(alignment, method, mapq)
+        super().__init__(alignment, method, mapq, is_read_annot)
 
     def build_counter(self, bam):
         if self.method == 'tail':
@@ -592,7 +601,7 @@ class TesMultiCounter(BaseMultiCounter):
                 f'`method` need to be either `tail` or `end` but {method} given')
 
     def _count_read_annot(self):
-        df = read_talon_read_annot(self.alignment)
+        df = self.df_alignment
 
         cols = ['Chromosome', 'Start', 'End', 'Strand', 'sample']
         df_count = list()
@@ -615,9 +624,50 @@ class TesMultiCounter(BaseMultiCounter):
 
 
 class TssMultiCounter(BaseMultiCounter):
+    '''
+    Counts transcript start sites from multiple aligment files.
 
-    def __init__(self, alignment, method='start', mapq=10):
-        super().__init__(alignment, method, mapq)
+    Args:
+        df_alignment: DataFrame with columns of ['sample', 'dataset', 'path']
+          where sample is the sample name, dataset is name of the group
+          (replicates) of sample belong, path is the path to bam file.
+        method: either `end` or `tail` see `FiveTailCounter`
+        mapq: minimum mapping quality
+        is_read_annot: Talon reads annotate file can be provided to
+          `df_alignment` argument in that case this argument need to True.
+
+    Examples:
+        Counts transcript end files for two samples with two replicates
+
+        >>> df_alignment = pd.DataFrame({
+        >>>     'sample': ['s1', 's2', 's3', 's4'],
+        >>>     'dataset': ['d1', 'd2', 'd3', 'd4'],
+        >>>     'path': ['s1.bam', 's2.bam', 's3.bam', 's4.bam']
+        >>> })
+        >>> counter = TssMultiCounter(df_alignment)
+        >>> counter.to_bigwig(chrom_sizes, output_dir) # export counts as bw
+        >>> df_all, samples = counter.to_df() # or export as df
+        >>> df_all
+        +--------------+-----------+-----------+--------------+-----------+------------+
+        | Chromosome   | Start     | End       | Strand       | count     | coverage   |
+        | (category)   | (int32)   | (int32)   | (category)   | (int64)   | (int64)    |
+        |--------------+-----------+-----------+--------------+-----------+------------|
+        | chr1         | 887771    | 887772    | +            | 5         | 5          |
+        | chr1         | 994684    | 994685    | -            | 8         | 10         |
+        ...
+        >>> samples['s1']
+        +--------------+-----------+-----------+--------------+-----------+------------+
+        | Chromosome   | Start     | End       | Strand       | count     | coverage   |
+        | (category)   | (int32)   | (int32)   | (category)   | (int64)   | (int64)    |
+        |--------------+-----------+-----------+--------------+-----------+------------|
+        | chr1         | 887771    | 887772    | +            | 5         | 5          |
+        | chr1         | 994684    | 994685    | -            | 8         | 10         |
+        ...
+    '''
+
+    def __init__(self, alignment, method='start', mapq=10,
+                 is_read_annot=False):
+        super().__init__(alignment, method, mapq, is_read_annot)
 
     def build_counter(self, bam):
         if self.method == 'start':
@@ -626,7 +676,7 @@ class TssMultiCounter(BaseMultiCounter):
             raise ValueError('`method` need to be either `start`')
 
     def _count_read_annot(self):
-        df = read_talon_read_annot(self.alignment)
+        df = self.df_alignment
 
         cols = ['Chromosome', 'Start', 'End', 'Strand', 'sample']
         df_count = list()

@@ -6,14 +6,14 @@ from lapa.utils.common import chroms_chr
 
 
 cluster_col_order = [
-    'Chromosome', 'Start', 'End', 'polyA_site', 'tpm', 'Strand',
-    'Feature', 'count', 'fracA', 'signal', 'canonical_site'
+    'Chromosome', 'Start', 'End', 'polyA_site', 'count', 'Strand',
+    'Feature', 'gene_id', 'tpm', 'gene_count', 'usage',
+    'fracA', 'signal', 'annotated_site'
 ]
 
-sample_col_order = [
-    'Chromosome', 'Start', 'End', 'polyA_site', 'tpm', 'Strand',
-    'Feature', 'gene_id', 'count', 'gene_count', 'usage',
-    'fracA', 'signal', 'canonical_site'
+tss_cluster_col_order = [
+    'Chromosome', 'Start', 'End', 'tss_site', 'count', 'Strand',
+    'Feature', 'gene_id', 'tpm', 'gene_count', 'usage', 'annotated_site'
 ]
 
 
@@ -91,7 +91,7 @@ def read_sample_csv(path, mapq=10):
     df_sample = pd.read_csv(path)
 
     df = list()
-    for i, row in df_sample.iterrows():
+    for _, row in df_sample.iterrows():
         df.append(read_bam_ends(row['path'], sample=row['sample']))
 
     return pd.concat(df)
@@ -126,12 +126,5 @@ def read_polyA_cluster(path):
 
 def read_tss_cluster(path):
     df = pd.read_csv(path, header=None, sep='\t')
-    df.columns = ['Chromosome', 'Start', 'End',
-                  'start_site', 'count', 'Strand']
-    return df
-
-
-def read_apa_sample(path):
-    df = pd.read_csv(path, header=None, sep='\t')
-    df.columns = sample_col_order
+    df.columns = tss_cluster_col_order
     return df
