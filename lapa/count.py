@@ -460,9 +460,10 @@ class PolyaTailCounter(ThreePrimeCounter):
 
     def filter_read(self, read):
         '''Filter tailed reads and quality'''
-        _, tail_len, percent_a = self.detect_polyA_tail(read)
-        return super().filter_read(read) \
-            and self._read_is_tailed(tail_len, percent_a)
+        if super().filter_read(read):
+            _, tail_len, percent_a = self.detect_polyA_tail(read)
+            return self._read_is_tailed(tail_len, percent_a)
+        return False
 
 
 class BaseMultiCounter:
