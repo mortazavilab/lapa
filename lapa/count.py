@@ -261,9 +261,72 @@ class ThreePrimeCounter(BaseCounter):
         Returns 3' end of the read
         '''
         if read.is_reverse:
-            return read.reference_start
+            polya_site = read.reference_start
+            tail_base = 'T'
         else:
-            return read.reference_end
+            polya_site = read.reference_end
+            tail_base = 'A'
+
+        cigartuples = read.cigartuples
+
+        # check if clipped and get clip
+        if len(cigartuples) <= 1:
+            return polya_site
+
+        if read.is_reverse:
+            clip = cigartuples[0]
+        else:
+            clip = cigartuples[-1]
+
+        if clip[0] != 4:  # soft-clip
+            return polya_site
+
+        # calculate info about polyA
+        clip_len = clip[1]
+
+        if read.is_reverse:
+            read_seq = read.seq[clip_len:]
+            tail_base = 'T'
+        else:
+            read_seq = read.seq[:-clip_len][::-1]
+            tail_base = 'A'
+
+        read_tail_len, read_percent_a = PolyaTailCounter._calculate_tail_seq(
+            read_seq, tail_base)
+        polya_site += read_tail_len if read.is_reverse else -read_tail_len
+
+        return polya_site
+
+    @staticmethod
+    def _calculate_tail_seq(tail_seq, tail_base):
+        '''Calculate tail seq'''
+
+        assert tail_base in {'A', 'T'}
+
+        score = 0
+        best_score = 0
+
+        tail_len = 0
+        num_a = 0
+        _num_a = 0
+
+        for i, base in enumerate(tail_seq):
+            if base == tail_base:
+                score += 1
+                _num_a += 1
+            else:
+                score -= 5
+
+            if score >= best_score:
+                best_score = score
+                tail_len = i + 1
+                num_a = _num_a
+
+            if score < -20:
+                break
+
+        percent_a = num_a / tail_len if tail_len > 0 else 0
+        return tail_len, percent_a
 
 
 class FivePrimeCounter(BaseCounter):
@@ -346,11 +409,13 @@ class PolyaTailCounter(ThreePrimeCounter):
         self.min_percent_a = min_percent_a
 
     @staticmethod
-    def detect_polyA_tail(read: pysam.AlignedSegment):
+    def detect_polyA_tail(read: pysam.AlignedSegment, count_aligned=False):
         """Detect polyA tails from a read
 
         Args:
           read: aligned reads
+          count_aligned: Count aligned base pairs (likely internal priming)
+            as well in tail length.
 
         Returns:
           Tuple of polyA_site, length of tail, percent of A base in tails.
@@ -373,42 +438,31 @@ class PolyaTailCounter(ThreePrimeCounter):
         clip_len = clip[1]
 
         if read.is_reverse:
+            read_seq = read.seq[clip_len:]
             tail_seq = read.seq[:clip_len][::-1]
             polyA_site = read.reference_start
             tail_base = 'T'
         else:
+            read_seq = read.seq[:-clip_len][::-1]
             tail_seq = read.seq[-clip_len:]
             polyA_site = read.reference_end
             tail_base = 'A'
 
         tail_len, percent_a = PolyaTailCounter._calculate_tail_seq(
             tail_seq, tail_base)
-        return polyA_site, tail_len, percent_a
+        read_tail_len, read_percent_a = PolyaTailCounter._calculate_tail_seq(
+            read_seq, tail_base)
 
-    @staticmethod
-    def _calculate_tail_seq(tail_seq, tail_base):
-        '''Calculate tail seq'''
-        score = 0
-        best_score = 0
+        polyA_site += read_tail_len if read.is_reverse else -read_tail_len
 
-        tail_len = 0
-        num_a = 0
-        _num_a = 0
+        if count_aligned:
+            total_len = tail_len + read_tail_len
+            total_percent = (percent_a * tail_len +
+                             read_percent_a * read_tail_len) / total_len
 
-        for i, base in enumerate(tail_seq):
-            if base == tail_base:
-                score += 1
-                _num_a += 1
-            else:
-                score -= 4
-
-            if score >= best_score:
-                best_score = score
-                tail_len = i + 1
-                num_a = _num_a
-
-        percent_a = num_a / tail_len if tail_len > 0 else 0
-        return tail_len, percent_a
+            return polyA_site, total_len, total_percent
+        else:
+            return polyA_site, tail_len, percent_a
 
     def _read_is_tailed(self, tail_len, percent_a):
         return (tail_len >= self.min_tail_len) \
