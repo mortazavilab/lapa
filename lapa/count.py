@@ -403,10 +403,11 @@ class PolyaTailCounter(ThreePrimeCounter):
     '''
 
     def __init__(self, bam_file, mapq=10, progress=True,
-                 min_tail_len=10, min_percent_a=0.9):
+                 min_tail_len=10, min_percent_a=0.9, count_aligned=False):
         super().__init__(bam_file, mapq, progress)
         self.min_tail_len = min_tail_len
         self.min_percent_a = min_percent_a
+        self.count_aligned = count_aligned
 
     @staticmethod
     def detect_polyA_tail(read: pysam.AlignedSegment, count_aligned=False):
@@ -472,7 +473,8 @@ class PolyaTailCounter(ThreePrimeCounter):
         """Iterates polyA reads and polyA_site based on polyA filters.
         """
         for read in super().iter_reads():
-            polyA_site, tail_len, percent_a = self.detect_polyA_tail(read)
+            polyA_site, tail_len, percent_a = self.detect_polyA_tail(
+                read, self.count_aligned)
 
             if self._read_is_tailed(tail_len, percent_a):
                 yield read, polyA_site, tail_len, percent_a
