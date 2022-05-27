@@ -37,9 +37,7 @@ long_read:
       - ENCFF153SIE
       - ENCFF377IEH
       - ENCFF489PQQ
-      - ENCFF089IVT
-      - ENCFF548RZB
-      - ENCFF997UNC
+
     dRNA:
       - ENCFF155CFF
       - ENCFF771DIX
@@ -107,7 +105,7 @@ minimap:
 lapa:
   samples: data/results/lapa/{library_prep}_{platform}.csv
   lapa_dir: data/results/lapa/{library_prep}_{platform}_{counting}/
-  lapa_tss_dir: data/results/lapa_tss/{library_prep}_{platform}_{counting}/
+  lapa_tss_dir: data/results/lapa_tss/{library_prep}_{platform}/
   lapa_quantseq_dir: data/results/lapa/quantseq_Illumina_end/
 
 talon:

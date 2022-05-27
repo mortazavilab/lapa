@@ -1,30 +1,31 @@
 rule link_tss_to_tes:
     input:
-        alignment = config['talon']['read_annot'],
+        bams = sample_bams,
         lapa_dir = config['lapa']['lapa_dir'],
         lapa_tss_dir = config['lapa']['lapa_tss_dir']
     threads: 1
     resources:
-        mem_gb = 32
+        mem_gb = 64
     output:
         config['talon']['link']
-    shell:
-        "lapa_link_tss_to_tes \
-        --alignment {input.alignment} \
+    run:
+        bams = ','.join(input.bams)
+        shell('lapa_link_tss_to_tes \
+        --alignment {bams} \
         --lapa_dir {input.lapa_dir} \
         --lapa_tss_dir {input.lapa_tss_dir} \
-        --output {output}"
+        --output {output}')
 
 
 rule correct_talon:
     input:
-        alignment = config['talon']['read_annot'],
         links = config['talon']['link'],
+        read_annot = config['talon']['read_annot'],
         gtf = config['talon']['gtf'],
         abundance = config['talon']['abundance']
     threads: 1
     resources:
-        mem_gb = 32
+        mem_gb = 64
     log: 'logs/lapa/correct_talon_{library_prep}_{platform}_{counting}.log'
     output:
         gtf = config['talon']['gtf_corrected'],
@@ -32,7 +33,7 @@ rule correct_talon:
     shell:
         "lapa_correct_talon \
         --links {input.links} \
-        --read_annot {input.alignment} \
+        --read_annot {input.read_annot} \
         --gtf_input {input.gtf} \
         --gtf_output {output.gtf} \
         --abundance_input {input.abundance} \

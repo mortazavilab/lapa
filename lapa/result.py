@@ -7,7 +7,7 @@ from scipy.stats import fisher_exact
 from statsmodels.stats.multitest import multipletests
 # from betabinomial import BetaBinomial, pval_adj
 from lapa.utils.io import read_polyA_cluster, read_tss_cluster
-
+from lapa.replication import replication_rate
 
 _core_cols = ['Chromosome', 'Start', 'End', 'Strand']
 
@@ -43,17 +43,23 @@ class LapaResult:
         if sample not in self.samples:
             raise ValueError(
                 'sample `%s` does not exist in directory' % sample)
-        return read_polyA_cluster(self.sample_dir / ('%s.bed' % sample))
+        df = read_polyA_cluster(self.sample_dir / ('%s.bed' % sample))
+        return self._set_index(df)
 
-    def read_clusters(self, filter_internal_priming=True):
-        df = read_polyA_cluster(self.lapa_dir / 'polyA_clusters.bed')
+    def read_clusters(self, filter_internal_priming=True,
+                      filter_intergenic=True):
+        df = read_polyA_cluster(self.cluster_path)
 
         if filter_internal_priming:
             df = df[~(
                 (df['fracA'] > 7) &
                 (df['signal'] == 'None@None')
             )]
-        return df
+
+        if filter_intergenic:
+            df = df[df['Feature'] != 'intergenic']
+
+        return self._set_index(df)
 
     def read_counts(self, sample=None, strand=None):
         sample = sample or 'all'
@@ -120,6 +126,19 @@ class LapaResult:
             & (n > min_gene_count).any(axis=1)
 
         return k[filter_rows], n[filter_rows]
+
+    def replication_rate(self):
+        return replication_rate({
+            i: self.read_sample(i)
+            for i in self.samples
+        }, score_column='count')
+
+    def plot_replication_rate(self):
+        import seaborn as sns
+
+        df = self.replication_rate()
+        df['rank'] = df['score'].rank(ascending=False)
+        return sns.lineplot(data=df, x='rank', y='replication')
 
     def fisher_exact_test(self, groups, min_gene_count=10,
                           correction_method='fdr_bh'):

@@ -16,7 +16,7 @@ class _Lapa:
                  method, mapq=10,
                  cluster_extent_cutoff=3, cluster_window=25,
                  cluster_ratio_cutoff=0.05,
-                 min_replication_rate=0.75, replication_rolling_size=1000,
+                 min_replication_rate=0.95, replication_rolling_size=1000,
                  filter_intergenic=True):
 
         self.fasta = fasta
@@ -332,7 +332,7 @@ class Lapa(_Lapa):
     def __init__(self, fasta, annotation, chrom_sizes, output_dir, method='end',
                  min_tail_len=10, min_percent_a=0.9, mapq=10,
                  cluster_extent_cutoff=3, cluster_window=25, cluster_ratio_cutoff=0.05,
-                 min_replication_rate=0.75, replication_rolling_size=1000,
+                 min_replication_rate=0.95, replication_rolling_size=1000,
                  filter_intergenic=True, filter_internal_priming=True):
 
         if method not in {'tail', 'end'}:
@@ -388,7 +388,7 @@ class LapaTss(_Lapa):
                  method='start', mapq=10,
                  cluster_extent_cutoff=3, cluster_window=25,
                  cluster_ratio_cutoff=0.05,
-                 min_replication_rate=0.75, replication_rolling_size=1000,
+                 min_replication_rate=0.95, replication_rolling_size=1000,
                  filter_intergenic=True):
 
         if method not in {'start'}:
@@ -426,7 +426,7 @@ class LapaTss(_Lapa):
 def lapa(alignment, fasta, annotation, chrom_sizes, output_dir, method='end',
          min_tail_len=10, min_percent_a=0.9, mapq=10,
          cluster_extent_cutoff=3, cluster_window=25, cluster_ratio_cutoff=0.05,
-         min_replication_rate=0.75, replication_rolling_size=1000):
+         min_replication_rate=0.95, replication_rolling_size=1000):
     _lapa = Lapa(fasta, annotation, chrom_sizes, output_dir, method=method,
                  min_tail_len=min_tail_len, min_percent_a=min_percent_a, mapq=mapq,
                  cluster_extent_cutoff=cluster_extent_cutoff,
@@ -439,7 +439,7 @@ def lapa(alignment, fasta, annotation, chrom_sizes, output_dir, method='end',
 def lapa_tss(alignment, fasta, annotation, chrom_sizes, output_dir,
              method='start', mapq=10,
              cluster_extent_cutoff=3, cluster_window=25, cluster_ratio_cutoff=0.05,
-             min_replication_rate=0.75, replication_rolling_size=1000):
+             min_replication_rate=0.95, replication_rolling_size=1000):
     _lapa = LapaTss(fasta, annotation, chrom_sizes, output_dir,
                     method=method, mapq=mapq,
                     cluster_extent_cutoff=cluster_extent_cutoff,

@@ -1,31 +1,17 @@
-def samples_names(wildcards):
-    platform = wildcards['platform']
-    library_prep = wildcards['library_prep']
-
-    if platform in {'PacBio', 'ONT'}:
-        return config['long_read'][platform][library_prep]
-
-    elif platform == 'Illumina' and library_prep == 'quantseq':
-        return config['quantseq']['bam']
-
-    else:
-        raise ValueError('No samples match given wildcards %s'
-                         % str(wildcards))
-
-
 def sample_bams(wildcards):
     platform = wildcards['platform']
     library_prep = wildcards['library_prep']
 
-    encode_ids = samples_names(wildcards)
-
     if platform in {'PacBio', 'ONT'}:
+        encode_ids = config['long_read'][platform][library_prep]
+
         if (library_prep in {'CapTrap', 'cDNA'}) and (platform == 'ONT'):
             bam_path = config['minimap']['bam_stranded']
         else:
             bam_path = config['minimap']['bam']
 
     elif platform == 'Illumina' and library_prep == 'quantseq':
+        encode_ids = config['quantseq']['bam']
         bam_path = config['encode']['bam']
 
     else:
@@ -35,25 +21,31 @@ def sample_bams(wildcards):
     return expand(bam_path, encode_id=encode_ids)
 
 
-rule lapa_reads_samples:
-    input:
-        bams = sample_bams
-    threads: 1
-    resources:
-        mem_gb = 1
-    params:
-        names = samples_names
-    output:
-        csv = config['lapa']['samples']
-    run:
-        with open(output['csv'], 'w') as f:
-            f.write('sample,path\n')
-            for name, bam_file in zip(params.names, input.bams):
-                f.write(f'{name},{bam_file}\n')
-
 rule lapa:
     input:
-        samples = config['lapa']['samples'],
+        bams = sample_bams,
+        fasta = config['genome']['fasta']['hg38'],
+        gtf = config['genome']['gtf']['hg38'],
+        chrom_sizes = config['common']['chrom_sizes'].format(genome='hg38')
+    threads: 1
+    resources:
+        mem_gb = 32
+    output:
+        directory(config['lapa']['lapa_dir'])
+    run:
+        bams = ','.join(input.bams)
+        shell(f'lapa \
+        --alignment {bams} \
+        --fasta {input.fasta} \
+        --annotation {input.gtf} \
+        --chrom_sizes {input.chrom_sizes} \
+        --counting_method {wildcards.counting} \
+        --output_dir {output}')
+
+
+rule lapa_tss:
+    input:
+        bams = sample_bams,
         fasta = config['genome']['fasta']['hg38'],
         gtf = config['genome']['gtf']['hg38'],
         chrom_sizes = config['common']['chrom_sizes'].format(genome='hg38')
@@ -63,49 +55,35 @@ rule lapa:
     resources:
         mem_gb = 32
     output:
-        directory(config['lapa']['lapa_dir'])
-    shell:
-        "lapa \
-        --alignment {input.samples} \
-        --fasta {input.fasta} \
-        --annotation {input.gtf} \
-        --chrom_sizes {input.chrom_sizes} \
-        --counting_method {wildcards.counting} \
-        --cluster_ratio_cutoff {params.cluster_ratio_cutoff} \
-        --output_dir {output}"
-
-
-rule lapa_tss:
-    input:
-        samples = config['lapa']['samples'],
-        fasta = config['genome']['fasta']['hg38'],
-        gtf = config['genome']['gtf']['hg38'],
-        chrom_sizes = config['common']['chrom_sizes'].format(genome='hg38')
-    params:
-        cluster_ratio_cutoff = 0.05        
-    threads: 1
-    resources:
-        mem_gb = 32
-    output:
         directory(config['lapa']['lapa_tss_dir'])
-    shell:
-        "lapa_tss \
-        --alignment {input.samples} \
+    run:
+        bams = ','.join(input.bams)
+        shell("lapa_tss \
+        --alignment {bams} \
         --fasta {input.fasta} \
         --annotation {input.gtf} \
         --chrom_sizes {input.chrom_sizes} \
         --cluster_ratio_cutoff {params.cluster_ratio_cutoff} \
-        --output_dir {output}"
-
+        --output_dir {output}")
 
 rule all_lapa:
     input:
-        expand([config['lapa']['lapa_dir'], config['lapa']['lapa_tss_dir']],
-               platform=['PacBio'], counting=['end'],
+        expand(config['lapa']['lapa_dir'],
+               platform=['PacBio'], counting=['end', 'tail'],
                library_prep=config['long_read']['PacBio']),
-        expand([config['lapa']['lapa_dir'], config['lapa']['lapa_tss_dir']],
-               platform=['ONT'], counting=['end'],
+
+        expand(config['lapa']['lapa_tss_dir'],
+               platform=['PacBio'],
+               library_prep=config['long_read']['PacBio']),
+
+        expand(config['lapa']['lapa_dir'],
+               platform=['ONT'], counting=['end', 'tail'],
                library_prep=config['long_read']['ONT']),
+
+        expand(config['lapa']['lapa_tss_dir'],
+               platform=['ONT'],
+               library_prep=config['long_read']['ONT']),
+
         expand(config['lapa']['lapa_dir'],
                platform=['Illumina'], counting=['end'],
                library_prep='quantseq')

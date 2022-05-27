@@ -505,11 +505,16 @@ class PolyaTailCounter(ThreePrimeCounter):
     def plot_tail_len_dist(self):
         '''Plots pdf and cdf of tail length distribution'''
         dist = self.tail_len_dist()
-        dist.plot()
-        dist.cumsum().plot()
+        df = pd.DataFrame({
+            'count': dist,
+            'cumulative count': dist.cumsum()
+        })
+        df = df[df['cumulative count'] / df['count'].sum() < 0.99]
+        df['count'].plot()
+        df['cumulative count'].plot()
         plt.legend([
-            'pdf',
-            'cdf'
+            'count',
+            'cumulative count'
         ])
         plt.xlabel('Length of polyA tail')
         plt.ylabel('Number of reads')

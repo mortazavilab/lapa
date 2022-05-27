@@ -103,7 +103,8 @@ rule plot_hist_read_count:
         mem_gb = 4
     output:
         hist = 'reports/figures/hist_read_counts.png',
-        percent = 'reports/figures/percentage_of_reads_tes.png'
+        percent = 'reports/figures/percentage_of_reads_tes.png',
+        percent_table = 'reports/tables/percentage_of_reads_tes.csv'
     notebook:
         'hist_read_count.ipynb'
 
@@ -121,7 +122,8 @@ rule plot_major_isoform_gene_exp:
                     platform='Illumina', counting='end',
                     library_prep='quantseq')
         ],
-        gene_exp = config['short_rnaseq']['gene_exp'].format(sample='WTC11')
+        gene_exp = config['short_rnaseq']['gene_exp'].format(sample='WTC11'),
+        genes = config['common']['gene_id_name_mapping'].format(genome='hg38')
     threads: 1
     resources:
         mem_gb = 4
@@ -132,8 +134,39 @@ rule plot_major_isoform_gene_exp:
         'plot_major_isoform_gene_exp.ipynb'
 
 
+rule count_tail_len:
+    input:
+        bams = sample_bams
+    threads: 1
+    resources:
+        mem_gb = 4
+    output:
+        counts = 'data/results/tail_len/{platform}_{library_prep}.csv'
+    script:
+        './count_tail_len.py'
+
+
+rule plot_tail_len:
+    input:
+        counts = [
+            *expand(rules.count_tail_len.output,
+                    platform=['PacBio'], library_prep=config['long_read']['PacBio']),
+            *expand(rules.count_tail_len.output,
+                    platform=['ONT'], library_prep=config['long_read']['ONT'])
+        ]
+    threads: 1
+    resources:
+        mem_gb = 4
+    output:
+        fig = "reports/figures/supplementary/tail_lengths.png",
+        median_count = 'reports/tables/median_tail_lengths.csv'
+    notebook:
+        './plot_tail_len.ipynb'
+
+
 rule all_plot:
     input:
         rules.read_nums_datasets.output,
         rules.plot_hist_read_count.output,
-        rules.plot_major_isoform_gene_exp.output
+        rules.plot_major_isoform_gene_exp.output,
+        rules.plot_tail_len.output

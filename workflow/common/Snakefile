@@ -39,7 +39,7 @@ rule gtf_tes:
                config['genome']['gtf'][wildcards['genome']])
     threads: 1
     resources:
-        mem_gb = 4
+        mem_gb = 8
     output:
         tes = config['common']['tes']
     script:
