@@ -12,16 +12,20 @@ from lapa.replication import replication_rate
 _core_cols = ['Chromosome', 'Start', 'End', 'Strand']
 
 
-class LapaResult:
+class _LapaResult:
 
-    def __init__(self, path, replicated=True):
+    def __init__(self, path, replicated=True, prefix=''):
         self.lapa_dir = Path(path)
         self.replicated = replicated
+        self.prefix = prefix
 
         self.samples = [
             i.stem.replace('.bed', '')
             for i in self.sample_dir.iterdir()
         ]
+
+    def read_clusters(self, filter_intergenic=True):
+        raise NotImplementedError()
 
     @property
     def count_dir(self):
@@ -36,42 +40,22 @@ class LapaResult:
     @property
     def cluster_path(self):
         if not self.replicated:
-            return self.lapa_dir / 'raw_polyA_clusters.bed'
-        return self.lapa_dir / 'polyA_clusters.bed'
-
-    def read_sample(self, sample):
-        if sample not in self.samples:
-            raise ValueError(
-                'sample `%s` does not exist in directory' % sample)
-        df = read_polyA_cluster(self.sample_dir / ('%s.bed' % sample))
-        return self._set_index(df)
-
-    def read_clusters(self, filter_internal_priming=True,
-                      filter_intergenic=True):
-        df = read_polyA_cluster(self.cluster_path)
-
-        if filter_internal_priming:
-            df = df[~(
-                (df['fracA'] > 7) &
-                (df['signal'] == 'None@None')
-            )]
-
-        if filter_intergenic:
-            df = df[df['Feature'] != 'intergenic']
-
-        return self._set_index(df)
+            return self.lapa_dir / (f'raw_{self.prefix}_clusters.bed')
+        return self.lapa_dir / (f'{self.prefix}_clusters.bed')
 
     def read_counts(self, sample=None, strand=None):
         sample = sample or 'all'
 
         if strand == '+':
             df = pr.read_bigwig(
-                str(self.count_dir / ('%s_polyA_counts_pos.bw' % sample))).df
+                str(self.count_dir / (f'{sample}_{self.prefix}_counts_pos.bw'))
+            ).df
             df['Strand'] = '+'
             return df.rename(columns={'Value': 'count'})
         elif strand == '-':
             df = pr.read_bigwig(
-                str(self.count_dir / ('%s_polyA_counts_neg.bw' % sample))).df
+                str(self.count_dir / (f'{sample}_{self.prefix}_counts_neg.bw'))
+            ).df
             df['Strand'] = '-'
             return df.rename(columns={'Value': 'count'})
         else:
@@ -87,7 +71,7 @@ class LapaResult:
             .rename(columns={field: sample})[sample]
             for sample in self.samples
         ], axis=1).sort_index()
-        df.index = df.index.rename('polya_site')
+        df.index = df.index.rename('site')
         return df
 
     def counts(self):
@@ -100,10 +84,9 @@ class LapaResult:
         return self.attribute('gene_id').apply(
             lambda row: row[~row.isna()][0], axis=1)
 
-    @staticmethod
-    def _set_index(df):
+    def _set_index(self, df):
         df['name'] = df['Chromosome'] + ':' \
-            + df['polyA_site'].astype('str') + ':' \
+            + df[f'{self.prefix}_site'].astype('str') + ':' \
             + df['Strand'].astype('str')
         return df.set_index('name')
 
@@ -143,7 +126,8 @@ class LapaResult:
     def fisher_exact_test(self, groups, min_gene_count=10,
                           correction_method='fdr_bh'):
         '''
-        Fis
+        Fisher-exact test for sites.
+
         Args:
             groups (Dict[str, List[str]]): dict of two elements
                 as assinging groups. Two keys are group names
@@ -168,10 +152,10 @@ class LapaResult:
             for _k, _n in tqdm(zip(k.values, n.values), total=k.shape[0])
         ])
 
-        polya_sites = k.index.tolist()
+        sites = k.index.tolist()
 
         usage_dif = self._agg_per_groups(
-            self.attribute('usage').loc[polya_sites], groups, 'mean')
+            self.attribute('usage').loc[sites], groups, 'mean')
         groups = usage_dif.columns
         usage_dif = usage_dif[groups[0]] - usage_dif[groups[1]]
 
@@ -179,11 +163,60 @@ class LapaResult:
             'odds_ratio': odds,
             'pval': pvals,
             'delta_usage': usage_dif,
-            'gene_id': self.gene_id().loc[polya_sites]
+            'gene_id': self.gene_id().loc[sites]
         }, index=k.index.tolist())
 
         df['pval_adj'] = multipletests(df['pval'], method=correction_method)[1]
         return df
+
+
+class LapaResult(_LapaResult):
+
+    def __init__(self, path, replicated=True):
+        super().__init__(path, replicated, 'polyA')
+
+    def read_clusters(self, filter_intergenic=True,
+                      filter_internal_priming=True):
+        df = read_polyA_cluster(self.cluster_path)
+
+        if filter_internal_priming:
+            df = df[~(
+                (df['fracA'] > 7) &
+                (df['signal'] == 'None@None')
+            )]
+
+        if filter_intergenic:
+            df = df[df['Feature'] != 'intergenic']
+
+        return self._set_index(df)
+
+    def read_sample(self, sample):
+        if sample not in self.samples:
+            raise ValueError(
+                'sample `%s` does not exist in directory' % sample)
+        df = read_polyA_cluster(self.sample_dir / ('%s.bed' % sample))
+        return self._set_index(df)
+
+
+class LapaTssResult(_LapaResult):
+
+    def __init__(self, path, replicated=True):
+        super().__init__(path, replicated, 'tss')
+
+    def read_clusters(self, filter_intergenic=True):
+        df = read_tss_cluster(self.cluster_path)
+
+        if filter_intergenic:
+            df = df[df['Feature'] != 'intergenic']
+
+        return self._set_index(df)
+
+    def read_sample(self, sample):
+        if sample not in self.samples:
+            raise ValueError(
+                'sample `%s` does not exist in directory' % sample)
+        df = read_tss_cluster(self.sample_dir / ('%s.bed' % sample))
+        return self._set_index(df)
 
     # beta-binomial test
     # def stats_testing(self, groups=None, min_gene_count=10,
