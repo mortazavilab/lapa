@@ -43,7 +43,6 @@ def test_agg_sample_cols(samples_replicates):
 
 
 def test_replication_rate(samples_replicates):
-
     df = replication_rate(samples_replicates, rolling_size=2)
 
     pd.testing.assert_frame_equal(
@@ -53,7 +52,7 @@ def test_replication_rate(samples_replicates):
             'Start': [10, 1000, 20, 100],
             'End': [100, 1010, 120, 150],
             'Strand': ['+', '-', '+', '-'],
-            'replication': [np.nan, 1.0, 0.75, 0.5],
+            'replication': [np.nan, 1.0, 0.5, 0],
             'score': [np.nan, 17.0, 2.5, 1.0]
         })
     )
@@ -66,11 +65,11 @@ def test_replication_dataset(samples_replicates):
     pd.testing.assert_frame_equal(
         samples['a'],
         pd.DataFrame({
-            'Chromosome': ['chr1', 'chr2', 'chr1'],
-            'Start': [10, 1000, 20],
-            'End': [100, 1010, 120],
-            'Strand': ['+', '-', '+'],
-            'Score': [10, 2, 1]
+            'Chromosome': ['chr1', 'chr2'],
+            'Start': [10, 1000],
+            'End': [100, 1010],
+            'Strand': ['+', '-'],
+            'Score': [10, 2]
         })
     )
 
