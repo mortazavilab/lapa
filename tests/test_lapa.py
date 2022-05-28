@@ -35,8 +35,8 @@ def test_lapa_annotate_cluster(tmp_path):
         'fracA': [6, 1, 1, 1, 6],
         'signal': ['100157@GATAAA', 'None@None', 'None@None', 'None@None', '100157@GATAAA'],
         'Feature': ['intergenic', 'exon', 'exon', 'exon', 'intergenic'],
-        'gene_id': ['', 'ENSG00000198496.12', 'ENSG00000198496.12', 'ENSG00000267681.1', ''],
-        'gene_name': ['', 'NBR2', 'NBR2', 'CTD-3199J23.6', ''],
+        'gene_id': ['intergenic_0', 'ENSG00000198496.12', 'ENSG00000198496.12', 'ENSG00000267681.1', 'intergenic_1'],
+        'gene_name': ['intergenic_0', 'NBR2', 'NBR2', 'CTD-3199J23.6', 'intergenic_1'],
         'annotated_site': [-1, -1, -1, -1, -1],
         'tpm': [
             15 * 1000000 / (15 + 11 + 10 + 5),

@@ -112,6 +112,10 @@ rule supp_figure_3:
 # TODO: tail counting vs end coding
 # rule supp_figure_5:
 
+# TODO: number of linking reads
+# TODO: read length
+# rule supp_fig_7
+
 
 rule supp_figure_6:
     input:

@@ -17,7 +17,7 @@ class _Lapa:
                  cluster_extent_cutoff=3, cluster_window=25,
                  cluster_ratio_cutoff=0.05,
                  min_replication_rate=0.95, replication_rolling_size=1000,
-                 filter_intergenic=True):
+                 replication_num_sample=2, replication_min_count=1):
 
         self.fasta = fasta
         self.annotation = annotation
@@ -36,9 +36,8 @@ class _Lapa:
         # replication parameters
         self.min_replication_rate = min_replication_rate
         self.replication_rolling_size = replication_rolling_size
-
-        # annotation parameters
-        self.filter_intergenic = filter_intergenic
+        self.replication_num_sample = replication_num_sample
+        self.replication_min_count = replication_min_count
 
         # create file structure
         self.output_dir.mkdir()
@@ -201,7 +200,8 @@ class _Lapa:
             else:
                 rep_samples = replication_dataset(
                     rep_samples, 'count',
-                    self.replication_rolling_size, self.min_replication_rate)
+                    self.replication_rolling_size, self.min_replication_rate,
+                    self.replication_num_sample, self.replication_min_count)
 
             for sample, df in rep_samples.items():
                 replicated_samples[sample] = self.calculate_usage(
@@ -211,9 +211,6 @@ class _Lapa:
 
     def sample_cluster(self, df_cluster, sample_counts):
         gr = pr.PyRanges(sample_counts)
-
-        if self.filter_intergenic:
-            df_cluster = df_cluster[df_cluster['Feature'] != 'intergenic']
 
         columns = ['Chromosome', 'Start', 'End', 'Strand', 'gene_id']
 
@@ -242,11 +239,6 @@ class _Lapa:
 
         df_cluster['tpm'] = (df_cluster['count'] * 1000000 /
                              df_cluster['count'].sum()).round(2)
-
-        # usage and gene count undefined for intergenic
-        intergenic = df_cluster['Feature'] == 'intergenic'
-        df_cluster.loc[intergenic, 'usage'] = None
-        df_cluster.loc[intergenic, 'gene_count'] = None
 
         return df_cluster.reset_index()
 
@@ -333,7 +325,7 @@ class Lapa(_Lapa):
                  min_tail_len=10, min_percent_a=0.9, mapq=10,
                  cluster_extent_cutoff=3, cluster_window=25, cluster_ratio_cutoff=0.05,
                  min_replication_rate=0.95, replication_rolling_size=1000,
-                 filter_intergenic=True, filter_internal_priming=True):
+                 filter_internal_priming=True, replication_num_sample=2, replication_min_count=1):
 
         if method not in {'tail', 'end'}:
             raise ValueError(
@@ -344,7 +336,7 @@ class Lapa(_Lapa):
                          cluster_extent_cutoff, cluster_window,
                          cluster_ratio_cutoff,
                          min_replication_rate, replication_rolling_size,
-                         filter_intergenic)
+                         replication_num_sample, replication_min_count)
 
         self.min_tail_len = min_tail_len
         self.min_percent_a = min_percent_a
@@ -389,7 +381,7 @@ class LapaTss(_Lapa):
                  cluster_extent_cutoff=3, cluster_window=25,
                  cluster_ratio_cutoff=0.05,
                  min_replication_rate=0.95, replication_rolling_size=1000,
-                 filter_intergenic=True):
+                 replication_num_sample=2, replication_min_count=1):
 
         if method not in {'start'}:
             raise ValueError(
@@ -400,7 +392,7 @@ class LapaTss(_Lapa):
                          cluster_extent_cutoff, cluster_window,
                          cluster_ratio_cutoff,
                          min_replication_rate, replication_rolling_size,
-                         filter_intergenic)
+                         replication_num_sample, replication_min_count)
 
         self.prefix = 'tss'
         self.cluster_col_order = tss_cluster_col_order
@@ -426,24 +418,31 @@ class LapaTss(_Lapa):
 def lapa(alignment, fasta, annotation, chrom_sizes, output_dir, method='end',
          min_tail_len=10, min_percent_a=0.9, mapq=10,
          cluster_extent_cutoff=3, cluster_window=25, cluster_ratio_cutoff=0.05,
-         min_replication_rate=0.95, replication_rolling_size=1000):
+         min_replication_rate=0.95, replication_rolling_size=1000,
+         replication_num_sample=2, replication_min_count=1):
+
     _lapa = Lapa(fasta, annotation, chrom_sizes, output_dir, method=method,
                  min_tail_len=min_tail_len, min_percent_a=min_percent_a, mapq=mapq,
                  cluster_extent_cutoff=cluster_extent_cutoff,
                  cluster_window=cluster_window, cluster_ratio_cutoff=cluster_ratio_cutoff,
                  min_replication_rate=min_replication_rate,
-                 replication_rolling_size=replication_rolling_size)
+                 replication_rolling_size=replication_rolling_size,
+                 replication_num_sample=replication_num_sample,
+                 replication_min_count=replication_min_count)
     _lapa(alignment)
 
 
 def lapa_tss(alignment, fasta, annotation, chrom_sizes, output_dir,
              method='start', mapq=10,
              cluster_extent_cutoff=3, cluster_window=25, cluster_ratio_cutoff=0.05,
-             min_replication_rate=0.95, replication_rolling_size=1000):
+             min_replication_rate=0.95, replication_rolling_size=1000,
+             replication_num_sample=2, replication_min_count=1):
     _lapa = LapaTss(fasta, annotation, chrom_sizes, output_dir,
                     method=method, mapq=mapq,
                     cluster_extent_cutoff=cluster_extent_cutoff,
                     cluster_window=cluster_window, cluster_ratio_cutoff=cluster_ratio_cutoff,
                     min_replication_rate=min_replication_rate,
-                    replication_rolling_size=replication_rolling_size)
+                    replication_rolling_size=replication_rolling_size,
+                    replication_num_sample=replication_num_sample,
+                    replication_min_count=replication_min_count)
     _lapa(alignment)

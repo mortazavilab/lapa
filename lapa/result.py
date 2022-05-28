@@ -27,6 +27,9 @@ class _LapaResult:
     def read_clusters(self, filter_intergenic=True):
         raise NotImplementedError()
 
+    def read_sample(self, sample, filter_intergenic=True):
+        raise NotADirectoryError()
+
     @property
     def count_dir(self):
         return self.lapa_dir / 'counts'
@@ -190,11 +193,16 @@ class LapaResult(_LapaResult):
 
         return self._set_index(df)
 
-    def read_sample(self, sample):
+    def read_sample(self, sample, filter_intergenic=True):
         if sample not in self.samples:
             raise ValueError(
                 'sample `%s` does not exist in directory' % sample)
+
         df = read_polyA_cluster(self.sample_dir / ('%s.bed' % sample))
+
+        if filter_intergenic:
+            df = df[df['Feature'] != 'intergenic']
+
         return self._set_index(df)
 
 
@@ -211,11 +219,16 @@ class LapaTssResult(_LapaResult):
 
         return self._set_index(df)
 
-    def read_sample(self, sample):
+    def read_sample(self, sample, filter_intergenic=True):
         if sample not in self.samples:
             raise ValueError(
                 'sample `%s` does not exist in directory' % sample)
+
         df = read_tss_cluster(self.sample_dir / ('%s.bed' % sample))
+
+        if filter_intergenic:
+            df = df[df['Feature'] != 'intergenic']
+
         return self._set_index(df)
 
     # beta-binomial test

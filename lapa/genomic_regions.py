@@ -67,10 +67,6 @@ class GenomicRegions:
             .drop(['Start_b', 'End_b', 'Strand_b'])
         df = gr_ann.df.drop_duplicates()
 
-        # need to avoid duplication of groupby for category
-        # df['Chromosome'] = df['Chromosome'].astype(str)
-        # df['Strand'] = df['Strand'].astype(str)
-
         df['Feature'] = df['Feature'].replace('-1', 'intergenic')
         df['gene_id'] = df['gene_id'].replace('-1', '')
         df['gene_name'] = df['gene_name'].replace('-1', '')
@@ -81,6 +77,19 @@ class GenomicRegions:
         df = df.groupby(_core_columns, observed=True) \
                .progress_apply(self._agg_annotation_gene) \
                .reset_index(drop=True)
+
+        df = self.intergenic_genes(df)
+        return df
+
+    def intergenic_genes(self, df):
+        '''
+        Assign `gene_id` and `gene_name` to intergenic clusters.
+        '''
+        genes = pd.Series(range(sum(df['Feature'] == 'intergenic'))) \
+                  .astype('str').add_prefix('intergenic_').index
+
+        df.loc[df['Feature'] == 'intergenic', 'gene_id'] = genes.tolist()
+        df.loc[df['Feature'] == 'intergenic', 'gene_name'] = genes.tolist()
 
         return df
 
@@ -99,8 +108,9 @@ class GenomicRegions:
             if _df.shape[0] == 1:
                 return _df
 
-            # feature type is not 3'UTR just get first overlap
-            if feature not in {'three_prime_utr', 'exon'}:
+            # feature type is not annotated_feature_site (UTR)
+            # just get first overlap
+            if feature not in {self.annotated_feature_site, 'exon'}:
                 return _df.iloc[[0]]
 
             return _df.drop_duplicates(subset='gene_id')

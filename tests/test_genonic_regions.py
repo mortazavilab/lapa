@@ -37,9 +37,9 @@ def test_GenomicRegions_annotate(polya_genomic_regions):
         'Strand': ['-', '-', '-', '-', '-'],
         'polyA_site': [4303050, 43045057, 43046769, 43093515, 43057094],
         'Feature': ['intergenic', 'three_prime_utr', 'intron', 'three_prime_utr', 'exon'],
-        'gene_id': ['', 'ENSG00000012048.23', 'ENSG00000012048.23',
+        'gene_id': ['intergenic_0', 'ENSG00000012048.23', 'ENSG00000012048.23',
                     'ENSG00000012048.23', 'ENSG00000012048.23'],
-        'gene_name': ['', 'BRCA1', 'BRCA1', 'BRCA1', 'BRCA1'],
+        'gene_name': ['intergenic_0', 'BRCA1', 'BRCA1', 'BRCA1', 'BRCA1'],
         'annotated_site': [-1, 43044294, -1, 43091434, -1]
     })
 
