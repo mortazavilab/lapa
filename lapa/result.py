@@ -5,7 +5,6 @@ import pyranges as pr
 from tqdm import tqdm
 from scipy.stats import fisher_exact
 from statsmodels.stats.multitest import multipletests
-# from betabinomial import BetaBinomial, pval_adj
 from lapa.utils.io import read_polyA_cluster, read_tss_cluster
 from lapa.replication import replication_rate
 
@@ -24,11 +23,8 @@ class _LapaResult:
             for i in self.sample_dir.iterdir()
         ]
 
-    def read_clusters(self, filter_intergenic=True):
+    def _read_cluster(self, path):
         raise NotImplementedError()
-
-    def read_sample(self, sample, filter_intergenic=True):
-        raise NotADirectoryError()
 
     @property
     def count_dir(self):
@@ -45,6 +41,42 @@ class _LapaResult:
         if not self.replicated:
             return self.lapa_dir / (f'raw_{self.prefix}_clusters.bed')
         return self.lapa_dir / (f'{self.prefix}_clusters.bed')
+
+    @property
+    def dataset_path(self):
+        if not self.replicated:
+            return self.lapa_dir / (f'raw_{self.prefix}_clusters.bed')
+        return self.lapa_dir / (f'{self.prefix}_clusters.bed')
+
+    def read_clusters(self, filter_intergenic=True):
+        df = self._read_cluster(self.cluster_path)
+
+        if filter_intergenic:
+            df = df[df['Feature'] != 'intergenic']
+
+        return self._set_index(df)
+
+    def read_sample(self, sample, filter_intergenic=True):
+        if sample not in self.samples:
+            raise ValueError(
+                'sample `%s` does not exist in directory' % sample)
+
+        df = self._read_cluster(self.sample_dir / ('%s.bed' % sample))
+
+        if filter_intergenic:
+            df = df[df['Feature'] != 'intergenic']
+
+        return self._set_index(df)
+
+    def read_dataset(self, dataset):
+        df = self._read_cluster(self.dataset_dir / ('%s.bed' % dataset))
+        return self._set_index(df)
+
+    def _set_index(self, df):
+        df['name'] = df['Chromosome'] + ':' \
+            + df[f'{self.prefix}_site'].astype('str') + ':' \
+            + df['Strand'].astype('str')
+        return df.set_index('name')
 
     def read_counts(self, sample=None, strand=None):
         sample = sample or 'all'
@@ -67,7 +99,12 @@ class _LapaResult:
                 self.read_counts(sample, strand='-')
             ])
 
-    def attribute(self, field):
+    def attribute(self, field, samples=None):
+        '''
+        Read attribute of samples as dataframe
+        '''
+        samples = samples or self.samples
+
         df = pd.concat([
             self.read_sample(sample)
             .drop_duplicates(_core_cols)
@@ -77,21 +114,15 @@ class _LapaResult:
         df.index = df.index.rename('site')
         return df
 
-    def counts(self):
-        return self.attribute('count')
+    def counts(self, samples=None):
+        return self.attribute('count', samples=samples)
 
-    def total_counts(self):
-        return self.counts().sum(axis=1)
+    def total_counts(self, samples=None):
+        return self.counts(samples=samples).sum(axis=1)
 
     def gene_id(self):
         return self.attribute('gene_id').apply(
             lambda row: row[~row.isna()][0], axis=1)
-
-    def _set_index(self, df):
-        df['name'] = df['Chromosome'] + ':' \
-            + df[f'{self.prefix}_site'].astype('str') + ':' \
-            + df['Strand'].astype('str')
-        return df.set_index('name')
 
     @staticmethod
     def _agg_per_groups(df, groups, agg_func):
@@ -113,16 +144,23 @@ class _LapaResult:
 
         return k[filter_rows], n[filter_rows]
 
-    def replication_rate(self):
+    def replication_rate(self, samples=None):
+        '''
+        Calculate replication rate of samples
+        '''
+        samples = samples or self.samples
+
         return replication_rate({
             i: self.read_sample(i)
-            for i in self.samples
+            for i in samples
         }, score_column='count')
 
-    def plot_replication_rate(self):
+    def plot_replication_rate(self, samples=None):
         import seaborn as sns
 
-        df = self.replication_rate()
+        samples = samples or self.samples
+
+        df = self.replication_rate(samples)
         df['rank'] = df['score'].rank(ascending=False)
         return sns.lineplot(data=df, x='rank', y='replication')
 
@@ -172,15 +210,73 @@ class _LapaResult:
         df['pval_adj'] = multipletests(df['pval'], method=correction_method)[1]
         return df
 
+    # beta-binomial test
+
+    def beta_binomial_test(self, min_gene_count=10, theta=0.001, max_iter=1000):
+        '''
+        P-values based on betabinomial test.
+        '''
+        from betabinomial import BetaBinomial, pval_adj
+
+        # merge replicates into one count
+        counts = self.counts()
+        k = counts.values
+        n = self.attribute('gene_count').values
+
+        filter_rows = ((n > 0).sum(axis=1) > 1) \
+            & (k != n).any(axis=1) \
+            & (n > min_gene_count).any(axis=1)
+
+        n = n[filter_rows]
+        k = k[filter_rows]
+        bb = BetaBinomial().infer(k, n, theta=theta, max_iter=max_iter)
+
+        # recalculate usage k/n
+        usage = self.attribute('usage')
+        usage = usage[filter_rows]
+
+        gene_id = self.gene_id()
+        gene_id = gene_id[filter_rows]
+        gene_id = np.repeat(gene_id.values.reshape((-1, 1)), 4, axis=1)
+
+        sites = counts.index
+        sites = sites[filter_rows]
+
+        cols = {
+            'usage': usage,
+            'delta_usage': usage - bb.beta_mean(),
+            'count': k,
+            'expected_count': bb.mean(n),
+            'gene_count': n,
+            'gene_id': gene_id,
+            'pval': bb.pval(k, n),
+            'z_score': bb.z_score(k, n),
+            'logfc': bb.log_fc(k, n)
+        }
+        cols['padj'] = pval_adj(np.nan_to_num(cols['pval'], nan=1))
+
+        df = pd.concat([
+            pd.DataFrame(v, index=sites, columns=self.samples)
+            .reset_index()
+            .melt(id_vars='polya_site', var_name='sample', value_name=col)
+            .set_index(['polya_site', 'sample'])
+            for col, v in cols.items()
+        ], axis=1)
+
+        return df
+
 
 class LapaResult(_LapaResult):
 
     def __init__(self, path, replicated=True):
         super().__init__(path, replicated, 'polyA')
 
+    def _read_cluster(self, path):
+        return read_polyA_cluster(path)
+
     def read_clusters(self, filter_intergenic=True,
                       filter_internal_priming=True):
-        df = read_polyA_cluster(self.cluster_path)
+        df = super().read_clusters(self.cluster_path)
 
         if filter_internal_priming:
             df = df[~(
@@ -188,22 +284,7 @@ class LapaResult(_LapaResult):
                 (df['signal'] == 'None@None')
             )]
 
-        if filter_intergenic:
-            df = df[df['Feature'] != 'intergenic']
-
-        return self._set_index(df)
-
-    def read_sample(self, sample, filter_intergenic=True):
-        if sample not in self.samples:
-            raise ValueError(
-                'sample `%s` does not exist in directory' % sample)
-
-        df = read_polyA_cluster(self.sample_dir / ('%s.bed' % sample))
-
-        if filter_intergenic:
-            df = df[df['Feature'] != 'intergenic']
-
-        return self._set_index(df)
+        return df
 
 
 class LapaTssResult(_LapaResult):
@@ -211,75 +292,5 @@ class LapaTssResult(_LapaResult):
     def __init__(self, path, replicated=True):
         super().__init__(path, replicated, 'tss')
 
-    def read_clusters(self, filter_intergenic=True):
-        df = read_tss_cluster(self.cluster_path)
-
-        if filter_intergenic:
-            df = df[df['Feature'] != 'intergenic']
-
-        return self._set_index(df)
-
-    def read_sample(self, sample, filter_intergenic=True):
-        if sample not in self.samples:
-            raise ValueError(
-                'sample `%s` does not exist in directory' % sample)
-
-        df = read_tss_cluster(self.sample_dir / ('%s.bed' % sample))
-
-        if filter_intergenic:
-            df = df[df['Feature'] != 'intergenic']
-
-        return self._set_index(df)
-
-    # beta-binomial test
-    # def stats_testing(self, groups=None, min_gene_count=10,
-    #                   theta=0.001, max_iter=1000):
-    #     '''
-    #     P-values based on betabinomial test.
-    #     '''
-    #     # merge replicates into one count
-    #     counts = self.counts()
-    #     k = counts.values
-    #     n = self.attribute('gene_count').values
-
-    #     filter_rows = ((n > 0).sum(axis=1) > 1) \
-    #         & (k != n).any(axis=1) \
-    #         & (n > min_gene_count).any(axis=1)
-
-    #     n = n[filter_rows]
-    #     k = k[filter_rows]
-    #     bb = BetaBinomial().infer(k, n, theta=theta, max_iter=max_iter)
-
-    #     # recalculate usage k/n
-    #     usage = self.attribute('usage')
-    #     usage = usage[filter_rows]
-
-    #     gene_id = self.gene_id()
-    #     gene_id = gene_id[filter_rows]
-    #     gene_id = np.repeat(gene_id.values.reshape((-1, 1)), 4, axis=1)
-
-    #     sites = counts.index
-    #     sites = sites[filter_rows]ll
-
-    #     cols = {
-    #         'usage': usage,
-    #         'delta_usage': usage - bb.beta_mean(),
-    #         'count': k,
-    #         'expected_count': bb.mean(n),
-    #         'gene_count': n,
-    #         'gene_id': gene_id,
-    #         'pval': bb.pval(k, n),
-    #         'z_score': bb.z_score(k, n),
-    #         'logfc': bb.log_fc(k, n)
-    #     }
-    #     cols['padj'] = pval_adj(np.nan_to_num(cols['pval'], nan=1))
-
-    #     df = pd.concat([
-    #         pd.DataFrame(v, index=sites, columns=self.samples)
-    #         .reset_index()
-    #         .melt(id_vars='polya_site', var_name='sample', value_name=col)
-    #         .set_index(['polya_site', 'sample'])
-    #         for col, v in cols.items()
-    #     ], axis=1)
-
-    #     return df
+    def _read_cluster(self, path):
+        return read_tss_cluster(path)
