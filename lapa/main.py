@@ -177,10 +177,15 @@ def cli_lapa_tss(alignment, fasta, annotation, chrom_sizes, output_dir,
               help='Minimum read quality to required for linking',
               default=10,
               type=int)
+@click.option('--dataset',
+              help='Which dataset to use in looking. '
+              'Validation options (`all`, `raw_all`, or dataset)',
+              default='all',
+              type=int)
 def cli_lapa_link_tss_to_tes(alignment, lapa_dir, lapa_tss_dir, output,
-                             mapq=10, min_read_length=100):
-    df = link_tss_to_tes(alignment, lapa_dir, lapa_tss_dir,
-                         mapq=mapq, min_read_length=min_read_length)
+                             mapq=10, min_read_length=100, dataset='all'):
+    df = link_tss_to_tes(alignment, lapa_dir, lapa_tss_dir, mapq=mapq,
+                         min_read_length=min_read_length, dataset=dataset)
     df.to_csv(output, index=False)
 
 

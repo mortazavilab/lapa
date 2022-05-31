@@ -209,14 +209,14 @@ def _transcript_tss_tes(df, threshold=1):
     df = df.set_index(['transcript_id', 'tss_site', 'polyA_site'])
 
     _df = df.groupby(['transcript_id', 'tss_site',
-                     'polyA_site']).agg({'count': 'sum'})
+                      'polyA_site']).agg({'count': 'sum'})
     df = df[_df['count'] > threshold]
 
     # update transcript_ids
     _df = df.reset_index().drop_duplicates(
         subset=['transcript_id', 'tss_site', 'polyA_site'])
-    _df['suffix'] = _df.groupby(
-        'transcript_id').cumcount().astype(str).radd('#')
+    _df['suffix'] = _df.groupby('transcript_id') \
+                       .cumcount().astype(str).radd('#')
     df = df.join(_df.set_index(
         ['transcript_id', 'tss_site', 'polyA_site'])['suffix']).reset_index()
     df['transcript_id'] += df['suffix']

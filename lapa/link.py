@@ -2,8 +2,8 @@ from pathlib import Path
 import numpy as np
 import pyranges as pr
 import pandas as pd
-from lapa.utils.io import read_talon_read_annot, \
-    read_tss_cluster, read_polyA_cluster
+from lapa.utils.io import read_talon_read_annot
+from lapa.result import LapaResult, LapaTssResult
 
 
 _reads_cols = ['read_name', 'Chromosome', 'read_Start', 'read_End', 'Strand']
@@ -68,7 +68,7 @@ def _link_reads_to_tss(df_tss_cluster, df_reads, distance=50):
 
 
 def link_tss_to_tes(alignment, lapa_dir, lapa_tss_dir, distance=50,
-                    mapq=10, min_read_length=100, raw=False):
+                    mapq=10, min_read_length=100, dataset='all'):
     '''
     Link transcript site sites to transcript end sites using
       long-read from the alignment file.
@@ -84,23 +84,38 @@ def link_tss_to_tes(alignment, lapa_dir, lapa_tss_dir, distance=50,
     df_reads = _read_alignment_reads(alignment, mapq=mapq,
                                      min_read_length=min_read_length)
 
+    lapa = LapaResult(lapa_dir)
+    lapa_tss = LapaTssResult(lapa_tss_dir)
+    
     print('TES read mapping...')
-    if raw:
-        df_cluster = read_polyA_cluster(
-            Path(lapa_dir) / 'raw_polyA_clusters.bed')
-        df_cluster = df_cluster[~((df_cluster['fracA'] > 7)
-                                  & (df_cluster['signal'] == 'None@None'))]
+    if dataset == 'raw_all':
+        lapa.replicated = False
+        df_cluster = lapa.read_clusters()
+    elif dataset == 'all':
+        df_cluster = lapa.read_clusters()
+    elif dataset in lapa.datasets:
+        df_cluster = lapa.read_dataset(dataset)
     else:
-        df_cluster = read_polyA_cluster(Path(lapa_dir) / 'polyA_clusters.bed')
+        raise ValueError(f'{dataset} is not in datasets.'
+                         'Valid options are `all`, `raw_all`, or dataset name')
 
+    core_cols = ['Chromosome', 'Start', 'End', 'Strand']
+    df_cluster = df_cluster.drop_duplicates(core_cols)
     df_reads = _link_reads_to_tes(df_cluster, df_reads, distance=distance)
 
     print('TSS read mapping...')
-    tss_file_path = 'tss_clusters.bed'
-    if raw:
-        tss_file_path = 'raw' + tss_file_path
-    df_tss_cluster = read_tss_cluster(Path(lapa_tss_dir) / tss_file_path)
+    if dataset == 'raw_all':
+        lapa_tss.replicated = False
+        df_tss_cluster = lapa_tss.read_clusters()
+    elif dataset == 'all':
+        df_tss_cluster = lapa_tss.read_clusters()
+    elif dataset in lapa_tss.datasets:
+        df_tss_cluster = lapa_tss.read_dataset(dataset)
+    else:
+        raise ValueError(f'{dataset} is not in datasets.'
+                         'Valid options are `all`, `raw_all`, or dataset name')
 
+    df_tss_cluster = df_tss_cluster.drop_duplicates(core_cols)
     df_reads = _link_reads_to_tss(df_tss_cluster, df_reads, distance=distance)
 
     valid = np.where(df_reads['Strand'] == '+',

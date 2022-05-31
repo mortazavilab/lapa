@@ -18,13 +18,29 @@ class _LapaResult:
         self.replicated = replicated
         self.prefix = prefix
 
-        self.samples = [
-            i.stem.replace('.bed', '')
-            for i in self.sample_dir.iterdir()
-        ]
+        self._samples = None
+        self._datasets = None
 
     def _read_cluster(self, path):
         raise NotImplementedError()
+
+    @property
+    def samples(self):
+        if self._samples is None:
+            self._samples = [
+                i.stem.replace('.bed', '')
+                for i in self.sample_dir.iterdir()
+            ]
+        return self._samples
+
+    @property
+    def datasets(self):
+        if self._datasets is None:
+            self._datasets = [
+                i.stem.replace('.bed', '')
+                for i in self.dataset_dir.iterdir()
+            ]
+        return self._datasets
 
     @property
     def count_dir(self):
@@ -36,6 +52,10 @@ class _LapaResult:
             return self.lapa_dir / 'raw_sample'
         return self.lapa_dir / 'sample'
 
+    @property
+    def dataset_dir(self):
+        return self.lapa_dir / 'dataset'
+    
     @property
     def cluster_path(self):
         if not self.replicated:
