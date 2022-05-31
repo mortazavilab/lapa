@@ -218,8 +218,11 @@ class _Lapa:
         df_join = gr_cluster.join(gr, suffix='_sample').df
 
         df_join = df_join.groupby(columns, observed=True) \
-                         .agg({'count': 'sum'}).reset_index()
-        df_join = df_join[df_join['count'] > 0]
+                         .agg({'count': 'sum', 'coverage': 'mean'}) \
+                         .reset_index()
+
+        threshold = df_join['coverage'] * self.cluster_ratio_cutoff
+        df_join = df_join[df_join['count'] > threshold]
 
         df_apa = df_join.reset_index().set_index(columns).join(
             df_cluster.set_index(columns)[self._keep_cols], rsuffix='_cluster'

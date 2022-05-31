@@ -53,24 +53,20 @@ from lapa.correction import correct_talon
               default=25,
               type=int)
 @click.option('--min_replication_rate',
-              help='Patience threshold to wait for termination cluster'
-              'if number of reads subceed `the cluster_extent_cutoff`',
-              default=25,
-              type=int)
+              help='Minimum replication rate to include cluster in replicated clusters',
+              default=0.95,
+              type=click.FloatRange(0, 1))
 @click.option('--replication_rolling_size',
-              help='Patience threshold to wait for termination cluster'
-              'if number of reads subceed `the cluster_extent_cutoff`',
-              default=25,
+              help='Replication rolling size to calcultate replication rate',
+              default=1000,
               type=int)
 @click.option('--replication_num_sample',
-              help='Patience threshold to wait for termination cluster'
-              'if number of reads subceed `the cluster_extent_cutoff`',
-              default=25,
+              help='Number of samples which region need to be observed for replication',
+              default=2,
               type=int)
 @click.option('--replication_min_count',
-              help='Patience threshold to wait for termination cluster'
-              'if number of reads subceed `the cluster_extent_cutoff`',
-              default=25,
+              help='Minimum count needed to recognize region as expressed',
+              default=1,
               type=int)
 def cli_lapa(alignment, fasta, annotation, chrom_sizes, output_dir,
              counting_method, min_tail_len=10, min_percent_a=0.9, mapq=10,
@@ -87,7 +83,7 @@ def cli_lapa(alignment, fasta, annotation, chrom_sizes, output_dir,
          cluster_ratio_cutoff=cluster_ratio_cutoff,
          cluster_window=cluster_window, mapq=mapq,
          min_replication_rate=min_replication_rate,
-         replication_rolling_count=replication_rolling_size,
+         replication_rolling_size=replication_rolling_size,
          replication_num_sample=replication_num_sample,
          replication_min_count=replication_min_count)
 

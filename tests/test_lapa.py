@@ -61,7 +61,8 @@ def test_lapa_sample_cluster(tmp_path):
         'Start': [43144811, 43145111],
         'End': [43144812, 43145112],
         'Strand': ['+', '+'],
-        'count': [10, 6]
+        'count': [10, 6],
+        'coverage': [10, 30]
     })
 
     df_cluster = pd.DataFrame({
