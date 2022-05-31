@@ -55,7 +55,7 @@ class _LapaResult:
     @property
     def dataset_dir(self):
         return self.lapa_dir / 'dataset'
-    
+
     @property
     def cluster_path(self):
         if not self.replicated:
@@ -175,14 +175,15 @@ class _LapaResult:
             for i in samples
         }, score_column='count')
 
-    def plot_replication_rate(self, samples=None):
+    def plot_replication_rate(self, samples=None, line_kws=None):
         import seaborn as sns
 
         samples = samples or self.samples
+        line_kws = line_kws or dict()
 
         df = self.replication_rate(samples)
         df['rank'] = df['score'].rank(ascending=False)
-        return sns.lineplot(data=df, x='rank', y='replication')
+        return sns.lineplot(data=df, x='rank', y='replication', **line_kws)
 
     def fisher_exact_test(self, groups, min_gene_count=10,
                           correction_method='fdr_bh'):

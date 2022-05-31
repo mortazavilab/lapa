@@ -178,10 +178,9 @@ def cli_lapa_tss(alignment, fasta, annotation, chrom_sizes, output_dir,
               default=10,
               type=int)
 @click.option('--dataset',
-              help='Which dataset to use in looking. '
-              'Validation options (`all`, `raw_all`, or dataset)',
-              default='all',
-              type=int)
+              help='Which dataset to use in linking. '
+              'Valid options (`all`, `raw_all`, or dataset)',
+              default='all')
 def cli_lapa_link_tss_to_tes(alignment, lapa_dir, lapa_tss_dir, output,
                              mapq=10, min_read_length=100, dataset='all'):
     df = link_tss_to_tes(alignment, lapa_dir, lapa_tss_dir, mapq=mapq,

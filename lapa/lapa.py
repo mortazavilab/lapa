@@ -17,7 +17,8 @@ class _Lapa:
                  cluster_extent_cutoff=3, cluster_window=25,
                  cluster_ratio_cutoff=0.05,
                  min_replication_rate=0.95, replication_rolling_size=1000,
-                 replication_num_sample=2, replication_min_count=1):
+                 replication_num_sample=2, replication_min_count=1,
+                 non_replicate_read_threhold=10):
 
         self.fasta = fasta
         self.annotation = annotation
@@ -38,6 +39,7 @@ class _Lapa:
         self.replication_rolling_size = replication_rolling_size
         self.replication_num_sample = replication_num_sample
         self.replication_min_count = replication_min_count
+        self.non_replicate_read_threhold = non_replicate_read_threhold
 
         # create file structure
         self.output_dir.mkdir()
