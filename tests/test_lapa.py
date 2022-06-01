@@ -113,8 +113,9 @@ def test_lapa_sample_cluster(tmp_path):
 def test_lapa_bam_pb(tmp_path):
     output_dir = tmp_path / 'lapa'
 
-    lapa(quantseq_gm12_bam, fasta, gtf, chrom_sizes,
-         output_dir, method='tail')
+    non_replicates_read_threhold = 10
+    lapa(quantseq_gm12_bam, fasta, gtf, chrom_sizes, output_dir, method='tail',
+         non_replicates_read_threhold=non_replicates_read_threhold)
 
     # ├── raw_polyA_clusters.bed
     # ├── polyA_clusters.bed
@@ -175,10 +176,12 @@ def test_lapa_bam_pb(tmp_path):
 
     assert all(df_cluster['fracA'] <= 10)
     assert all(df_cluster['fracA'] >= 0)
-
+    
     df_apa = read_polyA_cluster(
         str(output_dir / 'sample' / 'quantseq3_gm12878_chr17_rep1.bed'))
 
+    assert df_apa['count'].min() >= non_replicates_read_threhold
+    
     assert all(df_apa.columns == cluster_col_order)
 
     counts = pd.Series(Counter(df_apa['Feature']))

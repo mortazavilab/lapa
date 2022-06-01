@@ -68,11 +68,16 @@ from lapa.correction import correct_talon
               help='Minimum count needed to recognize region as expressed',
               default=1,
               type=int)
+@click.option('--non_replicates_read_threhold',
+              help='Minimum read count need for the samples without reads',
+              default=10,
+              type=int)
 def cli_lapa(alignment, fasta, annotation, chrom_sizes, output_dir,
              counting_method, min_tail_len=10, min_percent_a=0.9, mapq=10,
              cluster_extent_cutoff=3, cluster_ratio_cutoff=0.05, cluster_window=25,
              min_replication_rate=0.95, replication_rolling_size=1000,
-             replication_num_sample=2, replication_min_count=1):
+             replication_num_sample=2, replication_min_count=1,
+             non_replicates_read_threhold=10):
     '''
     Click command line interface for lapa polyA cluster calling.
     '''
@@ -85,7 +90,8 @@ def cli_lapa(alignment, fasta, annotation, chrom_sizes, output_dir,
          min_replication_rate=min_replication_rate,
          replication_rolling_size=replication_rolling_size,
          replication_num_sample=replication_num_sample,
-         replication_min_count=replication_min_count)
+         replication_min_count=replication_min_count,
+         non_replicates_read_threhold=non_replicates_read_threhold)
 
 
 @click.command()
@@ -138,11 +144,15 @@ def cli_lapa(alignment, fasta, annotation, chrom_sizes, output_dir,
               help='Minimum count needed to recognize region as expressed',
               default=1,
               type=int)
+@click.option('--non_replicates_read_threhold',
+              help='Minimum read count need for the samples without reads',
+              default=15,
+              type=int)
 def cli_lapa_tss(alignment, fasta, annotation, chrom_sizes, output_dir,
                  mapq=10, cluster_extent_cutoff=3, cluster_ratio_cutoff=0.05,
                  cluster_window=25, min_replication_rate=0.95,
                  replication_rolling_size=1000, replication_num_sample=2,
-                 replication_min_count=1):
+                 replication_min_count=1, non_replicates_read_threhold=10):
     '''
     Click command line interface for lapa tss cluster calling.
     '''
@@ -153,7 +163,8 @@ def cli_lapa_tss(alignment, fasta, annotation, chrom_sizes, output_dir,
              min_replication_rate=min_replication_rate,
              replication_rolling_size=replication_rolling_size,
              replication_num_sample=replication_num_sample,
-             replication_min_count=replication_min_count)
+             replication_min_count=replication_min_count,
+             non_replicates_read_threhold=non_replicates_read_threhold)
 
 
 @click.command()

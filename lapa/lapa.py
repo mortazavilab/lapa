@@ -18,7 +18,7 @@ class _Lapa:
                  cluster_ratio_cutoff=0.05,
                  min_replication_rate=0.95, replication_rolling_size=1000,
                  replication_num_sample=2, replication_min_count=1,
-                 non_replicate_read_threhold=10):
+                 non_replicates_read_threhold=10):
 
         self.fasta = fasta
         self.annotation = annotation
@@ -39,10 +39,10 @@ class _Lapa:
         self.replication_rolling_size = replication_rolling_size
         self.replication_num_sample = replication_num_sample
         self.replication_min_count = replication_min_count
-        self.non_replicate_read_threhold = non_replicate_read_threhold
+        self.non_replicates_read_threhold = non_replicates_read_threhold
 
         # create file structure
-        self.output_dir.mkdir()
+        self.output_dir.mkdir(exist_ok=True)
         self.sample_dir.mkdir()
         self.raw_sample_dir.mkdir()
         self.dataset_dir.mkdir()
@@ -194,10 +194,15 @@ class _Lapa:
                 sample: sample_clusters[sample] for sample in samples
             }
 
-            if len(samples) < 2:
+            if len(samples) == 1:
+                sample = samples[0]
                 self.warn_log.warning(
-                    f'Cannot filter sample {samples[0]} due to \
-                    lack of replicates in dataset.')
+                    f'Appling non_replicates_read_threhold={self.non_replicates_read_threhold}'
+                    ' to filter sample {sample} because sample does not replicates')
+                df_cluster = rep_samples[sample]
+                rep_samples = {
+                    sample: df_cluster[df_cluster['count'] >= self.non_replicates_read_threhold]
+                }
 
             else:
                 rep_samples = replication_dataset(
@@ -232,7 +237,8 @@ class _Lapa:
 
         return df_apa
 
-    def calculate_usage(self, df_cluster):
+    @staticmethod
+    def calculate_usage(df_cluster):
         # get number of tes in the gene
         df_cluster = df_cluster.set_index('gene_id').join(
             df_cluster[['gene_id', 'count']]
@@ -247,18 +253,19 @@ class _Lapa:
 
         return df_cluster.reset_index()
 
-    def aggregate_samples(self, samples):
+    @classmethod
+    def aggregate_samples(cls, samples):
 
         aggregation = {'count': 'sum'}
 
-        for i in self._keep_cols:
+        for i in cls._keep_cols:
             aggregation[i] = 'first'
 
         df = pd.concat(samples).groupby([
             'gene_id', 'Chromosome', 'Start', 'End', 'Strand'
         ], observed=True).agg(aggregation).reset_index()
 
-        return self.calculate_usage(df)
+        return cls.calculate_usage(df)
 
     def create_counter(self, alignment):
         raise NotImplementedError()
@@ -326,11 +333,17 @@ class _Lapa:
 
 class Lapa(_Lapa):
 
+    _keep_cols = [
+        'polyA_site', 'fracA', 'signal',
+        'Feature', 'annotated_site'
+    ]
+    
     def __init__(self, fasta, annotation, chrom_sizes, output_dir, method='end',
                  min_tail_len=10, min_percent_a=0.9, mapq=10,
                  cluster_extent_cutoff=3, cluster_window=25, cluster_ratio_cutoff=0.05,
                  min_replication_rate=0.95, replication_rolling_size=1000,
-                 filter_internal_priming=True, replication_num_sample=2, replication_min_count=1):
+                 filter_internal_priming=True, replication_num_sample=2,
+                 replication_min_count=1, non_replicates_read_threhold=10):
 
         if method not in {'tail', 'end'}:
             raise ValueError(
@@ -350,11 +363,6 @@ class Lapa(_Lapa):
 
         self.prefix = 'polyA'
         self.cluster_col_order = cluster_col_order
-
-        self._keep_cols = [
-            'polyA_site', 'fracA', 'signal',
-            'Feature', 'annotated_site'
-        ]
 
     def create_counter(self, alignment, is_read_annot=False):
         return TesMultiCounter(alignment, self.method, self.mapq,
@@ -381,12 +389,17 @@ class Lapa(_Lapa):
 
 class LapaTss(_Lapa):
 
+    _keep_cols = [
+            'tss_site', 'Feature', 'annotated_site'
+    ]
+    
     def __init__(self, fasta, annotation, chrom_sizes, output_dir,
                  method='start', mapq=10,
                  cluster_extent_cutoff=3, cluster_window=25,
                  cluster_ratio_cutoff=0.05,
                  min_replication_rate=0.95, replication_rolling_size=1000,
-                 replication_num_sample=2, replication_min_count=1):
+                 replication_num_sample=2, replication_min_count=1,
+                 non_replicates_read_threhold=10):
 
         if method not in {'start'}:
             raise ValueError(
@@ -401,10 +414,6 @@ class LapaTss(_Lapa):
 
         self.prefix = 'tss'
         self.cluster_col_order = tss_cluster_col_order
-
-        self._keep_cols = [
-            'tss_site', 'Feature', 'annotated_site'
-        ]
 
     def create_counter(self, alignment, is_read_annot=False):
         return TssMultiCounter(alignment, self.method, self.mapq,
@@ -424,7 +433,8 @@ def lapa(alignment, fasta, annotation, chrom_sizes, output_dir, method='end',
          min_tail_len=10, min_percent_a=0.9, mapq=10,
          cluster_extent_cutoff=3, cluster_window=25, cluster_ratio_cutoff=0.05,
          min_replication_rate=0.95, replication_rolling_size=1000,
-         replication_num_sample=2, replication_min_count=1):
+         replication_num_sample=2, replication_min_count=1,
+         non_replicates_read_threhold=10):
 
     _lapa = Lapa(fasta, annotation, chrom_sizes, output_dir, method=method,
                  min_tail_len=min_tail_len, min_percent_a=min_percent_a, mapq=mapq,
@@ -433,7 +443,8 @@ def lapa(alignment, fasta, annotation, chrom_sizes, output_dir, method='end',
                  min_replication_rate=min_replication_rate,
                  replication_rolling_size=replication_rolling_size,
                  replication_num_sample=replication_num_sample,
-                 replication_min_count=replication_min_count)
+                 replication_min_count=replication_min_count,
+                 non_replicates_read_threhold=non_replicates_read_threhold)
     _lapa(alignment)
 
 
@@ -441,7 +452,9 @@ def lapa_tss(alignment, fasta, annotation, chrom_sizes, output_dir,
              method='start', mapq=10,
              cluster_extent_cutoff=3, cluster_window=25, cluster_ratio_cutoff=0.05,
              min_replication_rate=0.95, replication_rolling_size=1000,
-             replication_num_sample=2, replication_min_count=1):
+             replication_num_sample=2, replication_min_count=1,
+             non_replicates_read_threhold=10):
+
     _lapa = LapaTss(fasta, annotation, chrom_sizes, output_dir,
                     method=method, mapq=mapq,
                     cluster_extent_cutoff=cluster_extent_cutoff,
@@ -449,5 +462,6 @@ def lapa_tss(alignment, fasta, annotation, chrom_sizes, output_dir,
                     min_replication_rate=min_replication_rate,
                     replication_rolling_size=replication_rolling_size,
                     replication_num_sample=replication_num_sample,
-                    replication_min_count=replication_min_count)
+                    replication_min_count=replication_min_count,
+                    non_replicates_read_threhold=non_replicates_read_threhold)
     _lapa(alignment)
