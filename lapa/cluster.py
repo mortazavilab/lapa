@@ -105,7 +105,7 @@ class PolyACluster(Cluster):
             if index == -1:
                 continue
             else:
-                return self.Start + index, signal_seq
+                return start + index, signal_seq
         return None, None
 
     def fraction_A(self, fasta, polyA_site):

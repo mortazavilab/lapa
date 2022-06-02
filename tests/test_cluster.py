@@ -51,7 +51,7 @@ def test_TesCluster_to_df(df_tes):
         'count': [10, 7, 11],
         'Strand': ['+', '-', '+'],
         'fracA': [6, 2, -1],
-        'signal': ['100157@GATAAA', 'None@None', 'None@None']
+        'signal': ['100098@GATAAA', 'None@None', 'None@None']
     })
 
     cols = ['Chromosome', 'Start', 'End', 'polyA_site',
