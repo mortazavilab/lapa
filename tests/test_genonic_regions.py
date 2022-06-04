@@ -32,8 +32,6 @@ def test_GenomicRegions_annotate(polya_genomic_regions):
     gr.polyA_site = [4303050, 43045057, 43046769, 43057094, 43093515]
     df_ann = polya_genomic_regions.annotate(gr)
 
-    __import__("pdb").set_trace()
-
     df_ann['Chromosome'] = df_ann['Chromosome'].astype('str')
     df_ann['Strand'] = df_ann['Strand'].astype('str')
 

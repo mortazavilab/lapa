@@ -4,6 +4,8 @@ from lapa import lapa
 from lapa.lapa import Lapa
 from lapa.utils.io import cluster_col_order, tss_cluster_col_order, \
     read_talon_read_annot, read_tss_cluster, read_polyA_cluster
+from kipoiseq import Interval
+from kipoiseq.extractors import FastaStringExtractor
 from conftest import fasta, gtf, chrom_sizes, \
     quantseq_gm12_bam, sample_csv, quantseq_both_gm12_bam, read_annot
 
@@ -185,6 +187,7 @@ def test_lapa_bam_pb(tmp_path):
     assert all(df_apa.columns == cluster_col_order)
 
     counts = pd.Series(Counter(df_apa['Feature']))
+    
     assert counts.idxmax() == 'three_prime_utr'
 
     df_cluster = read_polyA_cluster(str(output_dir / 'polyA_clusters.bed'))
@@ -222,6 +225,19 @@ def test_lapa_bam_quantseq(tmp_path):
         str(output_dir / 'sample' / 'quantseq3_gm12878_chr17_rep1.bed'))
 
     assert df_raw.shape[0] > df_replicated.shape[0]
+
+    seq_extractor = FastaStringExtractor(fasta, use_strand=True)
+
+    for row in df_replicated.itertuples():
+        pos, signal = row.signal.split('@')
+
+        if signal == 'None':
+            continue
+
+        pos = int(pos)
+        seq =  seq_extractor.extract(
+            Interval(row.Chromosome, pos, pos + 6, strand=row.Strand))
+        assert signal == seq
 
 
 def test_lapa_read_csv(tmp_path):
