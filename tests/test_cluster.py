@@ -1,6 +1,7 @@
 import pytest
 import pandas as pd
-from lapa.cluster import PolyAClustering, Cluster
+from kipoiseq.extractors import FastaStringExtractor
+from lapa.cluster import PolyAClustering, Cluster, PolyACluster
 from conftest import fasta
 
 
@@ -38,6 +39,26 @@ def test_PolyAClustering_cluster(df_tes):
     assert cluster.End == 1101
     assert cluster.Strand == '+'
     assert cluster.counts == [(1101, 11)]
+
+
+def test_PolyACluster_peak():
+    cluster = PolyACluster(
+        'chr17', 43044290, 43044299, '-',
+        counts=[(43044293, 5), (43044294, 10), (43044299, 5)]
+    )
+    peak = cluster.peak()
+    assert peak == 43044294
+
+
+def test_PolyACluster_polyA_signal_sequence():
+    cluster = PolyACluster(
+        'chr17', 43044290, 43044299, '-',
+        counts=[(43044293, 5), (43044294, 10), (43044299, 5)]
+    )
+    pos, signal = cluster.polyA_signal_sequence(fasta, 43044294)
+
+    assert pos == 43044314
+    assert signal == 'AATAAA'
 
 
 def test_TesCluster_to_df(df_tes):
@@ -108,5 +129,5 @@ def test_Cluster__count_arr():
         (21, 18)
     ]
     count_arr = Cluster._count_arr(counts)
-    assert count_arr == [
+    assert count_arr.tolist() == [
         10, 15, 16, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 23, 24, 0, 18]

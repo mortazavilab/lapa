@@ -47,16 +47,20 @@ class Cluster:
         count_arr = [0] * (max_pos - min_pos + 1)
         for pos, c in counts:
             count_arr[pos - min_pos] = c
-        return count_arr
+
+        return pd.Series(count_arr,
+                         index=pd.RangeIndex(min_pos, max_pos + 1))
 
     def peak(self, window=5, std=1):
+
         pad_size = window // 2
         counts = self._count_arr(self.counts)
+
         # counts = pd.Series(dict(self.counts)).sort_index()
         counts = pad_series(counts, pad_size=pad_size)
         moving_sum = counts.rolling(window, center=True,
                                     win_type='gaussian').sum(std=std)
-        return self.Start + moving_sum.idxmax() + 1
+        return moving_sum.idxmax()
 
     def to_dict(self, fasta):
         total = self.total_count
@@ -86,6 +90,10 @@ class PolyACluster(Cluster):
         # that are annotated for single 3' end processing sites
         # in the region -60 to +10 nt around them
         # According to Gruber et al., 2016, Genome Research.
+
+        if isinstance(fasta, str):
+            fasta = FastaStringExtractor(fasta, use_strand=True)
+
         if self.Strand == '+':
             start = polyA_site - 60
             end = polyA_site + 10
@@ -105,10 +113,17 @@ class PolyACluster(Cluster):
             if index == -1:
                 continue
             else:
-                return start + index, signal_seq
+                pos = (start + index) if self.Strand == '+' \
+                    else (end - index - 6)
+                return pos, signal_seq
+
         return None, None
 
     def fraction_A(self, fasta, polyA_site):
+
+        if isinstance(fasta, str):
+            fasta = FastaStringExtractor(fasta, use_strand=True)
+
         if self.Strand == '+':
             start = polyA_site
             end = polyA_site + 10

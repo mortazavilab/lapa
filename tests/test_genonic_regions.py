@@ -1,14 +1,19 @@
 import pytest
-from conftest import gtf_brca1, agg_annotation_gene
 import numpy as np
 import pandas as pd
 import pyranges as pr
 from lapa.genomic_regions import TssGenomicRegions, PolyAGenomicRegions
+from conftest import gtf_brca1, agg_annotation_gene, gtf
 
 
 @pytest.fixture
 def polya_genomic_regions():
     return PolyAGenomicRegions(gtf_brca1)
+
+
+@pytest.fixture
+def tss_genomic_regions():
+    return TssGenomicRegions(gtf)
 
 
 def test_GenomicRegions_features(polya_genomic_regions):
@@ -27,6 +32,8 @@ def test_GenomicRegions_annotate(polya_genomic_regions):
     gr.polyA_site = [4303050, 43045057, 43046769, 43057094, 43093515]
     df_ann = polya_genomic_regions.annotate(gr)
 
+    __import__("pdb").set_trace()
+
     df_ann['Chromosome'] = df_ann['Chromosome'].astype('str')
     df_ann['Strand'] = df_ann['Strand'].astype('str')
 
@@ -41,6 +48,33 @@ def test_GenomicRegions_annotate(polya_genomic_regions):
                     'ENSG00000012048.23', 'ENSG00000012048.23'],
         'gene_name': ['intergenic_0', 'BRCA1', 'BRCA1', 'BRCA1', 'BRCA1'],
         'annotated_site': [-1, 43044294, -1, 43091434, -1]
+    })
+
+    pd.testing.assert_frame_equal(df_ann, df_expected)
+
+
+def test_TssGenomicRegions_annotate(tss_genomic_regions):
+    gr = pr.PyRanges(chromosomes="chr17",
+                     starts=(50201626,),
+                     ends=(50201686,),
+                     strands=('-',))
+
+    gr.tss_site = [50201631]
+    df_ann = tss_genomic_regions.annotate(gr)
+
+    df_ann['Chromosome'] = df_ann['Chromosome'].astype('str')
+    df_ann['Strand'] = df_ann['Strand'].astype('str')
+
+    df_expected = pd.DataFrame({
+        'Chromosome': ['chr17'],
+        'Start': [50201626],
+        'End': [50201686],
+        'Strand': ['-'],
+        'tss_site': [50201631],
+        'Feature': ['five_prime_utr'],
+        'gene_id': ['ENSG00000108821.14'],
+        'gene_name': ['COL1A1'],
+        'annotated_site': [50201631]
     })
 
     pd.testing.assert_frame_equal(df_ann, df_expected)
