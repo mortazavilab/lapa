@@ -11,6 +11,7 @@ Welcome to lapa's documentation!
    :caption: Feature Overview:
 
    quick_start
+   run
    cli
    output
 

@@ -1,6 +1,3 @@
-# Output format
-
-
 ## Poly(A) clusters
 
 Output directory of LAPA (`lapa --output_dir your_output_dir`) looks like:
@@ -36,7 +33,7 @@ your_output_dir/
     └── warnings.log
 ```
 
-where `polyA_clusters.bed` is the main output of LAPA and contains poly(A) clusters with replication rate. Those set of clusters are high confidence set of poly(A) clusters. Poly(A) cluster .bed file have following format:
+**polyA_clusters.bed:** is the main output of LAPA and contains poly(A) clusters with replication rate. Those set of clusters are high confidence set of poly(A) clusters. Poly(A) cluster .bed file have following format:
 
 
 | Chromosome   |   Start |     End |   polyA_site |   count | Strand   | Feature         | gene_id            |      tpm |   gene_count |    usage |   fracA | signal         |   annotated_site |
@@ -74,27 +71,27 @@ from lapa import read_polyA_cluster
 df = read_polyA_cluster('your_output_dir/polyA_clusters.bed')
 ```
 
-`raw_polyA_clusters.bed` contains the all the poly(A) clusters detected by LAPA but not filtered for replication.
+**raw_polyA_clusters.bed:** contains the all the poly(A) clusters detected by LAPA but not filtered for replication.
 
 
-`counts` is directory containing read end bigwig files. Each bigwig file contains number of reads ends per position indicating possosible poly(A) sites. This directory contains one bigwig file for each strand and not filtered so representing row data. There is pair of bigwig files per sample. The file starting all prefix contains counts from all the samples where counts are aggreated into one bigwig file.
+**counts:** is directory containing read end bigwig files. Each bigwig file contains number of reads ends per position indicating possosible poly(A) sites. This directory contains one bigwig file for each strand and not filtered so representing row data. There is pair of bigwig files per sample. The file starting all prefix contains counts from all the samples where counts are aggreated into one bigwig file.
 
 
-`coverage` is directory containing bigwig files for coverage. Each file indicates for coverage of non-zero values in counts file. So the file format is sparse, contains values only for positions where at least 1 read is ending, and remaining positions are zero despite coverage can be non-zero. Sparse file format used to limit file and computational efficiency. The file starting all prefix contains counts from all the samples where counts are aggreated into one bigwig file.
+**coverage:** is directory containing bigwig files for coverage. Each file indicates for coverage of non-zero values in counts file. So the file format is sparse, contains values only for positions where at least 1 read is ending, and remaining positions are zero despite coverage can be non-zero. Sparse file format used to limit file and computational efficiency. The file starting all prefix contains counts from all the samples where counts are aggreated into one bigwig file.
 
 
-`coverage` is directory containing ratio of counts to coverage ($ count / coverage $). This ratio indicates percentage reads are ending at a position given coverage. If the ratio close to one, the site is definitive poly(A) site give there is high coverage. If ratio is close to 0 then reads ending could be at the position by chance. Based on the default parameters LAPA (`cluster_ratio_cutoff`) only initialize cluster if ratio > 5% at a position. The file starting all prefix contains counts from all the samples where counts are aggreated into one bigwig file.
+**coverage:** is directory containing ratio of counts to coverage ($ count / coverage $). This ratio indicates percentage reads are ending at a position given coverage. If the ratio close to one, the site is definitive poly(A) site give there is high coverage. If ratio is close to 0 then reads ending could be at the position by chance. Based on the default parameters LAPA (**cluster_ratio_cutoff**) only initialize cluster if ratio > 5% at a position. The file starting all prefix contains counts from all the samples where counts are aggreated into one bigwig file.
 
 
-`dataset` is directory containing poly(A) cluster .bed files per dataset. Those files are filtered for replication rate using samples in for the dataset, then replicated clusters from all the samples aggregate into .bed file for the cluster.
+**dataset:** is directory containing poly(A) cluster .bed files per dataset. Those files are filtered for replication rate using samples in for the dataset, then replicated clusters from all the samples aggregate into .bed file for the cluster.
 
 
-`raw_sample` is directory containing poly(A) cluster .bed files per sample where files are not filtered for replication. 
+**raw_sample:** is directory containing poly(A) cluster .bed files per sample where files are not filtered for replication. 
 
-`sample` is directory containing poly(A) cluster .bed files per sample where files are filtered for replication. 
+**sample:** is directory containing poly(A) cluster .bed files per sample where files are filtered for replication. 
 
 
-`logs` is directory containing logs of LAPA. `final_stats.log` contains statistics about poly(A) clusters after program finished. `progress.log` provide inside about the progress of program run. `warnings.log` file contains possible warning encounter during the run time if there is any.
+**logs:** is directory containing logs of LAPA. **final_stats.log** contains statistics about poly(A) clusters after program finished. **progress.log** provide inside about the progress of program run. **warnings.log** file contains possible warning encounter during the run time if there is any.
 
 
 ## TSS clusters
@@ -142,7 +139,6 @@ where `tss_clusters.bed` is the main output of LAPA and contains TSS clusters wi
 | chr17        | 38918997 | 38918998 |   38918998 |      27 | +        | exon           | ENSG00000002834.18 |  298.29 |          252 | 0.107143  |               -1 |
 | chr17        | 48107566 | 48107599 |   48107576 |      13 | +        | five_prime_utr | ENSG00000002919.15 |  143.62 |           23 | 0.565217  |         48107548 |
 | chr17        | 48107764 | 48107785 |   48107785 |      10 | +        | five_prime_utr | ENSG00000002919.15 |  110.48 |           23 | 0.434783  |         48107548 |
-...
 
 This cluster .bed file and all other cluster .bed files have following columns:
 
@@ -162,4 +158,4 @@ This cluster .bed file and all other cluster .bed files have following columns:
 
 `raw_tss_clusters.bed` contains the all the TSS clusters detected by LAPA but not filtered for replication.
 
-For the details of the other files see the documentation of Poly(A) clusters. File structure and contain of the files are same with TSS clusters.
+For the details of the other files see [the documentation of Poly(A) clusters](#poly(A)-clusters). File structure and content of the files are same with TSS clusters.
