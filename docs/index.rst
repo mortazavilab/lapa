@@ -12,6 +12,7 @@ Welcome to lapa's documentation!
 
    quick_start
    cli
+   output
 
 .. mdinclude:: ../README.md
 
