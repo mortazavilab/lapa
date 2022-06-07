@@ -164,24 +164,27 @@ class _LapaResult:
 
         return k[filter_rows], n[filter_rows]
 
-    def replication_rate(self, samples=None):
+    def replication_rate(self, samples=None, num_samples=2, min_score=1):
         '''
         Calculate replication rate of samples
         '''
         samples = samples or self.samples
 
         return replication_rate({
-            i: self.read_sample(i)
+            i: self.read_sample(i, filter_intergenic=False)
             for i in samples
-        }, score_column='count')
+        }, score_column='count', num_samples=num_samples,
+            min_score=min_score)
 
-    def plot_replication_rate(self, samples=None, line_kws=None):
+    def plot_replication_rate(self, samples=None, num_samples=2,
+                              min_score=1, line_kws=None):
         import seaborn as sns
 
         samples = samples or self.samples
         line_kws = line_kws or dict()
 
-        df = self.replication_rate(samples)
+        df = self.replication_rate(samples, num_samples=num_samples,
+                                   min_score=min_score)
         df['rank'] = df['score'].rank(ascending=False)
         return sns.lineplot(data=df, x='rank', y='replication', **line_kws)
 
