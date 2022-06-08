@@ -247,12 +247,12 @@ class ThreePrimeCounter(BaseCounter):
         >>> os.listdir(output_dir)
         ['lapa_count_pos.bw', 'lapa_count_neg.bw']
         >>> counter.to_df()
-        +--------------+-----------+-----------+--------------+------------+
-        | Chromosome   | Start     | End       | Strand       | count      |
-        | (category)   | (int32)   | (int32)   | (category)   | (uint16)   |
-        |--------------+-----------+-----------+--------------+------------|
-        | chr1         | 887771    | 887772    | +            | 5          |
-        | chr1         | 994684    | 994685    | -            | 8          |
+        +--------------+-----------+-----------+--------------+-----------+------------+
+        | Chromosome   | Start     | End       | Strand       | count     | coverage   |
+        | (category)   | (int32)   | (int32)   | (category)   | (int64)   | (int64)    |
+        |--------------+-----------+-----------+--------------+-----------+------------|
+        | chr1         | 887771    | 887772    | +            | 5         | 5          |
+        | chr1         | 994684    | 994685    | -            | 8         | 10         |
         ...
     '''
 
@@ -351,12 +351,12 @@ class FivePrimeCounter(BaseCounter):
         >>> os.listdir(output_dir)
         ['lapa_count_pos.bw', 'lapa_count_neg.bw']
         >>> counter.to_df()
-        +--------------+-----------+-----------+--------------+------------+
-        | Chromosome   | Start     | End       | Strand       | count      |
-        | (category)   | (int32)   | (int32)   | (category)   | (uint16)   |
-        |--------------+-----------+-----------+--------------+------------|
-        | chr1         | 887771    | 887772    | +            | 5          |
-        | chr1         | 994684    | 994685    | -            | 8          |
+        +--------------+-----------+-----------+--------------+-----------+------------+
+        | Chromosome   | Start     | End       | Strand       | count     | coverage   |
+        | (category)   | (int32)   | (int32)   | (category)   | (int64)   | (int64)    |
+        |--------------+-----------+-----------+--------------+-----------+------------|
+        | chr1         | 887771    | 887772    | +            | 5         | 5          |
+        | chr1         | 994684    | 994685    | -            | 8         | 10         |
         ...
     '''
 
@@ -393,12 +393,12 @@ class PolyaTailCounter(ThreePrimeCounter):
         >>> os.listdir(output_dir)
         ['lapa_count_pos.bw', 'lapa_count_neg.bw']
         >>> counter.to_df()
-        +--------------+-----------+-----------+--------------+------------+
-        | Chromosome   | Start     | End       | Strand       | count      |
-        | (category)   | (int32)   | (int32)   | (category)   | (uint16)   |
-        |--------------+-----------+-----------+--------------+------------|
-        | chr1         | 887771    | 887772    | +            | 5          |
-        | chr1         | 994684    | 994685    | -            | 8          |
+        +--------------+-----------+-----------+--------------+-----------+------------+
+        | Chromosome   | Start     | End       | Strand       | count     | coverage   |
+        | (category)   | (int32)   | (int32)   | (category)   | (int64)   | (int64)    |
+        |--------------+-----------+-----------+--------------+-----------+------------|
+        | chr1         | 887771    | 887772    | +            | 5         | 5          |
+        | chr1         | 994684    | 994685    | -            | 8         | 10         |
         ...
     '''
 

@@ -26,14 +26,16 @@ test_requirements = ['pytest']
 
 setup(
     name='lapa',
-    version='0.0.2',
+    version='0.0.3',
 
     author="M. Hasan Çelik",
     author_email='muhammedhasancelik@gmail.com',
     url='https://github.com/mortazavilab/lapa',
 
     keywords=['genomics', 'long read RNA-seq', 'APA'],
-    description="Alternative polyadenylation detection from diverse data sources",
+    description="Tools for alternative polyadenylation detection and analysis "
+    "from diverse data sources (3'seq and long-reads) and "
+    "transcript start site detection and analysis from long-read RNA-seq.",
 
     classifiers=[
         'Natural Language :: English',
