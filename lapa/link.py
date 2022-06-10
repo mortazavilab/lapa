@@ -71,7 +71,7 @@ def link_tss_to_tes(alignment, lapa_dir, lapa_tss_dir, distance=50,
                     mapq=10, min_read_length=100, dataset='all'):
     '''
     Link transcript site sites to transcript end sites using
-      long-read from the alignment file.
+    long-read from the alignment file.
 
     Args:
       alignment (str): Path to bam file or TALON read_annot file.

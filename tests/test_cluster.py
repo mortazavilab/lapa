@@ -74,7 +74,6 @@ def test_TesCluster_to_df(df_tes):
         'fracA': [6, 2, -1],
         'signal': ['100098@GATAAA', 'None@None', 'None@None']
     })
-
     cols = ['Chromosome', 'Start', 'End', 'polyA_site',
             'count', 'Strand', 'fracA', 'signal']
     pd.testing.assert_frame_equal(df_clusters[cols], df_expected)

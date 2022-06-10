@@ -429,13 +429,62 @@ class LapaTss(_Lapa):
         return TssGenomicRegions(self.annotation)
 
 
-def lapa(alignment, fasta, annotation, chrom_sizes, output_dir, method='end',
-         min_tail_len=10, min_percent_a=0.9, mapq=10,
+def lapa(alignment: str, fasta: str, annotation: str, chrom_sizes :str, output_dir:str,
+         method='end', min_tail_len=10, min_percent_a=0.9, mapq=10,
          cluster_extent_cutoff=3, cluster_window=25, cluster_ratio_cutoff=0.05,
          min_replication_rate=0.95, replication_rolling_size=1000,
          replication_num_sample=2, replication_min_count=1,
          non_replicates_read_threhold=10):
+    '''
+    LAPA high level api for polyA cluster calling.
 
+    Args:
+      alignment: Single or multiple bam file paths are separated
+        with a comma.Alternatively, CSV file with columns of
+        sample, dataset, path where the sample columns contains
+        the name of the sample, the dataset is the group of
+        samples replicates of each other, and path is the
+        path of bam file.
+      fasta: Genome reference (GENCODE or ENSEMBL fasta)
+      annotation: Standart genome annotation (GENCODE or ENSEMBL gtf).
+        GENCODE gtf file do not contains annotation for
+        `five_prime_utr` and `three_prime_utr` so need to be
+        corrected with `gencode_utr_fix`
+      chrom_sizes: Chrom sizes files (can be generated with
+      output_dir: See lapa.readthedocs.io/en/latest/output.html)
+        for the details of the directory structure and file format.
+      method: Counting method either `end` or `tail` where tails
+        counting only counts reads with poly(A)-tail with certain
+        length defined by `--min_tail_len` parameter. `end`
+        counting still detects tails if exists but uses end
+        location of all the reads in counting regardless of tail length.
+      min_tail_len: Minimum tail length for `tail` counting strategy.
+        This parameter will be ignored in `end` counting setting.
+      min_percent_a: Minimum percentage of A bp in soft-trimmed segment
+        to consider the segment as tails.
+        This parameter will be ignored for end counting.
+      mapq: Minimum read quality to required for tes calling
+      cluster_extent_cutoff: Minimum number of reads to initialized cluster and
+        terminated cluster will be terminated if read
+        numbers below this cutoff for certain number of base pairs.
+      cluster_ratio_cutoff: Percentage of coverage change for initialize cluster.
+        At least x% of reads covering the bp need to ended in the
+        position to initilized the cluster. This filter implies
+        `<x%` of the reads given position could stop by chance
+        so filtered as noise.
+      cluster_window: Patience threshold to wait for termination cluster.
+        If reads counts below the threshold for x bp then cluster
+        will be terminated otherwise cluster will be extended.
+        if number of reads subceed `the cluster_extent_cutoff.
+      min_replication_rate: Minimum replication rate to include cluster in
+        replicated clusters. 0.95 is recommended cutoff for
+        experimental replication and 75% for biological replication.
+      replication_rolling_size: Replication rolling size to calculate replication rate.
+      replication_num_sample: Number of samples which region need to be observed for replication
+      replication_min_count: Minimum count needed to recognize region as expressed
+      non_replicates_read_threhold: Minimum read count need for the samples without replication.
+        If there is not replicate samples for the sample, this default cutoff will be applied.
+    '''
     _lapa = Lapa(fasta, annotation, chrom_sizes, output_dir, method=method,
                  min_tail_len=min_tail_len, min_percent_a=min_percent_a, mapq=mapq,
                  cluster_extent_cutoff=cluster_extent_cutoff,
@@ -448,13 +497,58 @@ def lapa(alignment, fasta, annotation, chrom_sizes, output_dir, method='end',
     _lapa(alignment)
 
 
-def lapa_tss(alignment, fasta, annotation, chrom_sizes, output_dir,
+def lapa_tss(alignment: str, fasta: str, annotation: str, chrom_sizes: str, output_dir: str,
              method='start', mapq=10,
              cluster_extent_cutoff=3, cluster_window=25, cluster_ratio_cutoff=0.05,
              min_replication_rate=0.95, replication_rolling_size=1000,
              replication_num_sample=2, replication_min_count=1,
              non_replicates_read_threhold=10):
+    '''
+    LAPA TSS high level api for polyA cluster calling.
 
+    Args:
+      alignment: Single or multiple bam file paths are separated
+        with a comma.Alternatively, CSV file with columns of
+        sample, dataset, path where the sample columns contains
+        the name of the sample, the dataset is the group of
+        samples replicates of each other, and path is the
+        path of bam file.
+      fasta: Genome reference (GENCODE or ENSEMBL fasta)
+      annotation: Standart genome annotation (GENCODE or ENSEMBL gtf).
+        GENCODE gtf file do not contains annotation for
+        `five_prime_utr` and `three_prime_utr` so need to be
+        corrected with `gencode_utr_fix`
+      chrom_sizes: Chrom sizes files (can be generated with
+      method: Counting method
+      output_dir: See lapa.readthedocs.io/en/latest/output.html)
+        for the details of the directory structure and file format.
+      min_tail_len: Minimum tail length for `tail` counting strategy.
+        This parameter will be ignored in `end` counting setting.
+      min_percent_a: Minimum percentage of A bp in soft-trimmed segment
+        to consider the segment as tails.
+        This parameter will be ignored for end counting.
+      mapq: Minimum read quality to required for tes calling
+      cluster_extent_cutoff: Minimum number of reads to initialized cluster and
+        terminated cluster will be terminated if read
+        numbers below this cutoff for certain number of base pairs.
+      cluster_ratio_cutoff: Percentage of coverage change for initialize cluster.
+        At least x% of reads covering the bp need to ended in the
+        position to initilized the cluster. This filter implies
+        `<x%` of the reads given position could stop by chance
+        so filtered as noise.
+      cluster_window: Patience threshold to wait for termination cluster.
+        If reads counts below the threshold for x bp then cluster
+        will be terminated otherwise cluster will be extended.
+        if number of reads subceed `the cluster_extent_cutoff.
+      min_replication_rate: Minimum replication rate to include cluster in
+        replicated clusters. 0.95 is recommended cutoff for
+        experimental replication and 75% for biological replication.
+      replication_rolling_size: Replication rolling size to calculate replication rate.
+      replication_num_sample: Number of samples which region need to be observed for replication
+      replication_min_count: Minimum count needed to recognize region as expressed
+      non_replicates_read_threhold: Minimum read count need for the samples without replication.
+        If there is not replicate samples for the sample, this default cutoff will be applied.
+    '''
     _lapa = LapaTss(fasta, annotation, chrom_sizes, output_dir,
                     method=method, mapq=mapq,
                     cluster_extent_cutoff=cluster_extent_cutoff,

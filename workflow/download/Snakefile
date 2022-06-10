@@ -128,3 +128,8 @@ rule all_download:
 
         expand(rules.download_cage.output,
                geo_id=config['cage']['geo_id'])
+
+        expand(rules.download_encode_bam,
+               encode_id=config['c2c12']['bam']['myoblast'])
+        expand(rules.download_encode_bam,
+               encode_id=config['c2c12']['bam']['myotube'])

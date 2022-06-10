@@ -5,12 +5,17 @@ from lapa.utils.io import read_talon_read_annot
 
 
 class Transcript:
+    '''
+    Transcript class for performing manupulation on transcripts.
+
+    Args:
+      transcript_id: transcript id
+      df: Transcript and subfeatures as data.frame. 
+        Enteries of gtf file related with the transcript.
+      min_exon_len: Minimum exon length
+    '''
 
     def __init__(self, transcript_id, df, min_exon_len=25):
-        '''
-        Args:
-          df: enteries of gtf file related with the transcript
-        '''
         assert df['Feature'].iloc[0] == 'transcript', \
             "The first features of df should be transcript"
 
@@ -29,6 +34,9 @@ class Transcript:
 
     @property
     def five_prime_exon_idx(self):
+        '''
+        Most five prime exon of transcript
+        '''
         if self.strand == '+':
             return self.first_exon_idx
         elif self.strand == '-':
@@ -36,6 +44,9 @@ class Transcript:
 
     @property
     def three_prime_exon_idx(self):
+        '''
+        Most three prime exon of transcript
+        '''        
         if self.strand == '+':
             return self.last_exon_idx
         elif self.strand == '-':
@@ -43,8 +54,10 @@ class Transcript:
 
     def copy(self, new_transcript_id):
         '''
+        Create copy of transcript with new transcript id.
+
         Args:
-          new_transcript_id: `oldTranscriptId_suffix`
+          new_transcript_id: `oldTranscriptId#suffix`
         '''
         old_transcript, prefix = new_transcript_id.split('#')
         assert old_transcript == self.transcript_id
@@ -54,7 +67,15 @@ class Transcript:
         df['exon_id'] = df['exon_id'] + '#' + prefix
         return Transcript(new_transcript_id, df)
 
-    def valid_five_prime_exon_len(self, tss_site):
+    def valid_five_prime_exon_len(self, tss_site: int):
+        '''
+        Checks new proposed tss_site is valid for most five
+        prime exon of transcript based on coordinates and 
+        minimum exon length.
+
+        Args:
+          tss_site: Position of proposed tss site 
+        '''
         exon_idx = self.five_prime_exon_idx
 
         if self.strand == '+':
@@ -65,6 +86,14 @@ class Transcript:
         return exon_len > self.min_exon_len
 
     def valid_three_prime_exon_len(self, polyA_site):
+        '''
+        Checks new proposed polyA_site is valid for most three 
+        prime exon of transcript based on coordinates and 
+        minimum exon length.
+
+        Args:
+          polyA_site: Position of proposed poly(A) site
+        '''
         exon_idx = self.three_prime_exon_idx
 
         if self.strand == '+':
@@ -75,6 +104,12 @@ class Transcript:
         return exon_len > self.min_exon_len
 
     def update_tss_site(self, tss_site):
+        '''
+        Updates tss site of transcript and most five prime exons.
+
+        Args:
+          tss_site: Position of proposed tss site.        
+        '''
         exon_idx = self.five_prime_exon_idx
 
         if not self.valid_five_prime_exon_len(tss_site):
@@ -92,6 +127,12 @@ class Transcript:
             self.df['End'].iloc[0] = tss_site
 
     def update_polyA_site(self, polyA_site):
+        '''
+        Updates poly(A) site of transcript and most three prime exons.
+
+        Args:
+          polyA_site: Position of proposed poly(A) site.
+        '''        
         exon_idx = self.three_prime_exon_idx
 
         if not self.valid_three_prime_exon_len(polyA_site):
@@ -110,6 +151,14 @@ class Transcript:
 
 
 class TranscriptModifier:
+    '''
+    Modifier to update transcript start, end sites
+    of transcript and respective exons, genes.
+
+    Args:
+      templete_gtf: Use gtf as templete.
+      min_exon_len: Minimum exon length.
+    '''
 
     def __init__(self, templete_gtf, min_exon_len=25):
         self.gtf = pr.read_gtf(templete_gtf).df
@@ -132,6 +181,9 @@ class TranscriptModifier:
         self.genes = dict()
 
     def fetch_transcript(self, transcript_id):
+        '''
+        Fetch transcript from the templete gtf and return transcript object.
+        '''
         return Transcript(
             transcript_id,
             self._transcript_templetes[transcript_id],
@@ -139,7 +191,9 @@ class TranscriptModifier:
         )
 
     def add_transcript(self, transcript):
-
+        '''
+        Add new trascript isoform to modifier.
+        '''        
         self.transcripts[transcript.transcript_id] = transcript.df
 
         if transcript.gene_id not in self.genes:
@@ -175,6 +229,12 @@ class TranscriptModifier:
         ], na_position='first', key=TranscriptModifier._sort_gtf_key)
 
     def to_gtf(self, path):
+        '''
+        Save all motifiers with motified trascript as gtf.
+
+        Args:
+          path: Output path to save gtf.
+        '''
         print('Sorting and writing gtf...')
         df_gtf = pd.concat([
             *self.genes.values(),
@@ -317,6 +377,28 @@ def correct_talon(links_path, read_annot_path, gtf_input,
                   gtf_output, abundance_path, abundance_output,
                   link_threshold=1, keep_unsupported=False):
     '''
+    LAPA creates GTF file with tss/poly(A) cluster support based
+    on the linking reads and using splice chain of TALON.
+
+    Args:
+      links_path: Path to linking read file generated 
+        with `lapa_link_tss_to_tes` command.
+
+      read_annot_path: read_annot of TALON annotating read
+        transcript assignments.
+      gtf_input: Input gtf file to extract splice chains.
+      gtf_output: Output corrected gtf contains trascripts
+        with tss/poly(A) end support.
+      abundance_path: Input abundance file of TALON which contains
+        abundance of each transcript.
+      abundance_output: Update abundance file which calculated
+        based on abundance of linking reads.
+      link_threshold: Minimum number of linking reads to create 
+        transcript isoform.
+      keep_unsupported: Keep transcripts without tss and tes support in
+        the original gtf. If true transcript created with
+        non-linking reads (partial) in the original files
+        are kept gtf and abundance.
     '''
     df = _links_transcript_agg(links_path, read_annot_path)
     df = _transcript_tss_tes(df, threshold=link_threshold)

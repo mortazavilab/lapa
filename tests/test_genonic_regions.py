@@ -34,7 +34,7 @@ def test_GenomicRegions_annotate(polya_genomic_regions):
 
     df_ann['Chromosome'] = df_ann['Chromosome'].astype('str')
     df_ann['Strand'] = df_ann['Strand'].astype('str')
-
+    
     df_expected = pd.DataFrame({
         'Chromosome': ['chr17', 'chr17', 'chr17', 'chr17', 'chr17'],
         'Start': [4303000, 43044826, 43046541, 43093458, 43115728],
@@ -126,3 +126,4 @@ def test_GenomicRegions__agg_annotation_gene(polya_genomic_regions):
             'annotated_site': [2043430, 2043430]
         })
     )
+

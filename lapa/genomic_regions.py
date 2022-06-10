@@ -5,7 +5,7 @@ import pyranges as pr
 from tqdm import tqdm
 
 
-_core_columns = ['Chromosome', 'Start', 'End', 'Strand']
+
 
 
 def _tqdm_pandas_gr():
@@ -19,7 +19,7 @@ def _tqdm_pandas_gr():
                 bar_format='- {n_fmt} cluster is annotated...\n')
 
 
-class GenomicRegions:
+class _GenomicRegions:
 
     def __init__(self, gtf_file, feature_order, annotated_feature_site):
         if isinstance(gtf_file, str):
@@ -50,6 +50,7 @@ class GenomicRegions:
             gr_introns = self.gr.features.introns()
             df = pd.concat([df, gr_introns.df])
 
+        _core_columns = ['Chromosome', 'Start', 'End', 'Strand']
         df = df[[*_core_columns, 'Feature', 'gene_id', 'gene_name']]
 
         df['annotated_site'] = self.annotated_site(df)
@@ -74,6 +75,7 @@ class GenomicRegions:
         _tqdm_pandas_gr()
 
         # if gene_id defined overlap
+        _core_columns = ['Chromosome', 'Start', 'End', 'Strand']        
         df = df.groupby(_core_columns, observed=True) \
                .progress_apply(self._agg_annotation_gene) \
                .reset_index(drop=True)
@@ -116,7 +118,40 @@ class GenomicRegions:
             return _df.drop_duplicates(subset='gene_id')
 
 
-class PolyAGenomicRegions(GenomicRegions):
+class PolyAGenomicRegions(_GenomicRegions):
+    '''
+    Annotate polyA sites based on the genomics features.
+
+    Args:
+      gtf_file: Annotation file overlap against.
+
+    Examples:
+      Annotation of poly(A) in pyranges format:
+      
+      >>> regions = PolyAGenomicRegions('hg38.gtf')
+      >>> gr
+      +--------------+-----------+-----------+--------------+--------------+
+      | Chromosome   |     Start |       End | Strand       |   polyA_site |
+      | (category)   |   (int32) |   (int32) | (category)   |      (int64) |
+      |--------------+-----------+-----------+--------------+--------------|
+      | chr17        |   4303000 |   4303100 | -            |      4303050 |
+      | chr17        |  43044826 |  43045289 | -            |     43045057 |
+      | chr17        |  43046541 |  43046997 | -            |     43046769 |
+      | chr17        |  43115728 |  43115767 | -            |     43057094 |
+      | chr17        |  43093458 |  43093573 | -            |     43093515 |
+      +--------------+-----------+-----------+--------------+--------------+
+      >>> regions.annotate(gr)
+      +--------------+-----------+-----------+--------------+--------------+-----------------+--------------------+--------------+------------------+
+      | Chromosome   |     Start |       End | Strand       |   polyA_site | Feature         | gene_id            | gene_name    |   annotated_site |
+      | (category)   |   (int32) |   (int32) | (category)   |      (int64) | (object)        | (object)           | (object)     |          (int64) |
+      |--------------+-----------+-----------+--------------+--------------+-----------------+--------------------+--------------+------------------|
+      | chr17        |   4303000 |   4303100 | -            |      4303050 | intergenic      | intergenic_0       | intergenic_0 |               -1 |
+      | chr17        |  43044826 |  43045289 | -            |     43045057 | three_prime_utr | ENSG00000012048.23 | BRCA1        |         43044294 |
+      | chr17        |  43046541 |  43046997 | -            |     43046769 | intron          | ENSG00000012048.23 | BRCA1        |               -1 |
+      | chr17        |  43093458 |  43093573 | -            |     43093515 | three_prime_utr | ENSG00000012048.23 | BRCA1        |         43091434 |
+      | chr17        |  43115728 |  43115767 | -            |     43057094 | exon            | ENSG00000012048.23 | BRCA1        |               -1 |
+      +--------------+-----------+-----------+--------------+--------------+-----------------+--------------------+--------------+------------------+
+    '''
 
     def __init__(self, gtf_file):
         feature_order = ['three_prime_utr', 'exon',
@@ -129,7 +164,41 @@ class PolyAGenomicRegions(GenomicRegions):
             np.where(df['Strand'] == '-', df['Start'], df['End']), -1)
 
 
-class TssGenomicRegions(GenomicRegions):
+class TssGenomicRegions(_GenomicRegions):
+ 
+    '''
+    Annotate tss sites based on the genomics features.
+
+    Args:
+      gtf_file: Annotation file overlap against.
+
+    Examples:
+      Annotation of tss in pyranges format:
+      
+      >>> regions = TssGenomicRegions('hg38.gtf')
+      >>> gr
+      +--------------+-----------+-----------+--------------+--------------+
+      | Chromosome   |     Start |       End | Strand       |   polyA_site |
+      | (category)   |   (int32) |   (int32) | (category)   |      (int64) |
+      |--------------+-----------+-----------+--------------+--------------|
+      | chr17        |   4303000 |   4303100 | -            |      4303050 |
+      | chr17        |  43044826 |  43045289 | -            |     43045057 |
+      | chr17        |  43046541 |  43046997 | -            |     43046769 |
+      | chr17        |  43115728 |  43115767 | -            |     43057094 |
+      | chr17        |  43093458 |  43093573 | -            |     43093515 |
+      +--------------+-----------+-----------+--------------+--------------+
+      >>> regions.annotate(gr)
+      +--------------+-----------+-----------+--------------+--------------+-----------------+--------------------+--------------+------------------+
+      | Chromosome   |     Start |       End | Strand       |   polyA_site | Feature         | gene_id            | gene_name    |   annotated_site |
+      | (category)   |   (int32) |   (int32) | (category)   |      (int64) | (object)        | (object)           | (object)     |          (int64) |
+      |--------------+-----------+-----------+--------------+--------------+-----------------+--------------------+--------------+------------------|
+      | chr17        |   4303000 |   4303100 | -            |      4303050 | intergenic      | intergenic_0       | intergenic_0 |               -1 |
+      | chr17        |  43044826 |  43045289 | -            |     43045057 | five_prime_utr  | ENSG00000012048.23 | BRCA1        |         43044294 |
+      | chr17        |  43046541 |  43046997 | -            |     43046769 | intron          | ENSG00000012048.23 | BRCA1        |               -1 |
+      | chr17        |  43093458 |  43093573 | -            |     43093515 | five_prime_utr  | ENSG00000012048.23 | BRCA1        |         43091434 |
+      | chr17        |  43115728 |  43115767 | -            |     43057094 | exon            | ENSG00000012048.23 | BRCA1        |               -1 |
+      +--------------+-----------+-----------+--------------+--------------+-----------------+--------------------+--------------+------------------+
+    '''
 
     def __init__(self, gtf_file):
         feature_order = ['five_prime_utr', 'exon',

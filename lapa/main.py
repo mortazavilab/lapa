@@ -249,8 +249,8 @@ def cli_lapa_link_tss_to_tes(alignment, lapa_dir, lapa_tss_dir, output,
                              mapq=10, min_read_length=100, dataset='all'):
     '''
     CLI interface for detecting of linking reads. Linking reads are
-      the reads start in a tss cluster and in poly(A) cluster. Linking
-      reads represents transcript complete isoforms.
+    the reads start in a tss cluster and in poly(A) cluster. Linking
+    reads represents transcript complete isoforms.
     '''
     df = link_tss_to_tes(alignment, lapa_dir, lapa_tss_dir, mapq=mapq,
                          min_read_length=min_read_length, dataset=dataset)
@@ -259,7 +259,8 @@ def cli_lapa_link_tss_to_tes(alignment, lapa_dir, lapa_tss_dir, output,
 
 @click.command()
 @click.option('--links',
-              help='links',
+              help='Path to linking read file generated '
+              'with `lapa_link_tss_to_tes` command',
               required=True)
 @click.option('--read_annot',
               help='read_annot of TALON annotating read,'
@@ -291,7 +292,7 @@ def cli_lapa_correct_talon(links, read_annot, gtf_input, gtf_output,
                            keep_unsupported=False):
     '''
     CLI interface for create GTF file with tss/poly(A) cluster support
-      based on the linking reads and using splice chain of TALON.
+    based on the linking reads and using splice chain of TALON.
     '''
     correct_talon(links, read_annot, gtf_input, gtf_output,
                   abundance_input, abundance_output,
