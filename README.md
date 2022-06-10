@@ -19,10 +19,10 @@ pip install lapa
 
 ```
 lapa --alignment {rep1.bam},{rep2.bam},{rep3.bam} \
-	 --fasta {fasta} \
-	 --annotation {gtf} \
-	 --chrom_sizes {chrom_sizes} \
-	 --output_dir {output}
+	--fasta {fasta} \
+	--annotation {gtf} \
+	--chrom_sizes {chrom_sizes} \
+	--output_dir {output}
 ```
 
 Argument details ([doc](https://lapa.readthedocs.io/en/tss_clustering/cli.html#lapa)):
@@ -76,10 +76,10 @@ then LAPA takes samples_config.csv as input:
 
 ```
 lapa --alignment samples.csv \
-	 --fasta {fasta} \
-	 --annotation {gtf} \
-	 --chrom_sizes {chrom_sizes} \
-	 --output_dir {output}
+	--fasta {fasta} \
+	--annotation {gtf} \
+	--chrom_sizes {chrom_sizes} \
+	--output_dir {output}
  ...
 ```
 
@@ -88,10 +88,10 @@ lapa --alignment samples.csv \
 
 ```
 lapa_tss --alignment samples.csv \
-	     --fasta {fasta} \
-		 --annotation {gtf} \
-		 --chrom_sizes {chrom_sizes} \
-		 --output_dir {output}
+	--fasta {fasta} \
+	--annotation {gtf} \
+	--chrom_sizes {chrom_sizes} \
+	--output_dir {output}
 ```
 
 Argument details ([doc](https://lapa.readthedocs.io/en/latest/cli.html#lapa-tss)):
@@ -135,7 +135,9 @@ Options:
 See the following documentation links for other features, parameters of LAPA, python api and statistical testing:
 
 Readthedocs: https://lapa.readthedocs.io/en/latest/index.html
+
 API reference: https://lapa.readthedocs.io/en/latest/autoapi/index.html
+
 Colab tutorials (analysis of myoblast myotube cell differentiation): https://colab.research.google.com/drive/1QzMxCRjCk3i5_MuHzjozSRWMaJgdEdSI?usp=sharing
 
 
