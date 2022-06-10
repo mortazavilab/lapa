@@ -12,11 +12,12 @@ requirements = [
     'pandas',
     'pybigwig',
     'scipy',
-    'bamread>=0.0.9',
+    'bamread>=0.0.10',
     'pyranges>=0.0.71',
+    'sorted-nearest==0.0.33',
     'kipoiseq>=0.3.0',
     'matplotlib',
-    'betabinomial'
+    'betabinomial',
 ]
 
 setup_requirements = ['pytest-runner', ]
@@ -25,14 +26,16 @@ test_requirements = ['pytest']
 
 setup(
     name='lapa',
-    version='0.0.2',
+    version='0.0.3',
 
     author="M. Hasan Çelik",
     author_email='muhammedhasancelik@gmail.com',
     url='https://github.com/mortazavilab/lapa',
 
     keywords=['genomics', 'long read RNA-seq', 'APA'],
-    description="Alternative polyadenylation detection from diverse data sources",
+    description="Tools for alternative polyadenylation detection and analysis "
+    "from diverse data sources (3'seq and long-reads) and "
+    "transcript start site detection and analysis from long-read RNA-seq.",
 
     classifiers=[
         'Natural Language :: English',
@@ -50,8 +53,11 @@ setup(
 
     entry_points='''
         [console_scripts]
-        lapa=lapa.main:cli
-        lapa_correct_talon_gtf=lapa.main:lapa_correct_talon_gtf
+        lapa=lapa.main:cli_lapa
+        lapa_tss=lapa.main:cli_lapa_tss
+        lapa_link_tss_to_tes=lapa.main:cli_lapa_link_tss_to_tes
+        lapa_correct_talon_gtf=lapa.main:cli_lapa_correct_talon_gtf
+        lapa_correct_talon=lapa.main:cli_lapa_correct_talon
     ''',
     packages=find_packages(include=['lapa*']),
     include_package_data=True,

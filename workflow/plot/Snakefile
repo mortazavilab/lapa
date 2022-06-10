@@ -1,100 +1,76 @@
-import pandas as pd
-
-
-def counts_fastq(wildcards):
-    platform = wildcards['platform']
-    library_prep = wildcards['library_prep']
-
-    if platform in {'PacBio', 'ONT'}:
-        return expand(config['encode']['fastq_read_count'],
-                      encode_id=file_acc_long_reads(wildcards))
-
-    elif platform == 'Illumina' and library_prep == 'se':
-        sample = wildcards['sample']
-        encode_id = file_acc_short_reads(wildcards)
-        return expand(config['encode']['fastq_read_count'],
-                      encode_id=encode_id, sample=sample)
-
-    elif platform == 'Illumina' and library_prep == 'quantseq':
-        return expand(config['quantseq']['fastq_read_count'],
-                      rep=['1', '2', '3'], sample=sample)
-
-    else:
-        raise ValueError('No samples match given wildcards %s'
-                         % str(wildcards))
-
-
-def _read_counts(wildcards):
-    df = pd.read_csv(config['lrgasp']['config'], sep='\t')
-    _df = df[
-        (df['file_contents'] == 'reads') &
-        (df['sample'] == wildcards['sample']) &
-        (df['platform'].isin({'PacBio', 'ONT'})) &
-        (df['library_prep'] != 'R2C2')
-    ]
-    _df_r2c2 = df[
-        (df['file_contents'] == 'reads') &
-        (df['sample'] == wildcards['sample']) &
-        (df['platform'].isin({'PacBio', 'ONT'})) &
-        (df['library_prep'] == 'R2C2')
-    ]
-    return _df, _df_r2c2
-
-
-def read_counts_fastq(wildcards):
-    _df, _df_r2c2 = _read_counts(wildcards)
-    return [
-        *expand(config['encode']['fastq_read_count'],
-                encode_id=_df['file_acc'].tolist()),
-        *expand(config['encode']['fasta_read_count'],
-                encode_id=_df_r2c2['file_acc'].tolist())
-    ]
-
-
-def read_counts_bam(wildcards):
-    _df, _df_r2c2 = _read_counts(wildcards)
-    return [
-        *expand(config['encode']['bam_read_count'],
-                encode_id=_df['file_acc'].tolist()),
-        *expand(config['encode']['bam_read_count'],
-                encode_id=_df_r2c2['file_acc'].tolist())
-    ]
-
-
 rule read_nums_datasets:
     input:
-        long_fastq = read_counts_fastq,
-        long_bam = read_counts_bam,
+        PacBio_cDNA_fastq = expand(
+            config['encode']['fastq_read_count'],
+            encode_id=config['long_read']['PacBio']['cDNA']),
+        PacBio_cDNA_bam = expand(
+            config['encode']['bam_read_count'],
+            encode_id=config['long_read']['PacBio']['cDNA']),
+
+        PacBio_CapTrap_fastq = expand(
+            config['encode']['fastq_read_count'],
+            encode_id=config['long_read']['PacBio']['CapTrap']),
+        PacBio_CapTrap_bam = expand(
+            config['encode']['bam_read_count'],
+            encode_id=config['long_read']['PacBio']['CapTrap']),
+
+        ONT_cDNA_fastq = expand(
+            config['encode']['fastq_read_count'],
+            encode_id=config['long_read']['ONT']['cDNA']),
+        ONT_cDNA_bam = expand(
+            config['encode']['bam_read_count'],
+            encode_id=config['long_read']['ONT']['cDNA']),
+
+        ONT_CapTrap_fastq = expand(
+            config['encode']['fastq_read_count'],
+            encode_id=config['long_read']['ONT']['CapTrap']),
+        ONT_CapTrap_bam = expand(
+            config['encode']['bam_read_count'],
+            encode_id=config['long_read']['ONT']['CapTrap']),
+
+        ONT_R2C2_fastq = expand(
+            config['encode']['fasta_read_count'],
+            encode_id=config['long_read']['ONT']['R2C2']),
+        ONT_R2C2_bam = expand(
+            config['encode']['bam_read_count'],
+            encode_id=config['long_read']['ONT']['R2C2']),
+
+        ONT_dRNA_fastq = expand(
+            config['encode']['fastq_read_count'],
+            encode_id=config['long_read']['ONT']['dRNA']),
+        ONT_dRNA_bam = expand(
+            config['encode']['bam_read_count'],
+            encode_id=config['long_read']['ONT']['dRNA']),
+
         short_fastq = expand(config['encode']['fastq_read_count'],
-                             encode_id=config['short_rnaseq']['WTC11']['se']),
-        short_bam = expand(config['short_rnaseq']['bam_read_count'], sample='WTC11',
-                           encode_id=config['short_rnaseq']['WTC11']['se']),
-        quantseq_fastq = expand(config['quantseq']['fastq_read_count'],
-                                sample='WTC11', rep=['1', '2', '3']),
-        quantseq_bam = expand(config['quantseq']['bam_read_count'],
-                              sample='WTC11', rep=['1', '2', '3'])
-    output:
-        read_nums = "reports/figures/read_nums_datasets_{sample}.png"
-    params:
-        df_lrgasp = df_lrgasp
+                             encode_id=config['short_rnaseq']['se']),
+        short_bam = expand(config['encode']['bam_read_count'],
+                           encode_id=config['short_rnaseq']['se']),
+
+        quantseq_fastq = expand(config['encode']['fastq_read_count'],
+                                encode_id=config['quantseq']['fastq']),
+        quantseq_bam = expand(config['encode']['bam_read_count'],
+                              encode_id=config['quantseq']['bam'])
     threads: 1
     resources:
         mem_gb = 32
+    output:
+        read_nums = "reports/figures/read_nums_datasets.png",
+        counts = "reports/tables/read_nums_datasets.csv"
     notebook:
         "read_nums_datasets.ipynb"
 
 
 rule hist_read_counts:
     input:
-        tes = (lambda wildcards: config['common']['tes'].format(
-            genome=genome(wildcards))),
+        tes = config['common']['tes'].format(genome='hg38'),
         lapa_dir = config['lapa']['lapa_dir']
-    output:
-        hist = 'data/results/benchmark/hist/{sample}/{library_prep}_{platform}_{counting}_hist.csv',
-        percentage = 'data/results/benchmark/hist/{sample}/{library_prep}_{platform}_{counting}_percentage.txt'
     threads: 1
     resources:
         mem_gb = 4
+    output:
+        hist = 'data/results/benchmark/hist/{library_prep}_{platform}_{counting}_hist.csv',
+        percentage = 'data/results/benchmark/hist/{library_prep}_{platform}_{counting}_percentage.txt'
     script:
         'hist_read_counts.py'
 
@@ -102,39 +78,33 @@ rule hist_read_counts:
 rule plot_hist_read_count:
     input:
         hist = [
-            *expand('data/results/benchmark/hist/{sample}/{library_prep}_{platform}_{counting}_hist.csv',
-                    sample='{sample}', platform='PacBio', counting=['end'],
-                    library_prep=pb_library_prep),
-            *expand('data/results/benchmark/hist/{sample}/{library_prep}_{platform}_{counting}_hist.csv',
-                    sample='{sample}', platform='ONT', counting=['end'],
-                    library_prep=ont_library_prep),
-            *expand('data/results/benchmark/hist/{sample}/{library_prep}_{platform}_{counting}_hist.csv',
-                    sample='{sample}', platform='Illumina', counting='end',
-                    library_prep='quantseq'),
-            # *expand('data/results/benchmark/hist/{sample}/{library_prep}_{platform}_{counting}_hist.csv',
-            #         sample='{sample}', platform='Illumina', counting='end',
-            #         library_prep='se')
+            *expand('data/results/benchmark/hist/{library_prep}_{platform}_{counting}_hist.csv',
+                    platform='PacBio', counting=['end'],
+                    library_prep=config['long_read']['PacBio']),
+            *expand('data/results/benchmark/hist/{library_prep}_{platform}_{counting}_hist.csv',
+                    platform='ONT', counting=['end'],
+                    library_prep=config['long_read']['ONT']),
+            *expand('data/results/benchmark/hist/{library_prep}_{platform}_{counting}_hist.csv',
+                    platform='Illumina', counting='end', library_prep='quantseq')
         ],
         percentage = [
-            *expand('data/results/benchmark/hist/{sample}/{library_prep}_{platform}_{counting}_percentage.txt',
-                    sample='{sample}', platform='PacBio', counting=['end'],
-                    library_prep=pb_library_prep),
-            *expand('data/results/benchmark/hist/{sample}/{library_prep}_{platform}_{counting}_percentage.txt',
-                    sample='{sample}', platform='ONT', counting=['end'],
-                    library_prep=ont_library_prep),
-            *expand('data/results/benchmark/hist/{sample}/{library_prep}_{platform}_{counting}_percentage.txt',
-                    sample='{sample}', platform='Illumina', counting=['end'],
-                    library_prep='quantseq'),
-            # *expand('data/results/benchmark/hist/{sample}/{library_prep}_{platform}_{counting}_percentage.txt',
-            #         sample='{sample}', platform='Illumina', counting=['end'],
-            #         library_prep='se')
+            *expand('data/results/benchmark/hist/{library_prep}_{platform}_{counting}_percentage.txt',
+                    platform='PacBio', counting=['end'],
+                    library_prep=config['long_read']['PacBio']),
+            *expand('data/results/benchmark/hist/{library_prep}_{platform}_{counting}_percentage.txt',
+                    platform='ONT', counting=['end'],
+                    library_prep=config['long_read']['ONT']),
+            *expand('data/results/benchmark/hist/{library_prep}_{platform}_{counting}_percentage.txt',
+                    platform='Illumina', counting=['end'],
+                    library_prep='quantseq')
         ]
-    output:
-        hist = 'reports/figures/{sample}_hist_read_counts.png',
-        percent = 'reports/figures/{sample}_percentage_of_reads_tes.png'
     threads: 1
     resources:
         mem_gb = 4
+    output:
+        hist = 'reports/figures/hist_read_counts.png',
+        percent = 'reports/figures/percentage_of_reads_tes.png',
+        percent_table = 'reports/tables/percentage_of_reads_tes.csv'
     notebook:
         'hist_read_count.ipynb'
 
@@ -143,34 +113,60 @@ rule plot_major_isoform_gene_exp:
     input:
         lapa_dir = [
             *expand(config['lapa']['lapa_dir'],
-                    sample='{sample}', platform='PacBio', counting=['end'],
-                    library_prep=pb_library_prep),
+                    platform='PacBio', counting=['end'],
+                    library_prep=config['long_read']['PacBio']),
             *expand(config['lapa']['lapa_dir'],
-                    sample='{sample}', platform='ONT', counting=['end'],
-                    library_prep=ont_library_prep),
+                    platform='ONT', counting=['end'],
+                    library_prep=config['long_read']['ONT']),
             *expand(config['lapa']['lapa_dir'],
-                    sample='{sample}', platform='Illumina', counting='end',
+                    platform='Illumina', counting='end',
                     library_prep='quantseq')
         ],
-        gene_exp = config['short_rnaseq']['gene_exp']
+        gene_exp = config['short_rnaseq']['gene_exp'].format(sample='WTC11'),
+        genes = config['common']['gene_id_name_mapping'].format(genome='hg38')
+    threads: 1
+    resources:
+        mem_gb = 4
     output:
-        hist = 'reports/figures/{sample}_plot_major_isoform_gene_exp.png',
-        fracA = 'reports/figures/{sample}_plot_fracA.png'
+        hist = 'reports/figures/plot_major_isoform_gene_exp.png',
+        fracA = 'reports/figures/plot_fracA.png'
     notebook:
         'plot_major_isoform_gene_exp.ipynb'
 
 
+rule count_tail_len:
+    input:
+        bams = sample_bams
+    threads: 1
+    resources:
+        mem_gb = 4
+    output:
+        counts = 'data/results/tail_len/{platform}_{library_prep}.csv'
+    script:
+        './count_tail_len.py'
+
+
+rule plot_tail_len:
+    input:
+        counts = [
+            *expand(rules.count_tail_len.output,
+                    platform=['PacBio'], library_prep=config['long_read']['PacBio']),
+            *expand(rules.count_tail_len.output,
+                    platform=['ONT'], library_prep=config['long_read']['ONT'])
+        ]
+    threads: 1
+    resources:
+        mem_gb = 4
+    output:
+        fig = "reports/figures/supplementary/tail_lengths.png",
+        median_count = 'reports/tables/median_tail_lengths.csv'
+    notebook:
+        './plot_tail_len.ipynb'
+
+
 rule all_plot:
     input:
-        expand(
-            'reports/figures/{sample}_plot_major_isoform_gene_exp.png',
-            sample='WTC11'
-        ),
-        expand(
-            'reports/figures/read_nums_datasets_{sample}.png',
-            sample='WTC11'
-        ),
-        expand(
-            'reports/figures/{sample}_hist_read_counts.png',
-            sample='WTC11'
-        )
+        rules.read_nums_datasets.output,
+        rules.plot_hist_read_count.output,
+        rules.plot_major_isoform_gene_exp.output,
+        rules.plot_tail_len.output

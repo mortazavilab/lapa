@@ -1,4 +1,4 @@
-rule split_c2c12_read_annot:
+rule c2c12_lapa_config:
     input:
         read_annot = config['c2c12']['read_annot_bulk_sc']
     output:
@@ -19,27 +19,6 @@ rule lapa_longreads_c2c12_bulk:
         mem_gb = 16
     output:
         directory(config['c2c12']['lapa_bulk_dir'])
-    shell:
-        "lapa \
-        --alignment {input.aligment} \
-        --fasta {input.fasta} \
-        --annotation {input.gtf} \
-        --chrom_sizes {input.chrom_sizes} \
-        --counting_method end \
-        --output_dir {output}"
-
-
-rule lapa_longreads_c2c12_bulksc:
-    input:
-        aligment = config['c2c12']['read_annot_bulk_sc'],
-        fasta = config['genome']['fasta']['mm10'],
-        gtf = config['genome']['gtf']['mm10'],
-        chrom_sizes = config['common']['chrom_sizes'].format(genome='mm10')
-    threads: 1
-    resources:
-        mem_gb = 16
-    output:
-        directory(config['c2c12']['lapa_bulksc_dir'])
     shell:
         "lapa \
         --alignment {input.aligment} \
@@ -73,7 +52,7 @@ rule differential_apa_abundance_c2c12:
     resources:
         mem_gb = 16
     output:
-        boxplot = '../../reports/figures/c2c12_boxplot_gene.png',
+        boxplot = 'reports/figures/c2c12_boxplot_gene.png',
     notebook:
         "./apa_differetial_gene_exp.ipynb"
 

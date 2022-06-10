@@ -1,4 +1,4 @@
-Chromosome,Start,End,polyA_site,count,Strand,fracA,signal,Feature,gene_id,gene_name,canonical_site
+Chromosome,Start,End,polyA_site,count,Strand,fracA,signal,Feature,gene_id,gene_name,annotated_site
 chr17,2043419,2043430,2043424,761,+,3,2043461@AATAAA,gene,ENSG00000108963.19,DPH1,-1
 chr17,2043419,2043430,2043424,761,+,3,2043461@AATAAA,exon,ENSG00000108963.19,DPH1,-1
 chr17,2043419,2043430,2043424,761,+,3,2043461@AATAAA,exon,ENSG00000108963.19,DPH1,-1

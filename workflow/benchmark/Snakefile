@@ -2,23 +2,25 @@ rule benchmark_lapa:
     input:
         lapa_dir = [
             *expand(config['lapa']['lapa_dir'],
-                    sample='{sample}', platform='PacBio', counting=['end'],
-                    library_prep=pb_library_prep),
+                    platform=['PacBio'], counting=['end'],
+                    library_prep=config['long_read']['PacBio']),
             *expand(config['lapa']['lapa_dir'],
-                    sample='{sample}', platform='ONT', counting=['end'],
-                    library_prep=ont_library_prep)
+                    platform=['ONT'], counting=['end'],
+                    library_prep=config['long_read']['ONT'])
         ],
         quantseq = expand(config['lapa']['lapa_dir'],
-                          sample='{sample}', platform='Illumina', counting='end',
+                          platform='Illumina', counting='end',
                           library_prep='quantseq')
+    threads: 1
+    resources:
+        mem_gb = 4
     output:
-        pr_curve_plot = 'reports/figures/{sample}_pr_curve.png',
-        heatmap = 'reports/figures/{sample}_heatmap.png'
+        pr_curve_plot = 'reports/figures/benchmark_pr_curve.png',
+        heatmap = 'reports/figures/overlap_heatmap.png'
     notebook:
         './benchmark_lapa.ipynb'
 
 
 rule all_benchmark:
     input:
-        expand('reports/figures/{sample}_pr_curve.png', sample='WTC11'),
-        expand('reports/figures/{sample}_heatmap.png', sample='WTC11')
+        rules.benchmark_lapa.output

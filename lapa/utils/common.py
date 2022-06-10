@@ -1,18 +1,6 @@
 import pandas as pd
 
 
-chroms_chr = {
-    'chr1', 'chr10', 'chr11', 'chr12', 'chr13', 'chr14', 'chr15',
-    'chr16', 'chr17', 'chr18', 'chr19', 'chr2', 'chr3', 'chr4',
-    'chr5', 'chr6', 'chr7', 'chr8', 'chr9', 'chrX', 'chrY'
-}
-
-chroms = {
-    '1', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19',
-    '2', '3', '4', '5', '6', '7', '8', '9', 'X', 'Y'
-}
-
-
 polyA_signal_seqs = [
     'AATAAA', 'ATTAAA', 'TATAAA', 'AGTAAA',
     'AATACA', 'CATAAA', 'AATATA', 'GATAAA',
@@ -20,15 +8,24 @@ polyA_signal_seqs = [
     'AATAGA', 'ATTACA', 'AACAAA', 'ATTATA',
     'AACAAG', 'AATAAG'
 ]
+'''
+List[str]: the list of poly(A) signals
+that are annotated for single 3' end processing sites
+in the region -60 to +10 nt around them
+According to Gruber et al., 2016, Genome Research.
+'''
 
 
 def pad_series(series, pad_size=2):
+    '''
+    Pad pandas series with zeros at the start ande end.
+
+    Args:
+      series: pd.Series
+      pad_size: 0
+    '''
     return pd.concat([
         pd.Series([0] * pad_size),
         pd.Series(series),
         pd.Series([0] * pad_size)
     ])
-
-
-def filter_main_chroms(df):
-    return df[df['Chromosome'].isin(chroms)]

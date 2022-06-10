@@ -1,0 +1,163 @@
+rule figure_1:
+    input:
+        data_source = 'reports/drawing/polyA_data_sources.png',
+        method = 'reports/drawing/lapa_method.png'
+    threads: 1
+    resources:
+        mem_gb = 4
+    output:
+        fig = 'reports/paper_figures/figure-1.png'
+    notebook:
+        "figure-1.ipynb"
+
+
+rule figure_2:
+    input:
+        read_nums = "reports/figures/read_nums_datasets.png"
+    threads: 1
+    resources:
+        mem_gb = 1
+    output:
+        fig = 'reports/paper_figures/figure-2.png'
+    shell:
+        "cp {input} {output}"
+
+
+rule figure_3:
+    input:
+        hist = 'reports/figures/plot_major_isoform_gene_exp.png',
+        fracA = 'reports/figures/plot_fracA.png',
+        motif = 'reports/figures/polyA_motif.pdf'
+    threads: 1
+    resources:
+        mem_gb = 4
+    output:
+        fig = 'reports/paper_figures/figure-3.png'
+    notebook:
+        "figure-3.ipynb"
+
+rule figure_4:
+    input:
+        pr_curve_plot = 'reports/figures/benchmark_pr_curve.png',
+        heatmap = 'reports/figures/overlap_heatmap.png'
+    threads: 1
+    resources:
+        mem_gb = 4
+    output:
+        fig = 'reports/paper_figures/figure-4.png'
+    notebook:
+        "figure-4.ipynb"
+
+
+rule figure_5:
+    input:
+        correction = 'reports/figures/correction/cDNA_PacBio_end_overlap_annotation_both.png',
+        correction_tss = 'reports/figures/correction/cDNA_PacBio_end_overlap_tss_annotation_both.png',
+        percentage = 'reports/figures/correction/correction_percentage.png',
+        percentage_tss = 'reports/figures/correction/correction_tss_percentage.png'
+    threads: 1
+    resources:
+        mem_gb = 4
+    output:
+        fig = 'reports/paper_figures/figure-5.png'
+    notebook:
+        "figure-5.ipynb"
+
+
+rule figure_6:
+    input:
+        differential = 'reports/drawing/myoblast_myotube.png',
+        volcona = 'reports/figures/c2c12_volcona.png',
+        heatmap = 'reports/figures/c2c12_heatmap.png',
+        gene_fc = 'reports/figures/c2c12_boxplot_gene.png'
+    threads: 1
+    resources:
+        mem_gb = 4
+    output:
+        fig = 'reports/paper_figures/figure-6.png'
+    notebook:
+        "figure-6.ipynb"
+
+
+rule supp_figure_2:
+    input:
+        hist = 'reports/figures/hist_read_counts.png',
+        percent = 'reports/figures/percentage_of_reads_tes.png'
+    threads: 1
+    resources:
+        mem_gb = 4
+    output:
+        fig = 'reports/paper_supp_figures/supp_figure-2.png'
+    notebook:
+        "supp_figure-2.ipynb"
+
+
+rule supp_figure_3:
+    input:
+        fig = "reports/figures/supplementary/tail_lengths.png",
+    threads: 1
+    resources:
+        mem_gb = 1
+    output:
+        fig = "reports/paper_supp_figures/supp_figure-3.png",
+    shell:
+        "cp {input} {output}"
+
+# TODO: replication rate per dataset
+# rule supp_figure_:
+
+# TODO: different cutoffs tpm > 1 tpm > 2
+# rule supp_figure_4:
+
+# TODO: tail counting vs end coding
+# rule supp_figure_5:
+
+# TODO: number of linking reads
+# TODO: read length
+# rule supp_fig_7
+
+
+rule supp_figure_6:
+    input:
+        tes = [
+            *expand(
+                'reports/figures/correction/{library_prep}_{platform}_{counting}_overlap_annotation_both.png',
+                platform='PacBio', counting=['end'],
+                library_prep=config['long_read']['PacBio']),
+            *expand(
+                'reports/figures/correction/{library_prep}_{platform}_{counting}_overlap_annotation_both.png',
+                platform='ONT', counting=['end'],
+                library_prep=config['long_read']['ONT']),
+        ],
+        tss = [
+            *expand(
+                'reports/figures/correction/{library_prep}_{platform}_{counting}_overlap_tss_annotation_both.png',
+                platform='PacBio', counting=['end'],
+                library_prep=config['long_read']['PacBio']),
+            *expand(
+                'reports/figures/correction/{library_prep}_{platform}_{counting}_overlap_tss_annotation_both.png',
+                platform='ONT', counting=['end'],
+                library_prep=config['long_read']['ONT'])
+        ]
+    threads: 1
+    resources:
+        mem_gb = 4
+    output:
+        fig_tes = 'reports/paper_supp_figures/supp_figure-6.png',
+        fig_tss = 'reports/paper_supp_figures/supp_figure-7.png'
+    notebook:
+        "supp_figure-6.ipynb"
+
+
+rule all_figure:
+    input:
+        rules.figure_1.output,
+        rules.figure_2.output,
+        rules.figure_3.output,
+        rules.figure_4.output,
+        rules.figure_5.output,
+        rules.figure_6.output,
+
+        rules.supp_figure_2.output,
+        rules.supp_figure_3.output,
+        rules.supp_figure_6.output

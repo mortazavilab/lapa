@@ -1,105 +1,89 @@
-def file_acc_long_reads(wildcards):
-    df = pd.read_csv(config['lrgasp']['config'], sep='\t')
-    df = df[
-        (df['file_contents'] == 'reads') &
-        (df['sample'] == wildcards['sample']) &
-        (df['platform'] == wildcards['platform']) &
-        (df['library_prep'] == wildcards['library_prep']) 
-    ]
-    return df['file_acc'].tolist()
-
-
-def file_acc_short_reads(wildcards):
-    sample = wildcards['sample']
-    library_prep = wildcards['library_prep']
-    return config['short_rnaseq'][sample][library_prep]
-
-
-def reads_bam(wildcards):
+def sample_bams(wildcards):
     platform = wildcards['platform']
     library_prep = wildcards['library_prep']
-    sample = wildcards['sample']
 
     if platform in {'PacBio', 'ONT'}:
-        return expand(config['encode']['bam'],
-                      encode_id=file_acc_long_reads(wildcards))
+        encode_ids = config['long_read'][platform][library_prep]
 
-    elif platform == 'Illumina' and library_prep == 'se':
-        encode_id = file_acc_short_reads(wildcards)
-        return expand(config['short_rnaseq']['bam'],
-                      encode_id=encode_id, sample=sample)
+        if (library_prep in {'CapTrap', 'cDNA'}) and (platform == 'ONT'):
+            bam_path = config['minimap']['bam_stranded']
+        else:
+            bam_path = config['minimap']['bam']
 
     elif platform == 'Illumina' and library_prep == 'quantseq':
-        return expand(config['quantseq']['bam'],
-                      rep=['1', '2', '3'], sample=sample)
+        encode_ids = config['quantseq']['bam']
+        bam_path = config['encode']['bam']
 
     else:
         raise ValueError('No samples match given wildcards %s'
                          % str(wildcards))
 
-
-def sample_names(wildcards):
-    platform = wildcards['platform']
-    library_prep = wildcards['library_prep']
-
-    if platform in {'PacBio', 'ONT'}:
-        return file_acc_long_reads(wildcards)
-
-    elif platform == 'Illumina' and library_prep == 'se':
-        return file_acc_short_reads(wildcards)
-
-    elif platform == 'Illumina' and library_prep == 'quantseq':
-        return ['rep1', 'rep2', 'rep3']
-
-    else:
-        raise ValueError('No samples match given wildcards %s'
-                         % str(wildcards))
-
-
-rule lapa_reads_samples:
-    input:
-        bams = reads_bam
-    params:
-        sample_names = sample_names
-    output:
-        csv = config['lapa']['samples']
-    run:
-        with open(output['csv'], 'w') as f:
-            f.write('sample,path\n')
-            for name, bam_file in zip(params['sample_names'], input['bams']):
-                f.write(f'{name},{bam_file}\n')
+    return expand(bam_path, encode_id=encode_ids)
 
 
 rule lapa:
     input:
-        samples = config['lapa']['samples'],
-        fasta = fasta,
-        gtf = gtf,
-        chrom_sizes = chrom_sizes
+        bams = sample_bams,
+        fasta = config['genome']['fasta']['hg38'],
+        gtf = config['genome']['gtf']['hg38'],
+        chrom_sizes = config['common']['chrom_sizes'].format(genome='hg38')
     threads: 1
     resources:
-        mem_gb = 16
+        mem_gb = 32
     output:
         directory(config['lapa']['lapa_dir'])
-    shell:
-        "lapa \
-        --alignment {input.samples} \
+    run:
+        bams = ','.join(input.bams)
+        shell(f'lapa \
+        --alignment {bams} \
         --fasta {input.fasta} \
         --annotation {input.gtf} \
         --chrom_sizes {input.chrom_sizes} \
         --counting_method {wildcards.counting} \
-        --output_dir {output}"
+        --output_dir {output}')
 
+
+rule lapa_tss:
+    input:
+        bams = sample_bams,
+        fasta = config['genome']['fasta']['hg38'],
+        gtf = config['genome']['gtf']['hg38'],
+        chrom_sizes = config['common']['chrom_sizes'].format(genome='hg38')
+    params:
+        cluster_ratio_cutoff = 0.05
+    threads: 1
+    resources:
+        mem_gb = 32
+    output:
+        directory(config['lapa']['lapa_tss_dir'])
+    run:
+        bams = ','.join(input.bams)
+        shell("lapa_tss \
+        --alignment {bams} \
+        --fasta {input.fasta} \
+        --annotation {input.gtf} \
+        --chrom_sizes {input.chrom_sizes} \
+        --cluster_ratio_cutoff {params.cluster_ratio_cutoff} \
+        --output_dir {output}")
 
 rule all_lapa:
     input:
-        expand(config['lapa']['lapa_dir'], sample='WTC11', platform=['PacBio'],
-               counting=['end', 'tail'], library_prep=pb_library_prep),
-        expand(config['lapa']['lapa_dir'], sample='WTC11', platform=['ONT'],
-               counting=['end', 'tail'], library_prep=ont_library_prep),
-        # expand(config['encode']['fastq_read_count'],
-        #        encode_id=_df['file_acc'].tolist()),
-        # expand(config['encode']['fasta_read_count'],
-        #        encode_id=_df_r2c2['file_acc'].tolist()),
-        # expand(config['encode']['bam_read_count'],
-        #        encode_id=_df['file_acc'].tolist())
+        expand(config['lapa']['lapa_dir'],
+               platform=['PacBio'], counting=['end', 'tail'],
+               library_prep=config['long_read']['PacBio']),
+
+        expand(config['lapa']['lapa_tss_dir'],
+               platform=['PacBio'],
+               library_prep=config['long_read']['PacBio']),
+
+        expand(config['lapa']['lapa_dir'],
+               platform=['ONT'], counting=['end', 'tail'],
+               library_prep=config['long_read']['ONT']),
+
+        expand(config['lapa']['lapa_tss_dir'],
+               platform=['ONT'],
+               library_prep=config['long_read']['ONT']),
+
+        expand(config['lapa']['lapa_dir'],
+               platform=['Illumina'], counting=['end'],
+               library_prep='quantseq')
