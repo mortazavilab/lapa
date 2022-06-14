@@ -142,7 +142,10 @@ def bw_from_pyranges(gr: pr.PyRanges, value_col: str, chrom_sizes: str,
     if isinstance(chrom_sizes, str):
         chrom_sizes = read_chrom_sizes(chrom_sizes)
 
-    gr = gr[gr.Chromosome.isin(chrom_sizes.keys())]
+    gr = gr.subset(
+        lambda df: df.Chromosome.isin(set(chrom_sizes.keys()))
+        & (df.Start >= 0) # edge case occurs due to zero base indexing
+    )
     chroms = set(gr.Chromosome.unique())
     chrom_sizes = {k: v for k, v in chrom_sizes.items() if k in chroms}
 
