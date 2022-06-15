@@ -1,0 +1,12 @@
+jobs: 16
+latency-wait: 60
+restart-times: 0
+keep-going: True
+cluster:
+  sbatch
+    --account=seyedam_lab
+    --cluster-constraint=fastscratch3
+    --cpus-per-task={threads}
+    --mem={resources.mem_gb}G
+    --job-name=smk-{rule}
+    --output=logs/slurm-{rule}_%j.out

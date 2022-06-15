@@ -118,11 +118,6 @@ talon:
   abundance_corrected: data/results/talon/{library_prep}_{platform}_{counting}_abundance_filtered.tsv
 
 c2c12:
-  read_annot_bulk_sc: data/resources/c2c12/c2c12_bulk_sc_talon_read_annot.tsv
-  read_annot_bulk: data/resources/c2c12/c2c12_bulk_talon_read_annot.tsv
-  read_annot_sc: data/resources/c2c12/c2c12_sc_talon_read_annot.tsv
-  abundance: data/resources/c2c12/bulk_talon_abundance.tsv
-
   bam:
     myoblast:
       - ENCFF772LYG
@@ -131,7 +126,8 @@ c2c12:
       - ENCFF699KOR
       - ENCFF731HHB
 
-  lapa_bulk_dir: data/results/c2c12/lapa/bulk/
-  lapa_bulksc_dir: data/results/c2c12/lapa/bulksc/
-
+  config: data/results/c2c12/lapa_config.csv
+  lapa_dir: data/results/c2c12/lapa/
   diff_polya: data/results/c2c12/diff_polya.csv
+
+  abundance: data/resources/c2c12/bulk_talon_abundance.tsv

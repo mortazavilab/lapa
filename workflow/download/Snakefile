@@ -127,9 +127,9 @@ rule all_download:
                encode_id=config['quantseq']['bam']),
 
         expand(rules.download_cage.output,
-               geo_id=config['cage']['geo_id'])
+               geo_id=config['cage']['geo_id']),
 
-        expand(rules.download_encode_bam,
-               encode_id=config['c2c12']['bam']['myoblast'])
-        expand(rules.download_encode_bam,
+        expand(rules.download_encode_bam.output,
+               encode_id=config['c2c12']['bam']['myoblast']),
+        expand(rules.download_encode_bam.output,
                encode_id=config['c2c12']['bam']['myotube'])
