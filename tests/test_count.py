@@ -21,12 +21,15 @@ def five_prime_counter_brca1():
     return FivePrimeCounter(pb_brca1_bam)
 
 
-def test_ThreePrimeCounter_to_df(three_prime_counter_brca1):
+def test_ThreePrimeCounter_to_df(three_prime_counter_brca1, tmp_path):
 
     df = three_prime_counter_brca1 \
         .to_df() \
         .set_index(['Chromosome', 'End', 'Strand'])
 
+
+    three_prime_counter_brca1.to_bigwig(chr17_chrom_sizes, tmp_path)
+    
     assert df.loc[('chr17', 43044295, '-'), 'count'] == 25
     assert df.loc[('chr17', 43044295, '-'), 'coverage'] == 31
 
