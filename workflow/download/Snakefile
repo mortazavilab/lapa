@@ -97,6 +97,54 @@ rule download_cage:
         "wget {params.url} -O {output}"
 
 
+rule download_talon_gtf:
+    threads: 1
+    resources:
+        mem_gb = 4
+    params:
+        url = 'https://zenodo.org/record/6640541/files/{library_prep}_{platform}.gtf?download=1'
+    output:
+        config['talon']['gtf']
+    shell:
+        "wget {params.url} -O {output}"
+
+
+rule download_talon_read_annot:
+    threads: 1
+    resources:
+        mem_gb = 4
+    params:
+        url = 'https://zenodo.org/record/6640541/files/{library_prep}_{platform}_read_annot.tsv?download=1'
+    output:
+        config['talon']['read_annot']
+    shell:
+        "wget {params.url} -O {output}"
+
+
+rule download_talon_abundance:
+    threads: 1
+    resources:
+        mem_gb = 4
+    params:
+        url = 'https://zenodo.org/record/6640541/files/{library_prep}_{platform}_abundance_filtered.tsv?download=1'
+    output:
+        config['talon']['abundance']
+    shell:
+        "wget {params.url} -O {output}"
+
+
+rule download_c2c12_talon_abundance:
+    threads: 1
+    resources:
+        mem_gb = 4
+    params:
+        url = 'https://zenodo.org/record/6956036/files/c2c12_bulk_talon_abundance.tsv?download=1'
+    output:
+        config['c2c12']['abundance']
+    shell:
+        "wget {params.url} -O {output}"
+
+
 rule all_download:
     input:
         rules.download_human_fasta.output,
@@ -123,6 +171,27 @@ rule all_download:
         expand(rules.download_encode_fasta.output,
                encode_id=config['long_read']['ONT']['R2C2']),
 
+        expand(rules.download_talon_gtf.output,
+               platform='PacBio',
+               library_prep=config['long_read']['PacBio']),
+        expand(rules.download_talon_gtf.output,
+               platform='ONT',
+               library_prep=config['long_read']['ONT']),
+
+        expand(rules.download_talon_abundance.output,
+               platform='PacBio',
+               library_prep=config['long_read']['PacBio']),
+        expand(rules.download_talon_abundance.output,
+               platform='ONT',
+               library_prep=config['long_read']['ONT']),
+
+        expand(rules.download_talon_read_annot.output,
+               platform='PacBio',
+               library_prep=config['long_read']['PacBio']),
+        expand(rules.download_talon_read_annot.output,
+               platform='ONT',
+               library_prep=config['long_read']['ONT']),
+
         expand(rules.download_encode_bam.output,
                encode_id=config['quantseq']['bam']),
 
@@ -132,4 +201,4 @@ rule all_download:
         expand(rules.download_encode_bam.output,
                encode_id=config['c2c12']['bam']['myoblast']),
         expand(rules.download_encode_bam.output,
-               encode_id=config['c2c12']['bam']['myotube'])
+               encode_id=config['c2c12']['bam']['myotube']),

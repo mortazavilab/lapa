@@ -29,11 +29,24 @@ rule lapa_c2c12:
         --output_dir {output}"
 
 
-rule differential_apa_c2c12:
+rule lapa_c2c12_test:
     input:
         long_read = config['c2c12']['lapa_dir'],
         mapping = config['common']['gene_id_name_mapping'].format(
             genome='mm10')
+    threads: 1
+    resources:
+        mem_gb = 16
+    output:
+        stats = config['c2c12']['stats']
+    script:
+        "./c2c12_stats.py"
+
+
+rule differential_apa_c2c12:
+    input:
+        stats = config['c2c12']['stats'],
+        long_read = config['c2c12']['lapa_dir']
     threads: 1
     resources:
         mem_gb = 16
@@ -46,17 +59,19 @@ rule differential_apa_c2c12:
 
 rule differential_apa_abundance_c2c12:
     input:
-        long_read = config['c2c12']['lapa_dir'],
-        abundance = config['c2c12']['abundance']
+        stats = config['c2c12']['stats'],
+        long_read = config['c2c12']['lapa_dir']
     threads: 1
     resources:
         mem_gb = 16
     output:
         boxplot = 'reports/figures/c2c12_boxplot_gene.png',
+        scatterplot = 'reports/figures/c2c12_scatterplot_gene.png'
     notebook:
         "./apa_differetial_gene_exp.ipynb"
 
 
 rule all_c2c12:
     input:
-        rules.differential_apa_c2c12.output
+        rules.differential_apa_c2c12.output,
+        rules.differential_apa_abundance_c2c12.output

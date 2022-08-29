@@ -1,6 +1,7 @@
-PacBio cDNA,35
-PacBio CapTrap,16
-ONT cDNA,17
-ONT CapTrap,12
-ONT R2C2,29
-ONT dRNA,5
+,Data Source,median_tail_length
+0,PacBio cDNA,35
+1,PacBio CapTrap,16
+2,ONT cDNA,17
+3,ONT CapTrap,12
+4,ONT R2C2,29
+5,ONT dRNA,5

@@ -96,6 +96,7 @@ encode:
   fastq_read_count: data/results/encode/read_count/{encode_id}_fastq.txt
   fasta_read_count: data/results/encode/read_count/{encode_id}_fasta.txt
   bam_read_count: data/results/encode/read_count/{encode_id}_bam.txt
+  bam_aligned_len: data/results/encode/aligned_len/{encode_id}_bam.txt
 
 minimap:
   sam: data/results/minimap/sam/{encode_id}.sam
@@ -130,4 +131,6 @@ c2c12:
   lapa_dir: data/results/c2c12/lapa/
   diff_polya: data/results/c2c12/diff_polya.csv
 
-  abundance: data/resources/c2c12/bulk_talon_abundance.tsv
+  stats: data/results/c2c12/c2c12_stats.csv
+
+  abundance: data/resources/c2c12/c2c12_bulk_talon_abundance.tsv

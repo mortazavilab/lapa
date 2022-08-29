@@ -1,3 +1,4 @@
+import time
 import pandas as pd
 
 df = list()
@@ -11,3 +12,5 @@ for cell, encode_ids in snakemake.config['c2c12']['bam'].items():
         })
 
 pd.DataFrame(df).to_csv(snakemake.output['sample_config'], index=False)
+
+time.sleep(3) # needed for snakemake

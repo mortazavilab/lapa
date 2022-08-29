@@ -40,6 +40,7 @@ rule lapa:
         --annotation {input.gtf} \
         --chrom_sizes {input.chrom_sizes} \
         --counting_method {wildcards.counting} \
+        --min_tail_len 20 \
         --output_dir {output}')
 
 

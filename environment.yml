@@ -14,6 +14,7 @@ dependencies:
   - snakemake
   - pip:
     - pdf2image
+    - openpyxl
     - biopython
     - jupyter
     - notebook
@@ -26,5 +27,6 @@ dependencies:
     - adjustText
     - patchworklib
     - sklearn
+    - more_itertools
     - git+https://github.com/nboley/idr.git
     - -e .

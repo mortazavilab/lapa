@@ -82,6 +82,18 @@ rule bam_read_count:
         "samtools view -F 4 -F 256 -F 2048 -q 10 -c {input.bam} > {output.txt}"
 
 
+rule bam_aligned_len:
+    input:
+        bam = bam
+    output:
+        txt = config['encode']['bam_aligned_len']
+    threads: 1
+    resources:
+        mem_gb = 4
+    script:
+        "bam_aligned_len.py"
+
+
 rule gene_name_id_mapping:
     input:
         gtf = (lambda wildcards:

@@ -79,6 +79,18 @@ rule figure_6:
         "figure-6.ipynb"
 
 
+rule supp_figure_1:
+    input:
+        fig = "reports/figures/read_aligned_len.png"
+    threads: 1
+    resources:
+        mem_gb = 1
+    output:
+        fig = 'reports/paper_supp_figures/supp_figure-1.png'
+    shell:
+        "cp {input} {output}"
+
+
 rule supp_figure_2:
     input:
         hist = 'reports/figures/hist_read_counts.png',
@@ -103,21 +115,32 @@ rule supp_figure_3:
     shell:
         "cp {input} {output}"
 
-# TODO: replication rate per dataset
-# rule supp_figure_:
 
-# TODO: different cutoffs tpm > 1 tpm > 2
-# rule supp_figure_4:
+rule supp_figure_4:
+    input:
+        fig = 'reports/figures/replication_rate.png',
+    threads: 1
+    resources:
+        mem_gb = 1
+    output:
+        fig = "reports/paper_supp_figures/supp_figure-4.png",
+    shell:
+        "cp {input} {output}"
 
-# TODO: tail counting vs end coding
-# rule supp_figure_5:
 
-# TODO: number of linking reads
-# TODO: read length
-# rule supp_fig_7
+rule supp_figure_5:
+    input:
+        fig = 'reports/figures/benchmark_pr_curve_counting.png'
+    threads: 1
+    resources:
+        mem_gb = 1
+    output:
+        fig = "reports/paper_supp_figures/supp_figure-5.png"
+    shell:
+        "cp {input} {output}"
 
 
-rule supp_figure_6:
+rule supp_figure_6_7:
     input:
         tes = [
             *expand(
@@ -149,6 +172,41 @@ rule supp_figure_6:
         "supp_figure-6.ipynb"
 
 
+rule supp_figure_8:
+    input:
+        fig = 'reports/figures/c2c12_scatterplot_gene.png'
+    threads: 1
+    resources:
+        mem_gb = 1
+    output:
+        fig = "reports/paper_supp_figures/supp_figure-8.png"
+    shell:
+        "cp {input} {output}"
+
+
+rule supp_table:
+    input:
+        tables = [
+            'reports/tables/read_nums_datasets.csv',
+            'reports/tables/read_aligned_len.csv',
+            'reports/tables/median_tail_lengths.csv',
+            'reports/tables/cluster_annotation_counts.csv',
+            'reports/tables/percentage_of_reads_tes.csv',
+            'reports/tables/threshold_min_read_replication.csv',
+            'reports/tables/benchmark_pr_curve.csv',
+            'reports/tables/tes_correction.csv',
+            'reports/tables/tss_correction.csv',
+            'data/results/c2c12/c2c12_stats.csv'
+        ]
+    threads: 1
+    resources:
+        mem_gb = 1
+    output:
+        excel = 'reports/supp_table.xlsx'
+    script:
+        "supp_table.py"
+
+
 rule all_figure:
     input:
         rules.figure_1.output,
@@ -158,6 +216,12 @@ rule all_figure:
         rules.figure_5.output,
         rules.figure_6.output,
 
+        rules.supp_figure_1.output,
         rules.supp_figure_2.output,
         rules.supp_figure_3.output,
-        rules.supp_figure_6.output
+        rules.supp_figure_4.output,
+        rules.supp_figure_5.output,
+        rules.supp_figure_6_7.output,
+        rules.supp_figure_8.output,
+
+        rules.supp_table.output

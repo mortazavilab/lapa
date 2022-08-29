@@ -1,0 +1,8 @@
+Data Source,threshold
+cDNA PacBio,6
+CapTrap PacBio,5
+cDNA ONT,9
+CapTrap ONT,5
+R2C2 ONT,6
+dRNA ONT,6
+Quantseq Illumina,12
