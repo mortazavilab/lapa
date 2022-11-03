@@ -207,6 +207,39 @@ rule supp_table:
         "supp_table.py"
 
 
+rule supp_table_latex:
+    input:
+        tables = [
+            'reports/tables/read_nums_datasets.csv',
+            'reports/tables/read_aligned_len.csv',
+            'reports/tables/median_tail_lengths.csv',
+            'reports/tables/cluster_annotation_counts.csv',
+            'reports/tables/percentage_of_reads_tes.csv',
+            'reports/tables/threshold_min_read_replication.csv',
+            'reports/tables/benchmark_pr_curve.csv',
+            'reports/tables/tes_correction.csv',
+            'reports/tables/tss_correction.csv'
+        ]
+    threads: 1
+    resources:
+        mem_gb = 1
+    output:
+        tables = [
+            'reports/tables/supp_table1.txt',
+            'reports/tables/supp_table2.txt',
+            'reports/tables/supp_table3.txt',
+            'reports/tables/supp_table3.txt',
+            'reports/tables/supp_table4.txt',
+            'reports/tables/supp_table5.txt',
+            'reports/tables/supp_table6.txt',
+            'reports/tables/supp_table7.txt',
+            'reports/tables/supp_table8.txt',
+            'reports/tables/supp_table9.txt'
+        ]
+    script:
+        "supp_table_latex.py"
+        
+
 rule all_figure:
     input:
         rules.figure_1.output,
@@ -224,4 +257,5 @@ rule all_figure:
         rules.supp_figure_6_7.output,
         rules.supp_figure_8.output,
 
-        rules.supp_table.output
+        rules.supp_table.output,
+        rules.supp_table_latex.output
