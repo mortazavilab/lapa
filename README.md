@@ -5,7 +5,7 @@
 [![codecov](https://codecov.io/gh/mortazavilab/lapa/branch/master/graph/badge.svg?token=MJQ88T8JWK)](https://codecov.io/gh/mortazavilab/lapa)
 [![Documentation Status](https://readthedocs.org/projects/lapa/badge/?version=latest)](https://lapa.readthedocs.io/en/latest/?badge=latest)
 
-Alternative polyadenylation detection from diverse data sources such as 3'-seq, long-read and short-reads. 
+Alternative polyadenylation detection from diverse data sources such as 3'-seq, long-read and short-reads.
 
 ![method](docs/method.png)
 
@@ -146,5 +146,11 @@ Colab tutorials (analysis of myoblast myotube cell differentiation): https://col
 If you are using LAPA on academic studies cite the following paper:
 
 ```
-coming soon...
+@article{celik2022analysis,
+  title={Analysis of alternative polyadenylation from long-read or short-read RNA-seq with LAPA},
+  author={Celik, Muhammed Hasan and Mortazavi, Ali},
+  journal={bioRxiv},
+  year={2022},
+  publisher={Cold Spring Harbor Laboratory}
+}
 ```

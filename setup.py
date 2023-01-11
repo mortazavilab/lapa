@@ -8,6 +8,7 @@ with open('README.md') as readme_file:
 requirements = [
     'setuptools',
     'tqdm',
+    'numpy<=1.23',
     'click',
     'pandas',
     'pybigwig',
@@ -26,7 +27,7 @@ test_requirements = ['pytest']
 
 setup(
     name='lapa',
-    version='0.0.4',
+    version='0.0.5',
 
     author="M. Hasan Çelik",
     author_email='muhammedhasancelik@gmail.com',
