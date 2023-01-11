@@ -91,6 +91,9 @@ rule overlap_tes_corrected_talon:
 rule bed9_cage:
     input:
         bed = config['cage']['bed']
+    threads: 1
+    resources:
+        mem_gb = 16
     output:
         bed = config['cage']['bed9']
     script:
@@ -102,6 +105,8 @@ rule reproducable_reads:
         rep1 = config['cage']['bed9'].format(geo_id='GSM5625727'),
         rep2 = config['cage']['bed9'].format(geo_id='GSM5625732')
     threads: 1
+    resources:
+        mem_gb = 16
     params:
         idr_threshold = 0.05
     output:
@@ -204,7 +209,8 @@ rule plot_correction_percentage:
     resources:
         mem_gb = 4
     output:
-        fig = 'reports/figures/correction/correction_percentage.png'
+        fig = 'reports/figures/correction/correction_percentage.png',
+        table = 'reports/tables/tss_correction.csv'
     notebook:
         './plot_correction_percentage.ipynb'
 
@@ -237,7 +243,8 @@ rule plot_correction_tss_percentage:
     resources:
         mem_gb = 4
     output:
-        fig = 'reports/figures/correction/correction_tss_percentage.png'
+        fig = 'reports/figures/correction/correction_tss_percentage.png',
+        table = 'reports/tables/tes_correction.csv'
     notebook:
         './plot_correction_percentage.ipynb'
 

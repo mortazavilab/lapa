@@ -1,16 +1,16 @@
 rule c2c12_lapa_config:
-    input:
-        read_annot = config['c2c12']['read_annot_bulk_sc']
+    threads: 1
+    resources:
+        mem_gb = 1
     output:
-        bulk_annot = config['c2c12']['read_annot_bulk'],
-        sc_annot = config['c2c12']['read_annot_sc']
+        sample_config = config['c2c12']['config']
     script:
-        "split_annot.py"
+        "./c2c12_config.py"
 
 
-rule lapa_longreads_c2c12_bulk:
+rule lapa_c2c12:
     input:
-        aligment = config['c2c12']['read_annot_bulk'],
+        aligment = config['c2c12']['config'],
         fasta = config['genome']['fasta']['mm10'],
         gtf = config['genome']['gtf']['mm10'],
         chrom_sizes = config['common']['chrom_sizes'].format(genome='mm10')
@@ -18,7 +18,7 @@ rule lapa_longreads_c2c12_bulk:
     resources:
         mem_gb = 16
     output:
-        directory(config['c2c12']['lapa_bulk_dir'])
+        directory(config['c2c12']['lapa_dir'])
     shell:
         "lapa \
         --alignment {input.aligment} \
@@ -29,11 +29,24 @@ rule lapa_longreads_c2c12_bulk:
         --output_dir {output}"
 
 
-rule differential_apa_c2c12:
+rule lapa_c2c12_test:
     input:
-        long_read = config['c2c12']['lapa_bulk_dir'],
+        long_read = config['c2c12']['lapa_dir'],
         mapping = config['common']['gene_id_name_mapping'].format(
             genome='mm10')
+    threads: 1
+    resources:
+        mem_gb = 16
+    output:
+        stats = config['c2c12']['stats']
+    script:
+        "./c2c12_stats.py"
+
+
+rule differential_apa_c2c12:
+    input:
+        stats = config['c2c12']['stats'],
+        long_read = config['c2c12']['lapa_dir']
     threads: 1
     resources:
         mem_gb = 16
@@ -46,17 +59,19 @@ rule differential_apa_c2c12:
 
 rule differential_apa_abundance_c2c12:
     input:
-        long_read = config['c2c12']['lapa_bulk_dir'],
-        abundance = config['c2c12']['abundance']
+        stats = config['c2c12']['stats'],
+        long_read = config['c2c12']['lapa_dir']
     threads: 1
     resources:
         mem_gb = 16
     output:
         boxplot = 'reports/figures/c2c12_boxplot_gene.png',
+        scatterplot = 'reports/figures/c2c12_scatterplot_gene.png'
     notebook:
         "./apa_differetial_gene_exp.ipynb"
 
 
 rule all_c2c12:
     input:
-        rules.differential_apa_c2c12.output
+        rules.differential_apa_c2c12.output,
+        rules.differential_apa_abundance_c2c12.output

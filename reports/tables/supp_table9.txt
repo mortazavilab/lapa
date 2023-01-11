@@ -1,0 +1,12 @@
+\begin{tabular}{rrl}
+\toprule
+ Uncorrected &  Corrected &    Data Source \\
+\midrule
+    0.664829 &   0.906510 &       cDNA ONT \\
+    0.633491 &   0.928476 &    CapTrap ONT \\
+    0.716032 &   0.959905 &       R2C2 ONT \\
+    0.747163 &   0.979217 &       dRNA ONT \\
+    0.735696 &   0.971293 &    cDNA PacBio \\
+    0.703576 &   0.964382 & CapTrap PacBio \\
+\bottomrule
+\end{tabular}

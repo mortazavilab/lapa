@@ -1,0 +1,12 @@
+\begin{tabular}{lrrrrrrrr}
+\toprule
+   data source &    count &  mean &  std &  min &  25\% &  50\% &  75\% &   max \\
+\midrule
+   ONT CapTrap & 38118062 &   738 &  418 &   80 &  465 &  587 &  897 &  8327 \\
+      ONT R2C2 &  1984417 &  2701 &  769 &   80 & 2174 & 2536 & 3070 &  9001 \\
+      ONT cDNA & 27433659 &   912 &  647 &   80 &  482 &  682 & 1179 & 11007 \\
+      ONT dRNA &  2730704 &  1200 &  966 &   81 &  551 &  884 & 1530 & 16744 \\
+PacBio CapTrap &  5773371 &  1042 &  596 &   80 &  539 &  894 & 1390 &  7518 \\
+   PacBio cDNA &  7147240 &  2525 & 1482 &   80 & 1463 & 2241 & 3329 & 20313 \\
+\bottomrule
+\end{tabular}

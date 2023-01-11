@@ -1,0 +1,13 @@
+\begin{tabular}{rrrl}
+\toprule
+ three\_prime\_utr &   intron &     exon &        Data Source \\
+\midrule
+        0.976678 & 0.017077 & 0.006245 &       cDNA\textbackslash nPacBio \\
+        0.955889 & 0.025308 & 0.018804 &    CapTrap\textbackslash nPacBio \\
+        0.949037 & 0.028951 & 0.022012 &          cDNA\textbackslash nONT \\
+        0.891419 & 0.065609 & 0.042971 &       CapTrap\textbackslash nONT \\
+        0.982239 & 0.009055 & 0.008706 &          R2C2\textbackslash nONT \\
+        0.987273 & 0.007879 & 0.004848 &          dRNA\textbackslash nONT \\
+        0.876626 & 0.096488 & 0.026885 & Quantseq\textbackslash nIllumina \\
+\bottomrule
+\end{tabular}

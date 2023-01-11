@@ -8,6 +8,14 @@ rule benchmark_lapa:
                     platform=['ONT'], counting=['end'],
                     library_prep=config['long_read']['ONT'])
         ],
+        lapa_tail_dir = [
+            *expand(config['lapa']['lapa_dir'],
+                    platform=['PacBio'], counting=['tail'],
+                    library_prep=config['long_read']['PacBio']),
+            *expand(config['lapa']['lapa_dir'],
+                    platform=['ONT'], counting=['tail'],
+                    library_prep=['R2C2'])
+        ],
         quantseq = expand(config['lapa']['lapa_dir'],
                           platform='Illumina', counting='end',
                           library_prep='quantseq')
@@ -16,6 +24,8 @@ rule benchmark_lapa:
         mem_gb = 4
     output:
         pr_curve_plot = 'reports/figures/benchmark_pr_curve.png',
+        pr_table = 'reports/tables/benchmark_pr_curve.csv',
+        pr_curve_counting = 'reports/figures/benchmark_pr_curve_counting.png',
         heatmap = 'reports/figures/overlap_heatmap.png'
     notebook:
         './benchmark_lapa.ipynb'

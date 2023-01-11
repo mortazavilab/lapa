@@ -1,0 +1,12 @@
+\begin{tabular}{rlr}
+\toprule
+ Unnamed: 0 &    Data Source &  median\_tail\_length \\
+\midrule
+          0 &    PacBio cDNA &                  35 \\
+          1 & PacBio CapTrap &                  16 \\
+          2 &       ONT cDNA &                  17 \\
+          3 &    ONT CapTrap &                  12 \\
+          4 &       ONT R2C2 &                  29 \\
+          5 &       ONT dRNA &                   5 \\
+\bottomrule
+\end{tabular}

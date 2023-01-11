@@ -1,0 +1,13 @@
+\begin{tabular}{lr}
+\toprule
+   data source &  \% of read in proximity\textbackslash nof annotated TES \\
+\midrule
+   cDNA PacBio &                                  0.346173 \\
+CapTrap PacBio &                                  0.457267 \\
+      cDNA ONT &                                  0.273562 \\
+   CapTrap ONT &                                  0.336798 \\
+      R2C2 ONT &                                  0.305878 \\
+      dRNA ONT &                                  0.342175 \\
+     Quantseq3 &                                  0.345066 \\
+\bottomrule
+\end{tabular}

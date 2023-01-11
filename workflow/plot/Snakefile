@@ -53,12 +53,43 @@ rule read_nums_datasets:
                               encode_id=config['quantseq']['bam'])
     threads: 1
     resources:
-        mem_gb = 32
+        mem_gb = 4
     output:
         read_nums = "reports/figures/read_nums_datasets.png",
         counts = "reports/tables/read_nums_datasets.csv"
     notebook:
         "read_nums_datasets.ipynb"
+
+
+rule plot_read_aligned_len:
+    input:
+        PacBio_cDNA = expand(
+            config['encode']['bam_aligned_len'],
+            encode_id=config['long_read']['PacBio']['cDNA']),
+        PacBio_CapTrap = expand(
+            config['encode']['bam_aligned_len'],
+            encode_id=config['long_read']['PacBio']['CapTrap']),
+
+        ONT_cDNA = expand(
+            config['encode']['bam_aligned_len'],
+            encode_id=config['long_read']['ONT']['cDNA']),
+        ONT_CapTrap = expand(
+            config['encode']['bam_aligned_len'],
+            encode_id=config['long_read']['ONT']['CapTrap']),
+        ONT_R2C2 = expand(
+            config['encode']['bam_aligned_len'],
+            encode_id=config['long_read']['ONT']['R2C2']),
+        ONT_dRNA = expand(
+            config['encode']['bam_aligned_len'],
+            encode_id=config['long_read']['ONT']['dRNA'])
+    threads: 1
+    resources:
+        mem_gb = 4
+    output:
+        fig = "reports/figures/read_aligned_len.png",
+        table = "reports/tables/read_aligned_len.csv"
+    notebook:
+        "read_aligned_len.ipynb"
 
 
 rule hist_read_counts:
@@ -164,9 +195,59 @@ rule plot_tail_len:
         './plot_tail_len.ipynb'
 
 
+rule plot_cluster_annotation:
+    input:
+        lapa_dir = [
+            *expand(config['lapa']['lapa_dir'],
+                    platform='PacBio', counting=['end'],
+                    library_prep=config['long_read']['PacBio']),
+            *expand(config['lapa']['lapa_dir'],
+                    platform='ONT', counting=['end'],
+                    library_prep=config['long_read']['ONT']),
+            *expand(config['lapa']['lapa_dir'],
+                    platform='Illumina', counting='end',
+                    library_prep='quantseq')
+        ],
+        genes = config['common']['gene_id_name_mapping'].format(genome='hg38')
+    threads: 1
+    resources:
+        mem_gb = 16
+    output:
+        fig = 'reports/figures/plot_cluster_annotation.png',
+        table = 'reports/tables/cluster_annotation_counts.csv'
+    notebook:
+        'plot_cluster_annotation.ipynb'
+
+
+rule plot_replication_rate:
+    input:
+        lapa_dir = [
+            *expand(config['lapa']['lapa_dir'],
+                    platform='PacBio', counting=['end'],
+                    library_prep=config['long_read']['PacBio']),
+            *expand(config['lapa']['lapa_dir'],
+                    platform='ONT', counting=['end'],
+                    library_prep=config['long_read']['ONT']),
+            *expand(config['lapa']['lapa_dir'],
+                    platform='Illumina', counting='end',
+                    library_prep='quantseq')
+        ]
+    threads: 1
+    resources:
+        mem_gb = 4
+    output:
+        fig = 'reports/figures/pas/replication_rate.png',
+        table = 'reports/tables/threshold_min_read_replication.csv'
+    notebook:
+        "./replication_rate.ipynb"
+
+
 rule all_plot:
     input:
         rules.read_nums_datasets.output,
         rules.plot_hist_read_count.output,
         rules.plot_major_isoform_gene_exp.output,
-        rules.plot_tail_len.output
+        rules.plot_tail_len.output,
+        rules.plot_read_aligned_len.output,
+        rules.plot_cluster_annotation.output,
+        rules.plot_replication_rate.output

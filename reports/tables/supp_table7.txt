@@ -1,0 +1,12 @@
+\begin{tabular}{rrl}
+\toprule
+  Recall &  Precision &    Data Source \\
+\midrule
+0.852165 &   0.682092 &    cDNA PacBio \\
+0.489438 &   0.738593 & CapTrap PacBio \\
+0.406448 &   0.833830 &       cDNA ONT \\
+0.355482 &   0.746878 &    CapTrap ONT \\
+0.513217 &   0.698884 &       R2C2 ONT \\
+0.813993 &   0.786981 &       dRNA ONT \\
+\bottomrule
+\end{tabular}
