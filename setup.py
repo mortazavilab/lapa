@@ -15,7 +15,7 @@ requirements = [
     'scipy',
     'bamread>=0.0.10',
     'pyranges>=0.0.71',
-    'sorted-nearest==0.0.33',
+    'sorted-nearest>=0.0.35',
     'kipoiseq>=0.3.0',
     'matplotlib',
     'betabinomial',
