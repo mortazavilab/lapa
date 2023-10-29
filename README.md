@@ -7,6 +7,9 @@
 
 Alternative polyadenylation detection from diverse data sources such as 3'-seq, long-read and short-reads.
 
+> Please get in touch with ali.mortazavi@uci.edu for questions related to maintenance.
+
+
 ![method](docs/method.png)
 
 ## Installation
