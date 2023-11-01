@@ -169,8 +169,7 @@ class BaseCounter:
         return pr.PyRanges(df).count_overlaps(
             gr_bam,
             overlap_col='coverage',
-            strandedness='same',
-            nb_cpu = 8)
+            strandedness='same')
 
     def to_df(self):
         return self.to_gr().df.astype({'Chromosome': 'str', 'Strand': 'str'})
