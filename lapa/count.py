@@ -133,10 +133,43 @@ class BaseCounter:
         gr_bam = pr.PyRanges(df_bam)
         gr_bam = gr_bam[gr_bam.Flag.isin({0, 16})]
 
+        gr = gr_bam.df
+        gr['Chromosome'] = gr['Chromosome'].astype(str)
+        df_counts = df.groupby(["Chromosome", "Strand"]).size().reset_index(name="Count")
+        gr_counts = gr.groupby(["Chromosome", "Strand"]).size().reset_index(name="Count")
+        merged_counts = df_counts.merge(gr_counts, on=["Chromosome","Strand"], suffixes=("_df","_gr"))
+        merged_counts["log2Prod"] = np.log2(merged_counts["Count_df"]) + np.log2(merged_counts["Count_gr"])
+
+
+        filtered_combinations = merged_counts[merged_counts['log2Prod'] > 31]
+
+        for index, row in filtered_combinations.iterrows():
+            if row['log2Prod'] > 31:
+                num_division = 2**int(np.ceil(row['log2Prod']-31))
+                starts = list(df[(df['Chromosome'] == row['Chromosome']) & \
+                                                (df['Strand'] == row['Strand'])]['Start']) + \
+                                            list(gr[(gr['Chromosome'] == row['Chromosome']) & \
+                                                (gr['Strand'] == row['Strand'])]['Start'])
+                percentiles = [np.percentile(starts, i*(100/num_division)) for i in range(1,num_division)]
+                percentiles = [np.percentile(starts, 0)] + percentiles + [np.percentile(starts, 100)]
+                for i in range(num_division):
+                    df_ind = (df['Chromosome'] == row['Chromosome']) & \
+                    (df['Strand'] == row['Strand']) & \
+                    (df['Start'] >= percentiles[i]) & \
+                    (df['Start'] <= percentiles[i+1])
+                    df.loc[df_ind,'Chromosome'] = df[df_ind]['Chromosome'].apply(lambda x: str(x) + "$" + str(i))
+                    gr_ind = (gr['Chromosome'] == row['Chromosome']) & \
+                    (gr['Strand'] == row['Strand']) & \
+                    (gr['Start'] >= percentiles[i]) & \
+                    (gr['Start'] <= df.loc[df_ind,'End'].max())
+                    gr.loc[gr_ind,'Chromosome'] = gr[gr_ind]['Chromosome'].apply(lambda x: str(x) + "$" + str(i))
+        gr_bam = pr.PyRanges(gr)
+        
         return pr.PyRanges(df).count_overlaps(
             gr_bam,
             overlap_col='coverage',
-            strandedness='same')
+            strandedness='same',
+            nb_cpu = 8)
 
     def to_df(self):
         return self.to_gr().df.astype({'Chromosome': 'str', 'Strand': 'str'})
