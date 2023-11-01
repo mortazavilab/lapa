@@ -8,6 +8,7 @@ import matplotlib.pyplot as plt
 from lapa.utils.io import bw_from_pyranges, \
     _read_talon_read_annot_five_prime_count, \
     _read_talon_read_annot_three_prime_count
+import numpy as np
 
 
 def _tqdm_counting(iterable):
