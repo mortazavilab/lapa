@@ -8,6 +8,7 @@ import matplotlib.pyplot as plt
 from lapa.utils.io import bw_from_pyranges, \
     _read_talon_read_annot_five_prime_count, \
     _read_talon_read_annot_three_prime_count
+import numpy as np
 
 
 def _tqdm_counting(iterable):
@@ -130,14 +131,52 @@ class BaseCounter:
         df_bam = pr.read_bam(self.bam_file, mapq=self.mapq, as_df=True)
         df_bam['Start'] -= 1
 
+        df_bam['Chromosome'] = df_bam['Chromosome'].astype(str)
+        df_counts = df.groupby(["Chromosome", "Strand"]).size().reset_index(name="Count")
+        gr_counts = df_bam.groupby(["Chromosome", "Strand"]).size().reset_index(name="Count")
+        merged_counts = df_counts.merge(gr_counts, on=["Chromosome","Strand"], suffixes=("_df","_gr"))
+        merged_counts["log2Prod"] = np.log2(merged_counts["Count_df"]) + np.log2(merged_counts["Count_gr"])
+
+
+        filtered_combinations = merged_counts[merged_counts['log2Prod'] > 31]
+
+        for index, row in filtered_combinations.iterrows():
+            if row['log2Prod'] > 31:
+                num_division = 2**int(np.ceil(row['log2Prod']-31))
+                starts = list(df[(df['Chromosome'] == row['Chromosome']) & \
+                                                (df['Strand'] == row['Strand'])]['Start']) + \
+                                            list(df_bam[(df_bam['Chromosome'] == row['Chromosome']) & \
+                                                (df_bam['Strand'] == row['Strand'])]['Start'])
+                percentiles = [np.percentile(starts, i*(100/num_division)) for i in range(1,num_division)]
+                percentiles = [np.percentile(starts, 0)] + percentiles + [np.percentile(starts, 100)]
+                for i in range(num_division):
+                    df_ind = (df['Chromosome'] == row['Chromosome']) & \
+                    (df['Strand'] == row['Strand']) & \
+                    (df['Start'] >= percentiles[i]) & \
+                    (df['Start'] <= percentiles[i+1])
+                    df.loc[df_ind,'Chromosome'] = df[df_ind]['Chromosome'].apply(lambda x: str(x) + "$" + str(i))
+                    gr_ind = (df_bam['Chromosome'] == row['Chromosome']) & \
+                    (df_bam['Strand'] == row['Strand']) & \
+                    (df_bam['Start'] >= percentiles[i]) & \
+                    (df_bam['Start'] <= df.loc[df_ind,'End'].max())
+                    df_bam.loc[gr_ind,'Chromosome'] = df_bam[gr_ind]['Chromosome'].apply(lambda x: str(x) + "$" + str(i))
+
         gr_bam = pr.PyRanges(df_bam)
         gr_bam = gr_bam[gr_bam.Flag.isin({0, 16})]
 
-        return pr.PyRanges(df).count_overlaps(
+
+        out =  pr.PyRanges(df).count_overlaps(
             gr_bam,
             overlap_col='coverage',
             strandedness='same')
+        
+        out2 = out.df
+        out2['Chromosome'] = out2['Chromosome'].astype(str)
+        out2['Chromosome'] = out2['Chromosome'].str.split('$').str[0]
 
+        return pr.PyRanges(out2)  
+
+    
     def to_df(self):
         return self.to_gr().df.astype({'Chromosome': 'str', 'Strand': 'str'})
 
